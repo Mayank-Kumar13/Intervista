@@ -6,7 +6,7 @@ import HowItWorks from './components/HowItWorks';
 import InterviewShowcase from './components/InterviewShowcase';
 import RoleCards from './components/RoleCards';
 import PerformanceReport from './components/PerformanceReport';
-import ReviewsSection from './components/ReviewsSection';
+import PricingSection from './components/PricingSection';
 import CtaBanner from './components/CtaBanner';
 import Footer from './components/Footer';
 import Dashboard from './components/Dashboard';
@@ -183,8 +183,8 @@ export default function App() {
             {/* 7. Performance Report Section */}
             <PerformanceReport onViewReport={() => handleViewSampleReport()} />
 
-            {/* 8. Student Feedback & Infinite Review Loop */}
-            <ReviewsSection />
+            {/* 8. Premium Plans & Buying Section */}
+            <PricingSection onStartInterview={handleStartInterview} />
 
             {/* 9. Final CTA Banner */}
             <CtaBanner onStartInterview={handleStartInterview} />

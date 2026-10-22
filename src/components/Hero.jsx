@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mic, ArrowRight, Play, Zap, MessageSquare, Target } from 'lucide-react';
+import { Mic, ArrowRight, Zap, MessageSquare, Target } from 'lucide-react';
 import LaptopMockup from './LaptopMockup';
 
 export default function Hero({ onStartInterview, onWatchDemo }) {
@@ -69,8 +69,8 @@ export default function Hero({ onStartInterview, onWatchDemo }) {
                 onClick={() => onStartInterview()}
                 className="btn-primary"
                 style={{
-                  padding: '0.82rem 1.65rem',
-                  fontSize: '0.95rem',
+                  padding: '0.82rem 1.75rem',
+                  fontSize: '0.96rem',
                 }}
               >
                 <Mic size={17} />
@@ -78,29 +78,17 @@ export default function Hero({ onStartInterview, onWatchDemo }) {
                 <ArrowRight size={16} />
               </button>
 
-              <button
-                onClick={onWatchDemo}
+              <a
+                href="#pricing"
                 className="btn-secondary"
                 style={{
                   padding: '0.82rem 1.65rem',
                   fontSize: '0.95rem',
+                  textDecoration: 'none',
                 }}
               >
-                <div
-                  style={{
-                    width: '20px',
-                    height: '20px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Play size={10} fill="currentColor" />
-                </div>
-                <span>Watch Demo</span>
-              </button>
+                <span>View Plans</span>
+              </a>
             </div>
 
             {/* 3 Value Propositions */}
