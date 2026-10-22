@@ -191,7 +191,7 @@ Intervista System Architecture
 | **2026-10-22** | **Premium Plans & Checkout Section** | Built premium pricing cards and interactive checkout modal with Razorpay simulation for subscription access. |
 | **2026-10-22** | **Homepage Section Cleanup** | Removed the "Your performance, clearly understood" (`PerformanceReport`) section from the homepage as requested. Cleaned up footer navigation link. |
 | **2026-10-22** | **Interview Showcase Removal** | Removed the "Real interviews. Real feedback." (`InterviewShowcase`) section from the homepage as requested. Cleaned up footer navigation link. |
-| **2026-10-22** | **How It Works Flowchart Pipeline Redesign** | Redesigned "How it works" into an interactive architectural flowchart simulation pipeline: 1) Blueprint dot-matrix canvas with pipeline status bar (`SYSTEM PIPELINE: ACTIVE`), 2) Three connected nodes (`PHASE 01 // INPUT`, `PHASE 02 // ENGINE`, `PHASE 03 // OUTPUT`), 3) Glowing wire conduits with gold contact port rings and animated light pulses, 4) Micro-chips for each stage, 5) Pipeline timing footer with sandbox assurance. Non-clickable, informative, and structurally connected. |
+| **2026-10-22** | **How It Works Minimal Flow Redesign & Git Sync** | 1) Redesigned "How it works" matching reference image: uncluttered, no numbers, top glowing halo nodes, and sequential flowing glow through the arrows. 2) Pulled remote changes (Plans & Pricing, Checkout modal, and frontend/ directory refactoring), resolved merge conflicts cleanly, and pushed all commits to origin/main. |
 
 ---
 
