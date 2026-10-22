@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import CompanyLogos from './components/CompanyLogos';
@@ -9,6 +9,7 @@ import PerformanceReport from './components/PerformanceReport';
 import ReviewsSection from './components/ReviewsSection';
 import CtaBanner from './components/CtaBanner';
 import Footer from './components/Footer';
+import Dashboard from './components/Dashboard';
 
 // Modals
 import SetupModal from './components/SetupModal';
@@ -19,6 +20,11 @@ import LegalModal from './components/LegalModal';
 import ContactModal from './components/ContactModal';
 
 export default function App() {
+  // View state: 'home' | 'dashboard'
+  const [currentView, setCurrentView] = useState(() => {
+    return window.location.hash === '#dashboard' ? 'dashboard' : 'home';
+  });
+
   // Modal states
   const [setupModalOpen, setSetupModalOpen] = useState(false);
   const [selectedRoleForSetup, setSelectedRoleForSetup] = useState('Software Engineer');
@@ -36,6 +42,31 @@ export default function App() {
   const [legalModalOpen, setLegalModalOpen] = useState(false);
   const [legalTopic, setLegalTopic] = useState('');
   const [contactModalOpen, setContactModalOpen] = useState(false);
+
+  // Sync with browser hash
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#dashboard') {
+        setCurrentView('dashboard');
+      } else if (window.location.hash === '#home' || window.location.hash === '') {
+        setCurrentView('home');
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const handleNavigateToDashboard = () => {
+    window.location.hash = 'dashboard';
+    setCurrentView('dashboard');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavigateToHome = () => {
+    window.location.hash = 'home';
+    setCurrentView('home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Handlers
   const handleStartInterview = (role = 'Software Engineer') => {
@@ -63,18 +94,34 @@ export default function App() {
     setLiveDemoOpen(true);
   };
 
-  const handleViewSampleReport = () => {
-    setReportData({
-      role: 'Software Engineer',
-      level: 'Mid Level',
-      overallScore: 88,
-      scores: {
-        communication: 92,
-        technicalDepth: 86,
-        problemSolving: 89,
-        confidence: 84,
-      },
-    });
+  const handleViewSampleReport = (customData = null) => {
+    if (customData) {
+      setReportData({
+        role: customData.role || 'Software Engineer',
+        level: customData.level || 'Mid Level',
+        overallScore: customData.overallScore || 86,
+        scores: customData.scores || {
+          communication: 90,
+          technicalDepth: 86,
+          problemSolving: 88,
+          confidence: 82,
+        },
+        strengths: customData.strengths,
+        improvements: customData.improvements,
+      });
+    } else {
+      setReportData({
+        role: 'Software Engineer',
+        level: 'Mid Level',
+        overallScore: 88,
+        scores: {
+          communication: 92,
+          technicalDepth: 86,
+          problemSolving: 89,
+          confidence: 84,
+        },
+      });
+    }
     setReportModalOpen(true);
   };
 
@@ -91,49 +138,67 @@ export default function App() {
 
   return (
     <div className="intervista-app">
-      {/* 1. Navigation Bar with HOME, DASHBOARD, COMPANIES, REVIEWS, CONTACT US */}
-      <Navbar
-        onStartInterview={() => handleStartInterview()}
-        onOpenLogin={() => setAuthModalOpen(true)}
-        onOpenContact={() => setContactModalOpen(true)}
-      />
-
-      <main>
-        {/* 2. Hero Section (with live oval removed) */}
-        <Hero
+      {currentView === 'dashboard' ? (
+        /* =====================================================================
+           DASHBOARD OVERVIEW PAGE (Matches Reference Screenshot)
+           ===================================================================== */
+        <Dashboard
           onStartInterview={handleStartInterview}
-          onWatchDemo={handleOpenDemo}
+          onViewReport={handleViewSampleReport}
+          onBackToHome={handleNavigateToHome}
         />
+      ) : (
+        /* =====================================================================
+           HOMEPAGE (Warm Dark Luxury Aesthetic)
+           ===================================================================== */
+        <>
+          {/* 1. Navigation Bar with HOME, DASHBOARD, COMPANIES, REVIEWS, CONTACT US */}
+          <Navbar
+            onStartInterview={() => handleStartInterview()}
+            onOpenLogin={() => setAuthModalOpen(true)}
+            onOpenContact={() => setContactModalOpen(true)}
+            onNavigateToDashboard={handleNavigateToDashboard}
+            onNavigateToHome={handleNavigateToHome}
+          />
 
-        {/* 3. Trusted Companies Strip (with brand colors on hover) */}
-        <CompanyLogos />
+          <main>
+            {/* 2. Hero Section (with live oval removed) */}
+            <Hero
+              onStartInterview={handleStartInterview}
+              onWatchDemo={handleOpenDemo}
+            />
 
-        {/* 4. How It Works */}
-        <HowItWorks onSelectStep={handleSelectStep} />
+            {/* 3. Trusted Companies Strip (with brand colors on hover) */}
+            <CompanyLogos />
 
-        {/* 5. Interview Experience Showcase (Dashboard) */}
-        <InterviewShowcase onTryDemo={handleOpenDemo} />
+            {/* 4. How It Works */}
+            <HowItWorks onSelectStep={handleSelectStep} />
 
-        {/* 6. Practice for Your Next Role */}
-        <RoleCards onSelectRole={handleStartInterview} />
+            {/* 5. Interview Experience Showcase (Dashboard Preview) */}
+            <InterviewShowcase onTryDemo={handleOpenDemo} />
 
-        {/* 7. Performance Report Section */}
-        <PerformanceReport onViewReport={handleViewSampleReport} />
+            {/* 6. Practice for Your Next Role */}
+            <RoleCards onSelectRole={handleStartInterview} />
 
-        {/* 8. Student Feedback & Infinite Review Loop */}
-        <ReviewsSection />
+            {/* 7. Performance Report Section */}
+            <PerformanceReport onViewReport={() => handleViewSampleReport()} />
 
-        {/* 9. Final CTA Banner */}
-        <CtaBanner onStartInterview={handleStartInterview} />
-      </main>
+            {/* 8. Student Feedback & Infinite Review Loop */}
+            <ReviewsSection />
 
-      {/* 10. Footer */}
-      <Footer
-        onOpenLegal={handleOpenLegal}
-        onSelectRole={handleStartInterview}
-      />
+            {/* 9. Final CTA Banner */}
+            <CtaBanner onStartInterview={handleStartInterview} />
+          </main>
 
-      {/* Interactive Flow Modals */}
+          {/* 10. Footer */}
+          <Footer
+            onOpenLegal={handleOpenLegal}
+            onSelectRole={handleStartInterview}
+          />
+        </>
+      )}
+
+      {/* Interactive Flow Modals (Shared across Home & Dashboard) */}
       <SetupModal
         isOpen={setupModalOpen}
         onClose={() => setSetupModalOpen(false)}

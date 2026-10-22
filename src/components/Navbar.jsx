@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Menu, X, Sparkles } from 'lucide-react';
 
-export default function Navbar({ onStartInterview, onOpenLogin, onOpenContact }) {
+export default function Navbar({ onStartInterview, onOpenLogin, onOpenContact, onNavigateToDashboard, onNavigateToHome }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -95,7 +95,7 @@ export default function Navbar({ onStartInterview, onOpenLogin, onOpenContact })
         >
           {[
             { label: 'HOME', id: 'hero' },
-            { label: 'DASHBOARD', id: 'features' },
+            { label: 'DASHBOARD', id: 'dashboard' },
             { label: 'COMPANIES', id: 'companies' },
             { label: 'REVIEWS', id: 'reviews' },
             { label: 'CONTACT US', id: 'contact', isContact: true },
@@ -104,7 +104,13 @@ export default function Navbar({ onStartInterview, onOpenLogin, onOpenContact })
               key={item.label}
               href={`#${item.id}`}
               onClick={(e) => {
-                if (item.isContact && onOpenContact) {
+                if (item.label === 'DASHBOARD' && onNavigateToDashboard) {
+                  e.preventDefault();
+                  onNavigateToDashboard();
+                } else if (item.label === 'HOME' && onNavigateToHome) {
+                  e.preventDefault();
+                  onNavigateToHome();
+                } else if (item.isContact && onOpenContact) {
                   e.preventDefault();
                   onOpenContact();
                 } else {
@@ -193,7 +199,7 @@ export default function Navbar({ onStartInterview, onOpenLogin, onOpenContact })
         >
           {[
             { label: 'HOME', id: 'hero' },
-            { label: 'DASHBOARD', id: 'features' },
+            { label: 'DASHBOARD', id: 'dashboard' },
             { label: 'COMPANIES', id: 'companies' },
             { label: 'REVIEWS', id: 'reviews' },
             { label: 'CONTACT US', id: 'contact', isContact: true },
@@ -202,7 +208,15 @@ export default function Navbar({ onStartInterview, onOpenLogin, onOpenContact })
               key={item.label}
               href={`#${item.id}`}
               onClick={(e) => {
-                if (item.isContact && onOpenContact) {
+                if (item.label === 'DASHBOARD' && onNavigateToDashboard) {
+                  e.preventDefault();
+                  setMobileMenuOpen(false);
+                  onNavigateToDashboard();
+                } else if (item.label === 'HOME' && onNavigateToHome) {
+                  e.preventDefault();
+                  setMobileMenuOpen(false);
+                  onNavigateToHome();
+                } else if (item.isContact && onOpenContact) {
                   e.preventDefault();
                   setMobileMenuOpen(false);
                   onOpenContact();

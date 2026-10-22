@@ -162,6 +162,15 @@ Intervista System Architecture
 - [x] Actionable key strengths and growth recommendations.
 - [x] Export report (PDF print) option and retake session trigger.
 
+### Phase 6: AI Dashboard Overview Page (Matches Reference UI)
+- [x] **Collapsible Left Sidebar:** Intervista AI wordmark, collapse/expand toggle (`<` / `>`), active `Overview` state with champagne border & subtle glow, navigation items (`Mock Room`, `Analytics & Skills`, `Schedule & Feed`, `Career Prep`, `Settings`), and `← Back to Website` link.
+- [x] **Welcome Header:** *"Welcome Back, Mayankkk"*, completed mock sessions subtext, primary `+ Start New Interview →` pill button, upper-right notification bell with unread indicator dot, user avatar (`M`), and understated motivational card (*"Consistent practice today, bigger opportunities tomorrow."*).
+- [x] **Yearly Practice Activity Heatmap:** 12-month calendar (Jan–Dec), 53-week × 7-day contribution grid, progressive emerald green intensity tiers (`#064e3b`, `#047857`, `#10B981`, `#34D399`), interactive year navigation (`< 2026 >`), date & session count hover tooltips, and `Less → More` legend.
+- [x] **Recent Interviews:** 2-column left section with table rows for Google (86%), Microsoft (78%), Amazon (72%), and Tesla (65%), authentic vector logos, circular SVG score percentage gauges, dates, and interactive `View Report` buttons linked to report modals.
+- [x] **Topics to Work On:** 2-column right section with 3 skill cards (Technical depth 62%, Problem solving 71%, Communication 78%), monochrome icons, concise growth guidance, and champagne progress bars.
+- [x] **Two-Way Navigation & Routing:** Seamless switching between homepage and dashboard via top Navbar `DASHBOARD` / `HOME` tabs and browser hash (`#dashboard` / `#home`).
+- [x] **Responsive Layout:** Adaptive sidebar for desktop, top bar with mobile menu for small screens, and stacked responsive grid for mobile and tablet views.
+
 ---
 
 ## 5. Change Log & Activity Record
@@ -172,7 +181,9 @@ Intervista System Architecture
 | **2026-10-22** | **Design System Extraction & Progress Setup** | Created [progress.md](file:///c:/Users/mayan/OneDrive/Desktop/CLASSES/Projects/Intervista/progress.md) defining the project vision, roadmap, and dark luxury theme. |
 | **2026-10-22** | **Full Homepage Implementation** | Built complete Intervista frontend with Vite + React + Vanilla CSS matching the reference design: Hero with 3D laptop dashboard, trusted company logo strip, How It Works cards, Interview Experience showcase, Role cards, and Performance Report panel. |
 | **2026-10-22** | **Reviews System, Nav Updates & Brand Colors** | 1) Built Student Feedback section with 4.9 rating, star distribution, "Write a Review" modal, and continuous infinite horizontal marquee loop. 2) Updated navbar to `HOME`, `DASHBOARD`, `COMPANIES`, `REVIEWS`, `CONTACT US`. 3) Removed "Live now" oval pill from Hero. 4) Added official brand color transitions to company logos on hover. |
+| **2026-10-22** | **Dashboard Overview Page (Matches Reference UI)** | Built dedicated Intervista AI Dashboard Overview page matching the reference screenshot: 1) Left sidebar with collapse control, 2) Welcome header with motivational card and Start Interview CTA, 3) 53-week yearly practice heatmap with year switcher and tooltips, 4) Recent interviews table with circular score rings and View Report modals, 5) Topics to work on with champagne progress bars. Integrated two-way navigation with Navbar and URL hashes. |
 
 ---
 
 > *Note: Update this file with new entries under the **Change Log** and tick off checklist items as features are implemented.*
+
