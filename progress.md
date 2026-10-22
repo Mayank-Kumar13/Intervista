@@ -157,8 +157,8 @@ Intervista System Architecture
 - [x] Session controls: Mute, sample answers, question skip, real-time transcript.
 
 ### Phase 6: Company Interview Preparation Section (Implemented)
-- [x] **Structured Data Engine (`src/data/companyData.js`)**: Converted the research Markdown guide into a structured dataset covering all 15 target companies (Google, Microsoft, Amazon, Meta, Apple, Netflix, Adobe, Salesforce, IBM, Oracle, NVIDIA, Infosys, TCS, Wipro, Accenture) with distinct candidate-reported questions, curated practice problems, direct problem URLs, core CS topics, aptitude topics, official career guidance links, and source labels.
-- [x] **CardSwap Component (`src/components/CardSwap.jsx`)**: Integrated the reference CardSwap animation powered by GSAP perspective transforms, smooth 3D cycling, pause on hover, click selection, and `prefers-reduced-motion` compliance matching Intervista's dark luxury theme.
+- [x] **Structured Data Engine (`frontend/data/companyData.js`)**: Converted the research Markdown guide into a structured dataset covering all 15 target companies (Google, Microsoft, Amazon, Meta, Apple, Netflix, Adobe, Salesforce, IBM, Oracle, NVIDIA, Infosys, TCS, Wipro, Accenture) with distinct candidate-reported questions, curated practice problems, direct problem URLs, core CS topics, aptitude topics, official career guidance links, and source labels.
+- [x] **CardSwap Component (`frontend/components/CardSwap.jsx`)**: Integrated the reference CardSwap animation powered by GSAP perspective transforms, smooth 3D cycling, pause on hover, click selection, and `prefers-reduced-motion` compliance matching Intervista's dark luxury theme.
 - [x] **Synchronized Company Selection**: Unified selection state across the CardSwap showcase, searchable company browser grid, and the left sidebar directory. Selecting any company synchronizes all three components.
 - [x] **Company Directory & Section Navigation**: Left sidebar containing all 15 companies with brand indicator dots, solved counters, active highlights, and quick section jumpers (Overview, Questions, Practice, Resources, Core CS, Aptitude, Behavioral, Roadmap).
 - [x] **Question Interaction & Progress Tracking**: Real-time solved/unsolved checkbox toggle with localStorage persistence (`intervista-company-progress`), dynamic progress circle indicator, topic filters, and difficulty filters.
@@ -192,6 +192,7 @@ Intervista System Architecture
 | **2026-10-22** | **Homepage Section Cleanup** | Removed the "Your performance, clearly understood" (`PerformanceReport`) section from the homepage as requested. Cleaned up footer navigation link. |
 | **2026-10-22** | **Interview Showcase Removal** | Removed the "Real interviews. Real feedback." (`InterviewShowcase`) section from the homepage as requested. Cleaned up footer navigation link. |
 | **2026-10-22** | **How It Works Minimal Flow Redesign & Git Sync** | 1) Redesigned "How it works" matching reference image: uncluttered, no numbers, top glowing halo nodes, and sequential flowing glow through the arrows. 2) Pulled remote changes (Plans & Pricing, Checkout modal, and frontend/ directory refactoring), resolved merge conflicts cleanly, and pushed all commits to origin/main. |
+| **2026-10-22** | **Remote Integration & Full Sync to Origin** | Pulled remote changes from `Mayank-Kumar13/Intervista.git`, cleanly resolved branch state retaining all local features (CardSwap showcase, 15-company interview engine, dashboard routing, and checkout), cleaned orphan directories, verified production build, and safely pushed to remote `main`. |
 
 ---
 
