@@ -276,6 +276,7 @@ export default function Dashboard({
         color: 'var(--text-primary)',
         fontFamily: 'var(--font-sans)',
         position: 'relative',
+        paddingTop: 'var(--nav-height, 72px)',
       }}
       className="dashboard-root"
     >
@@ -291,9 +292,9 @@ export default function Dashboard({
           flexDirection: 'column',
           transition: 'width 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
           position: 'sticky',
-          top: 0,
-          height: '100vh',
-          zIndex: 50,
+          top: 'var(--nav-height, 72px)',
+          height: 'calc(100vh - var(--nav-height, 72px))',
+          zIndex: 40,
           padding: '1.5rem 1rem',
           flexShrink: 0,
         }}
@@ -517,82 +518,41 @@ export default function Dashboard({
           MAIN CONTENT AREA
           ========================================================================= */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-        {/* Mobile Header Bar */}
-        <header
-          className="mobile-header"
+        {/* Mobile Horizontal Dashboard Nav Tabs */}
+        <div
+          className="dashboard-mobile-tabs"
           style={{
             display: 'none',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '1rem 1.5rem',
+            overflowX: 'auto',
+            padding: '0.75rem 1rem',
             backgroundColor: '#0c0c0c',
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            gap: '0.5rem',
+            whiteSpace: 'nowrap',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M12 0L14.2 9.8L24 12L14.2 14.2L12 24L9.8 14.2L0 12L9.8 9.8L12 0Z" fill="var(--accent-gold)"/>
-            </svg>
-            <span style={{ fontFamily: 'var(--font-serif)', fontSize: '1.15rem' }}>Intervista AI</span>
-          </div>
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}
-          >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-        </header>
-
-        {/* Mobile Menu Dropdown */}
-        {mobileMenuOpen && (
-          <div
-            style={{
-              backgroundColor: '#111111',
-              padding: '1rem 1.5rem',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.75rem',
-            }}
-          >
-            {navItems.map((item) => (
-              <button
-                key={item.label}
-                onClick={() => {
-                  setActiveNav(item.label);
-                  setMobileMenuOpen(false);
-                  if (item.action) item.action();
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: activeNav === item.label ? 'var(--accent-gold)' : 'var(--text-primary)',
-                  textAlign: 'left',
-                  fontSize: '0.95rem',
-                  padding: '0.4rem 0',
-                  cursor: 'pointer',
-                }}
-              >
-                {item.label}
-              </button>
-            ))}
+          {navItems.map((item) => (
             <button
-              onClick={onBackToHome}
+              key={item.label}
+              onClick={() => {
+                setActiveNav(item.label);
+                if (item.action) item.action();
+              }}
               style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-secondary)',
-                textAlign: 'left',
-                fontSize: '0.9rem',
-                paddingTop: '0.5rem',
-                borderTop: '1px solid rgba(255,255,255,0.06)',
+                background: activeNav === item.label ? 'rgba(217, 183, 122, 0.12)' : 'transparent',
+                border: activeNav === item.label ? '1px solid rgba(217, 183, 122, 0.35)' : '1px solid transparent',
+                borderRadius: '8px',
+                color: activeNav === item.label ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                fontSize: '0.82rem',
+                fontWeight: activeNav === item.label ? 600 : 500,
+                padding: '0.4rem 0.85rem',
                 cursor: 'pointer',
               }}
             >
-              ← Back to Website
+              {item.label}
             </button>
-          </div>
-        )}
+          ))}
+        </div>
 
         <main style={{ padding: '2.5rem 3rem', maxWidth: '1360px', width: '100%', margin: '0 auto' }} className="dashboard-main-content">
           {/* =========================================================================
@@ -1392,7 +1352,7 @@ export default function Dashboard({
           .dashboard-sidebar {
             display: none !important;
           }
-          .mobile-header {
+          .dashboard-mobile-tabs {
             display: flex !important;
           }
           .welcome-header-right {

@@ -3,6 +3,7 @@ import { ArrowRight, Menu, X, Sparkles } from 'lucide-react';
 
 export default function Navbar({
   currentPage = 'home',
+  currentView,
   onNavigate,
   onStartInterview,
   onOpenLogin,
@@ -10,6 +11,7 @@ export default function Navbar({
   onNavigateToDashboard,
   onNavigateToHome,
 }) {
+  const activePage = currentView || currentPage || 'home';
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -150,9 +152,9 @@ export default function Navbar({
         >
           {navItems.map((item) => {
             const isActive =
-              (item.page === 'companies' && currentPage === 'companies') ||
-              (item.page === 'dashboard' && currentPage === 'dashboard') ||
-              (item.page === 'home' && item.id === 'hero' && currentPage === 'home' && !scrolled);
+              (item.page === 'companies' && activePage === 'companies') ||
+              (item.page === 'dashboard' && activePage === 'dashboard') ||
+              (item.page === 'home' && item.id === 'hero' && activePage === 'home' && !scrolled);
 
             return (
               <a
@@ -263,9 +265,9 @@ export default function Navbar({
         >
           {navItems.map((item) => {
             const isActive =
-              (item.page === 'companies' && currentPage === 'companies') ||
-              (item.page === 'dashboard' && currentPage === 'dashboard') ||
-              (item.page === 'home' && item.id === 'hero' && currentPage === 'home' && !scrolled);
+              (item.page === 'companies' && activePage === 'companies') ||
+              (item.page === 'dashboard' && activePage === 'dashboard') ||
+              (item.page === 'home' && item.id === 'hero' && activePage === 'home' && !scrolled);
 
             return (
               <a

@@ -159,6 +159,18 @@ export default function App() {
 
   return (
     <div className="intervista-app">
+      {/* Global Navigation Bar rendered at the top across all pages */}
+      <Navbar
+        currentPage={currentView}
+        currentView={currentView}
+        onNavigate={handleNavigate}
+        onStartInterview={() => handleStartInterview()}
+        onOpenLogin={() => setAuthModalOpen(true)}
+        onOpenContact={() => setContactModalOpen(true)}
+        onNavigateToDashboard={handleNavigateToDashboard}
+        onNavigateToHome={handleNavigateToHome}
+      />
+
       {/* 1. DASHBOARD VIEW */}
       {currentView === 'dashboard' && (
         <Dashboard
@@ -171,16 +183,6 @@ export default function App() {
       {/* 2. DEDICATED COMPANIES VIEW */}
       {currentView === 'companies' && (
         <>
-          <Navbar
-            currentPage="companies"
-            onNavigate={handleNavigate}
-            onStartInterview={() => handleStartInterview()}
-            onOpenLogin={() => setAuthModalOpen(true)}
-            onOpenContact={() => setContactModalOpen(true)}
-            onNavigateToDashboard={handleNavigateToDashboard}
-            onNavigateToHome={handleNavigateToHome}
-          />
-
           <main style={{ minHeight: '80vh' }}>
             <CompaniesSection
               activeCompanyId={targetCompany}
@@ -201,16 +203,6 @@ export default function App() {
       {/* 3. HOME VIEW */}
       {currentView === 'home' && (
         <>
-          <Navbar
-            currentPage="home"
-            onNavigate={handleNavigate}
-            onStartInterview={() => handleStartInterview()}
-            onOpenLogin={() => setAuthModalOpen(true)}
-            onOpenContact={() => setContactModalOpen(true)}
-            onNavigateToDashboard={handleNavigateToDashboard}
-            onNavigateToHome={handleNavigateToHome}
-          />
-
           <main>
             {/* Hero Section */}
             <Hero
