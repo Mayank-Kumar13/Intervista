@@ -254,6 +254,12 @@ export default function Navbar({
       return;
     }
 
+    if (item.page === 'profile') {
+      if (onNavigate) onNavigate('profile');
+      else window.location.hash = '#profile';
+      return;
+    }
+
     // Navigating to a section on home (e.g. hero)
     if (onNavigate) {
       onNavigate('home', item.id);
@@ -526,20 +532,22 @@ export default function Navbar({
           {currentUser ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div
-                onClick={() => (onNavigate ? onNavigate('dashboard') : onNavigateToDashboard && onNavigateToDashboard())}
-                title={currentUser.email}
+                onClick={() => (onNavigate ? onNavigate('profile') : (window.location.hash = '#profile'))}
+                title="View My Profile & Career Journey"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
                   padding: '0.35rem 0.85rem',
-                  backgroundColor: 'rgba(217, 183, 122, 0.1)',
-                  border: '1px solid rgba(217, 183, 122, 0.3)',
+                  backgroundColor: activePage === 'profile' ? 'rgba(217, 183, 122, 0.22)' : 'rgba(217, 183, 122, 0.1)',
+                  border: activePage === 'profile' ? '1px solid var(--accent-gold)' : '1px solid rgba(217, 183, 122, 0.3)',
                   borderRadius: '9999px',
                   color: 'var(--accent-gold)',
                   fontSize: '0.84rem',
                   fontWeight: 600,
                   cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: activePage === 'profile' ? '0 0 12px rgba(217, 183, 122, 0.35)' : 'none',
                 }}
               >
                 <span
@@ -689,8 +697,15 @@ export default function Navbar({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
           {currentUser ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--accent-gold)' }}>
-                👤 {currentUser.name || currentUser.email}
+              <span
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (onNavigate) onNavigate('profile');
+                  else window.location.hash = '#profile';
+                }}
+                style={{ fontSize: '0.85rem', color: 'var(--accent-gold)', cursor: 'pointer' }}
+              >
+                👤 {currentUser.name || currentUser.email} (View Profile)
               </span>
               <button
                 onClick={() => {

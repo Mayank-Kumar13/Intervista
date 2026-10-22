@@ -7,6 +7,7 @@ import HowItWorks from './components/HowItWorks';
 import RoleCards from './components/RoleCards';
 import PricingSection from './components/PricingSection';
 import PlansPage from './components/PlansPage';
+import ProfilePage from './components/ProfilePage';
 import ReviewsSection from './components/ReviewsSection';
 import CtaBanner from './components/CtaBanner';
 import Footer from './components/Footer';
@@ -26,13 +27,14 @@ export default function App() {
   // Current authenticated user session
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
 
-  // Page / View State ('home' | 'dashboard' | 'companies' | 'plans')
+  // Page / View State ('home' | 'dashboard' | 'companies' | 'plans' | 'profile')
   const [currentView, setCurrentView] = useState(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash;
       if (hash.startsWith('#companies')) return 'companies';
       if (hash === '#dashboard') return 'dashboard';
       if (hash === '#plans' || hash === '#pricing') return 'plans';
+      if (hash === '#profile') return 'profile';
     }
     return 'home';
   });
@@ -77,6 +79,8 @@ export default function App() {
         setCurrentView('dashboard');
       } else if (hash === '#plans' || hash === '#pricing') {
         setCurrentView('plans');
+      } else if (hash === '#profile') {
+        setCurrentView('profile');
       } else {
         setCurrentView('home');
       }
@@ -105,6 +109,9 @@ export default function App() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (page === 'plans') {
       window.location.hash = '#plans';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (page === 'profile') {
+      window.location.hash = '#profile';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       if (sectionId && sectionId !== 'hero') {
@@ -303,6 +310,26 @@ export default function App() {
               onBackToHome={handleNavigateToHome}
             />
           </main>
+
+          <Footer
+            onOpenLegal={handleOpenLegal}
+            onSelectRole={handleStartInterview}
+            onNavigate={handleNavigate}
+            onOpenContact={() => setContactModalOpen(true)}
+          />
+        </>
+      )}
+
+      {/* 5. DEDICATED PROFILE VIEW */}
+      {currentView === 'profile' && (
+        <>
+          <ProfilePage
+            currentUser={currentUser}
+            onStartInterview={handleStartInterview}
+            onNavigate={handleNavigate}
+            onViewReport={handleViewSampleReport}
+            onLogout={handleLogout}
+          />
 
           <Footer
             onOpenLegal={handleOpenLegal}
