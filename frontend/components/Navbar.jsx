@@ -536,57 +536,44 @@ export default function Navbar({
           }}
         >
           {currentUser ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div
-                onClick={() => (onNavigate ? onNavigate('profile') : (window.location.hash = '#profile'))}
-                title="View My Profile & Career Journey"
+            <div
+              onClick={() => (onNavigate ? onNavigate('profile') : (window.location.hash = '#profile'))}
+              title="View My Profile & Career Journey"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.35rem 0.85rem',
+                backgroundColor: activePage === 'profile' ? 'rgba(217, 183, 122, 0.22)' : 'rgba(217, 183, 122, 0.1)',
+                border: activePage === 'profile' ? '1px solid var(--accent-gold)' : '1px solid rgba(217, 183, 122, 0.3)',
+                borderRadius: '9999px',
+                color: 'var(--accent-gold)',
+                fontSize: '0.84rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: activePage === 'profile' ? '0 0 12px rgba(217, 183, 122, 0.35)' : 'none',
+              }}
+            >
+              <span
                 style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--accent-gold)',
+                  color: '#0A0A0A',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.35rem 0.85rem',
-                  backgroundColor: activePage === 'profile' ? 'rgba(217, 183, 122, 0.22)' : 'rgba(217, 183, 122, 0.1)',
-                  border: activePage === 'profile' ? '1px solid var(--accent-gold)' : '1px solid rgba(217, 183, 122, 0.3)',
-                  borderRadius: '9999px',
-                  color: 'var(--accent-gold)',
-                  fontSize: '0.84rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: activePage === 'profile' ? '0 0 12px rgba(217, 183, 122, 0.35)' : 'none',
+                  justifyContent: 'center',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
                 }}
               >
-                <span
-                  style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '50%',
-                    backgroundColor: 'var(--accent-gold)',
-                    color: '#0A0A0A',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                  }}
-                >
-                  {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
-                </span>
-                <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {currentUser.name || currentUser.email}
-                </span>
-              </div>
-              <button
-                onClick={onLogout}
-                className="btn-ghost-outline"
-                style={{
-                  padding: '0.52rem 1.1rem',
-                  fontSize: '0.84rem',
-                  color: 'var(--text-secondary)',
-                }}
-              >
-                Sign Out
-              </button>
+                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+              </span>
+              <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {currentUser.name || currentUser.email}
+              </span>
             </div>
           ) : (
             <>
@@ -702,27 +689,42 @@ export default function Navbar({
         })}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
           {currentUser ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0' }}>
+            <div
+              onClick={() => {
+                setMobileMenuOpen(false);
+                if (onNavigate) onNavigate('profile');
+                else window.location.hash = '#profile';
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.65rem',
+                padding: '0.6rem 0.85rem',
+                backgroundColor: 'rgba(217, 183, 122, 0.1)',
+                border: '1px solid rgba(217, 183, 122, 0.3)',
+                borderRadius: '12px',
+                cursor: 'pointer',
+              }}
+            >
               <span
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  if (onNavigate) onNavigate('profile');
-                  else window.location.hash = '#profile';
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--accent-gold)',
+                  color: '#0A0A0A',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
                 }}
-                style={{ fontSize: '0.85rem', color: 'var(--accent-gold)', cursor: 'pointer' }}
               >
-                👤 {currentUser.name || currentUser.email} (View Profile)
+                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
               </span>
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  if (onLogout) onLogout();
-                }}
-                className="btn-ghost-outline"
-                style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
-              >
-                Sign Out
-              </button>
+              <span style={{ fontSize: '0.86rem', color: 'var(--accent-gold)', fontWeight: 600 }}>
+                {currentUser.name || currentUser.email} (My Profile)
+              </span>
             </div>
           ) : (
             <div style={{ display: 'flex', gap: '0.75rem' }}>
