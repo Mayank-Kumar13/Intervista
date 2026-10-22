@@ -156,11 +156,15 @@ Intervista System Architecture
 - [x] Dynamic audio visualizer reacting to spoken sound.
 - [x] Session controls: Mute, sample answers, question skip, real-time transcript.
 
-### Phase 5: Post-Interview Feedback & Performance Report
-- [x] Overall score (88%) and readiness assessment summary.
-- [x] Competency breakdown (Communication, Technical Depth, Problem Solving, Confidence).
-- [x] Actionable key strengths and growth recommendations.
-- [x] Export report (PDF print) option and retake session trigger.
+### Phase 6: Company Interview Preparation Section (Implemented)
+- [x] **Structured Data Engine (`src/data/companyData.js`)**: Converted the research Markdown guide into a structured dataset covering all 15 target companies (Google, Microsoft, Amazon, Meta, Apple, Netflix, Adobe, Salesforce, IBM, Oracle, NVIDIA, Infosys, TCS, Wipro, Accenture) with distinct candidate-reported questions, curated practice problems, direct problem URLs, core CS topics, aptitude topics, official career guidance links, and source labels.
+- [x] **CardSwap Component (`src/components/CardSwap.jsx`)**: Integrated the reference CardSwap animation powered by GSAP perspective transforms, smooth 3D cycling, pause on hover, click selection, and `prefers-reduced-motion` compliance matching Intervista's dark luxury theme.
+- [x] **Synchronized Company Selection**: Unified selection state across the CardSwap showcase, searchable company browser grid, and the left sidebar directory. Selecting any company synchronizes all three components.
+- [x] **Company Directory & Section Navigation**: Left sidebar containing all 15 companies with brand indicator dots, solved counters, active highlights, and quick section jumpers (Overview, Questions, Practice, Resources, Core CS, Aptitude, Behavioral, Roadmap).
+- [x] **Question Interaction & Progress Tracking**: Real-time solved/unsolved checkbox toggle with localStorage persistence (`intervista-company-progress`), dynamic progress circle indicator, topic filters, and difficulty filters.
+- [x] **Core CS & Technical Fundamentals**: Dedicated section covering OOP (4 pillars, polymorphism, design principles), DBMS & SQL (ACID, joins, indexes, normalization), Operating Systems (processes vs threads, deadlocks, paging, concurrency), and Computer Networks (OSI vs TCP/IP, TCP handshake, HTTP/HTTPS, DNS).
+- [x] **Aptitude & Behavioral Prep**: Tailored aptitude topics for services/campus companies (Accenture, TCS, Infosys, Wipro) and STAR-R behavioral framework prompts.
+- [x] **Integration & Cross-Navigation**: Connected company logos in the trusted strip to jump directly to specific company prep; linked "Start AI Mock Interview" in company headers to the setup modal.
 
 ---
 
@@ -172,6 +176,8 @@ Intervista System Architecture
 | **2026-10-22** | **Design System Extraction & Progress Setup** | Created [progress.md](file:///c:/Users/mayan/OneDrive/Desktop/CLASSES/Projects/Intervista/progress.md) defining the project vision, roadmap, and dark luxury theme. |
 | **2026-10-22** | **Full Homepage Implementation** | Built complete Intervista frontend with Vite + React + Vanilla CSS matching the reference design: Hero with 3D laptop dashboard, trusted company logo strip, How It Works cards, Interview Experience showcase, Role cards, and Performance Report panel. |
 | **2026-10-22** | **Reviews System, Nav Updates & Brand Colors** | 1) Built Student Feedback section with 4.9 rating, star distribution, "Write a Review" modal, and continuous infinite horizontal marquee loop. 2) Updated navbar to `HOME`, `DASHBOARD`, `COMPANIES`, `REVIEWS`, `CONTACT US`. 3) Removed "Live now" oval pill from Hero. 4) Added official brand color transitions to company logos on hover. |
+| **2026-10-22** | **Companies Tab & CardSwap Implementation** | Built full Companies Interview Preparation section: 1) Created `companyData.js` with all 15 companies, verified questions, resources, and topics from research guide. 2) Created `CardSwap.jsx` with GSAP perspective swaps. 3) Created `CompaniesSection.jsx` with synchronized 3-way company selection (CardSwap, searchable browser, left sidebar), real-time progress tracking, Core CS fundamentals, aptitude sections, and behavioral prompts. 4) Verified production build and visual interaction via browser automation. |
+| **2026-10-22** | **Separate Companies Page & Header Overlap Fix** | 1) Shifted Companies section from single-scroll home page to a dedicated separate page view (`#companies`) routed via React state + URL hash. 2) Fixed typography overlap where CardSwap cards were climbing 120px upwards into the section title/subtitle by centering card slot offsets around the stack midpoint and reducing vertical displacement. 3) Added breadcrumb navigation with "← Back to Home" button and active navbar gold indicators. |
 
 ---
 

@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
 
-export default function CompanyLogos() {
+export default function CompanyLogos({ onSelectCompany }) {
   const [hovered, setHovered] = useState(null);
+
+  const handleClickCompany = (companyId) => {
+    if (onSelectCompany) {
+      onSelectCompany(companyId);
+    }
+    const el = document.getElementById('companies');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <section
-      id="companies"
+      id="trusted-companies"
       style={{
         paddingTop: '2rem',
         paddingBottom: '4rem',
@@ -63,9 +73,10 @@ export default function CompanyLogos() {
           {/* 1. Google */}
           <div
             className="company-logo-item"
+            onClick={() => handleClickCompany('google')}
             onMouseEnter={() => setHovered('google')}
             onMouseLeave={() => setHovered(null)}
-            title="Google"
+            title="Google (Click to view preparation guide)"
             style={{
               cursor: 'pointer',
               display: 'flex',
@@ -117,9 +128,10 @@ export default function CompanyLogos() {
           {/* 2. Microsoft */}
           <div
             className="company-logo-item"
+            onClick={() => handleClickCompany('microsoft')}
             onMouseEnter={() => setHovered('microsoft')}
             onMouseLeave={() => setHovered(null)}
-            title="Microsoft"
+            title="Microsoft (Click to view preparation guide)"
             style={{
               cursor: 'pointer',
               display: 'flex',
@@ -151,9 +163,10 @@ export default function CompanyLogos() {
           {/* 3. Amazon */}
           <div
             className="company-logo-item"
+            onClick={() => handleClickCompany('amazon')}
             onMouseEnter={() => setHovered('amazon')}
             onMouseLeave={() => setHovered(null)}
-            title="Amazon"
+            title="Amazon (Click to view preparation guide)"
             style={{
               cursor: 'pointer',
               display: 'flex',
@@ -195,9 +208,10 @@ export default function CompanyLogos() {
           {/* 4. Apple */}
           <div
             className="company-logo-item"
+            onClick={() => handleClickCompany('apple')}
             onMouseEnter={() => setHovered('apple')}
             onMouseLeave={() => setHovered(null)}
-            title="Apple"
+            title="Apple (Click to view preparation guide)"
             style={{
               cursor: 'pointer',
               display: 'flex',
@@ -223,9 +237,10 @@ export default function CompanyLogos() {
           {/* 5. Meta */}
           <div
             className="company-logo-item"
+            onClick={() => handleClickCompany('meta')}
             onMouseEnter={() => setHovered('meta')}
             onMouseLeave={() => setHovered(null)}
-            title="Meta"
+            title="Meta (Click to view preparation guide)"
             style={{
               cursor: 'pointer',
               display: 'flex',
@@ -292,9 +307,10 @@ export default function CompanyLogos() {
           {/* 7. Adobe */}
           <div
             className="company-logo-item"
+            onClick={() => handleClickCompany('adobe')}
             onMouseEnter={() => setHovered('adobe')}
             onMouseLeave={() => setHovered(null)}
-            title="Adobe"
+            title="Adobe (Click to view preparation guide)"
             style={{
               cursor: 'pointer',
               display: 'flex',

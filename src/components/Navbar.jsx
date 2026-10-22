@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Menu, X, Sparkles } from 'lucide-react';
 
-export default function Navbar({ onStartInterview, onOpenLogin, onOpenContact }) {
+export default function Navbar({
+  currentPage = 'home',
+  onNavigate,
+  onStartInterview,
+  onOpenLogin,
+  onOpenContact,
+}) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -13,14 +19,38 @@ export default function Navbar({ onStartInterview, onOpenLogin, onOpenContact })
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const scrollToSection = (e, id) => {
+  const handleNavClick = (e, item) => {
     e.preventDefault();
     setMobileMenuOpen(false);
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+
+    if (item.isContact) {
+      if (onOpenContact) onOpenContact();
+      return;
+    }
+
+    if (item.page === 'companies') {
+      if (onNavigate) onNavigate('companies');
+      return;
+    }
+
+    // Navigating to a section on home
+    if (onNavigate) {
+      onNavigate('home', item.id);
+    } else {
+      const element = document.getElementById(item.id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
+
+  const navItems = [
+    { label: 'HOME', page: 'home', id: 'hero' },
+    { label: 'DASHBOARD', page: 'home', id: 'features' },
+    { label: 'COMPANIES', page: 'companies', id: 'companies' },
+    { label: 'REVIEWS', page: 'home', id: 'reviews' },
+    { label: 'CONTACT US', id: 'contact', isContact: true },
+  ];
 
   return (
     <header
@@ -31,7 +61,7 @@ export default function Navbar({ onStartInterview, onOpenLogin, onOpenContact })
         right: 0,
         zIndex: 100,
         transition: 'all 0.3s ease',
-        backgroundColor: scrolled ? 'rgba(9, 9, 9, 0.88)' : 'rgba(9, 9, 9, 0.65)',
+        backgroundColor: scrolled ? 'rgba(9, 9, 9, 0.92)' : 'rgba(9, 9, 9, 0.75)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
@@ -48,13 +78,19 @@ export default function Navbar({ onStartInterview, onOpenLogin, onOpenContact })
       >
         {/* Brand Logo */}
         <a
-          href="#"
+          href="#home"
+          onClick={(e) => {
+            e.preventDefault();
+            if (onNavigate) onNavigate('home', 'hero');
+            else window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '0.65rem',
             textDecoration: 'none',
             color: 'var(--text-primary)',
+            cursor: 'pointer',
           }}
         >
           {/* 4-point sparkle icon */}
@@ -93,38 +129,52 @@ export default function Navbar({ onStartInterview, onOpenLogin, onOpenContact })
           }}
           className="desktop-nav"
         >
-          {[
-            { label: 'HOME', id: 'hero' },
-            { label: 'DASHBOARD', id: 'features' },
-            { label: 'COMPANIES', id: 'companies' },
-            { label: 'REVIEWS', id: 'reviews' },
-            { label: 'CONTACT US', id: 'contact', isContact: true },
-          ].map((item) => (
-            <a
-              key={item.label}
-              href={`#${item.id}`}
-              onClick={(e) => {
-                if (item.isContact && onOpenContact) {
-                  e.preventDefault();
-                  onOpenContact();
-                } else {
-                  scrollToSection(e, item.id);
-                }
-              }}
-              style={{
-                color: 'var(--text-secondary)',
-                textDecoration: 'none',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                letterSpacing: '0.08em',
-                transition: 'color var(--transition-fast)',
-              }}
-              onMouseEnter={(e) => (e.target.style.color = 'var(--text-primary)')}
-              onMouseLeave={(e) => (e.target.style.color = 'var(--text-secondary)')}
-            >
-              {item.label}
-            </a>
-          ))}
+          {navItems.map((item) => {
+            const isActive =
+              (item.page === 'companies' && currentPage === 'companies') ||
+              (item.page === 'home' && item.id === 'hero' && currentPage === 'home' && !scrolled);
+
+            return (
+              <a
+                key={item.label}
+                href={`#${item.id}`}
+                onClick={(e) => handleNavClick(e, item)}
+                style={{
+                  color: isActive ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                  textDecoration: 'none',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  transition: 'color var(--transition-fast)',
+                  position: 'relative',
+                  padding: '0.4rem 0',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) e.currentTarget.style.color = 'var(--text-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) e.currentTarget.style.color = 'var(--text-secondary)';
+                }}
+              >
+                {item.label}
+                {isActive && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: '16px',
+                      height: '2px',
+                      backgroundColor: 'var(--accent-gold)',
+                      borderRadius: '9999px',
+                      boxShadow: '0 0 8px rgba(217, 183, 122, 0.6)',
+                    }}
+                  />
+                )}
+              </a>
+            );
+          })}
         </nav>
 
         {/* Right CTA Buttons */}
@@ -191,37 +241,43 @@ export default function Navbar({ onStartInterview, onOpenLogin, onOpenContact })
             gap: '1.25rem',
           }}
         >
-          {[
-            { label: 'HOME', id: 'hero' },
-            { label: 'DASHBOARD', id: 'features' },
-            { label: 'COMPANIES', id: 'companies' },
-            { label: 'REVIEWS', id: 'reviews' },
-            { label: 'CONTACT US', id: 'contact', isContact: true },
-          ].map((item) => (
-            <a
-              key={item.label}
-              href={`#${item.id}`}
-              onClick={(e) => {
-                if (item.isContact && onOpenContact) {
-                  e.preventDefault();
-                  setMobileMenuOpen(false);
-                  onOpenContact();
-                } else {
-                  scrollToSection(e, item.id);
-                }
-              }}
-              style={{
-                color: 'var(--text-primary)',
-                textDecoration: 'none',
-                fontSize: '0.95rem',
-                fontWeight: 600,
-                letterSpacing: '0.08em',
-                padding: '0.25rem 0',
-              }}
-            >
-              {item.label}
-            </a>
-          ))}
+          {navItems.map((item) => {
+            const isActive =
+              (item.page === 'companies' && currentPage === 'companies') ||
+              (item.page === 'home' && item.id === 'hero' && currentPage === 'home' && !scrolled);
+
+            return (
+              <a
+                key={item.label}
+                href={`#${item.id}`}
+                onClick={(e) => handleNavClick(e, item)}
+                style={{
+                  color: isActive ? 'var(--accent-gold)' : 'var(--text-primary)',
+                  textDecoration: 'none',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  padding: '0.25rem 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span>{item.label}</span>
+                {isActive && (
+                  <span
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--accent-gold)',
+                      boxShadow: '0 0 6px var(--accent-gold)',
+                    }}
+                  />
+                )}
+              </a>
+            );
+          })}
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
             <button
               onClick={() => {

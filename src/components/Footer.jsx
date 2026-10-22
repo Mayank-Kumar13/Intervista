@@ -1,9 +1,21 @@
 import React from 'react';
 
-export default function Footer({ onOpenLegal, onSelectRole }) {
+export default function Footer({ onOpenLegal, onSelectRole, onNavigate }) {
   const scrollTo = (id) => {
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    if (id === 'companies') {
+      if (onNavigate) onNavigate('companies');
+      else {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
+      return;
+    }
+    if (onNavigate) {
+      onNavigate('home', id);
+    } else {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   return (
