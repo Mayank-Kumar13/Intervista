@@ -4,11 +4,9 @@ import Hero from './components/Hero';
 import CompanyLogos from './components/CompanyLogos';
 import CompaniesSection from './components/CompaniesSection';
 import HowItWorks from './components/HowItWorks';
-import InterviewShowcase from './components/InterviewShowcase';
 import RoleCards from './components/RoleCards';
-import PerformanceReport from './components/PerformanceReport';
-import ReviewsSection from './components/ReviewsSection';
 import PricingSection from './components/PricingSection';
+import ReviewsSection from './components/ReviewsSection';
 import CtaBanner from './components/CtaBanner';
 import Footer from './components/Footer';
 import Dashboard from './components/Dashboard';
@@ -154,12 +152,6 @@ export default function App() {
     setReportModalOpen(true);
   };
 
-  const handleSelectStep = (action) => {
-    if (action === 'role') handleStartInterview('Software Engineer');
-    else if (action === 'demo') handleOpenDemo();
-    else if (action === 'report') handleViewSampleReport();
-  };
-
   const handleOpenLegal = (topic) => {
     setLegalTopic(topic);
     setLegalModalOpen(true);
@@ -234,25 +226,19 @@ export default function App() {
               }}
             />
 
-            {/* How It Works */}
-            <HowItWorks onSelectStep={handleSelectStep} />
+            {/* 4. How It Works (Informational Architectural Pipeline Flow) */}
+            <HowItWorks />
 
-            {/* Interview Experience Showcase (Dashboard Preview) */}
-            <InterviewShowcase onTryDemo={handleOpenDemo} />
-
-            {/* Role Selection */}
+            {/* 5. Practice for Your Next Role */}
             <RoleCards onSelectRole={handleStartInterview} />
 
-            {/* Performance Analytics Preview */}
-            <PerformanceReport onViewReport={() => handleViewSampleReport()} />
-
-            {/* Student Feedback & Infinite Review Loop */}
-            <ReviewsSection />
-
-            {/* Premium Plans & Checkout Section */}
+            {/* 6. Plans & Pricing Section */}
             <PricingSection onStartInterview={handleStartInterview} />
 
-            {/* Final CTA Banner */}
+            {/* 7. Student Feedback & Infinite Review Loop */}
+            <ReviewsSection />
+
+            {/* 8. Final CTA Banner */}
             <CtaBanner onStartInterview={handleStartInterview} />
           </main>
 
