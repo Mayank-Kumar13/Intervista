@@ -47,22 +47,32 @@ export default function AuthModal({ isOpen, onClose }) {
           <X size={20} />
         </button>
 
-        {/* Logo / Sparkle */}
+        {/* Official Intervista Logo */}
         <div
           style={{
-            width: '48px',
-            height: '48px',
+            width: '54px',
+            height: '54px',
             borderRadius: '14px',
-            backgroundColor: 'rgba(217, 183, 122, 0.12)',
-            border: '1px solid rgba(217, 183, 122, 0.25)',
+            overflow: 'hidden',
+            border: '1px solid rgba(217, 183, 122, 0.4)',
+            boxShadow: '0 0 20px rgba(217, 183, 122, 0.3)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--accent-gold)',
+            backgroundColor: '#0a0a0a',
             margin: '0 auto 1.25rem auto',
           }}
         >
-          <Sparkles size={24} />
+          <img
+            src="/logo.png"
+            alt="Intervista"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block',
+            }}
+          />
         </div>
 
         <h3

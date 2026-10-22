@@ -11,6 +11,7 @@ import ReviewsSection from './components/ReviewsSection';
 import CtaBanner from './components/CtaBanner';
 import Footer from './components/Footer';
 import Dashboard from './components/Dashboard';
+import LoadingScreen from './components/LoadingScreen';
 
 // Modals
 import SetupModal from './components/SetupModal';
@@ -166,6 +167,9 @@ export default function App() {
 
   return (
     <div className="intervista-app">
+      {/* Cinematic Intro & Star Blink Loading Screen */}
+      <LoadingScreen />
+
       {/* Global Navigation Bar rendered at the top across all pages */}
       <Navbar
         currentPage={currentView}

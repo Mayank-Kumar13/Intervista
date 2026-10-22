@@ -41,18 +41,33 @@ export default function Footer({ onOpenLegal, onNavigate, onOpenContact }) {
         >
           {/* Brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <svg
-              width="17"
-              height="17"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+            <div
+              style={{
+                position: 'relative',
+                width: '28px',
+                height: '28px',
+                borderRadius: '7px',
+                overflow: 'hidden',
+                border: '1px solid rgba(217, 183, 122, 0.4)',
+                boxShadow: '0 0 10px rgba(217, 183, 122, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#0a0a0a',
+                flexShrink: 0,
+              }}
             >
-              <path
-                d="M12 0L14.2 9.8L24 12L14.2 14.2L12 24L9.8 14.2L0 12L9.8 9.8L12 0Z"
-                fill="var(--accent-gold)"
+              <img
+                src="/logo.png"
+                alt="Intervista"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
               />
-            </svg>
+            </div>
             <span
               style={{
                 fontFamily: 'var(--font-serif)',
