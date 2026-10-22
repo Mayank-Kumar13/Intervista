@@ -118,6 +118,7 @@ export default function Footer({ onOpenLegal, onSelectRole, onNavigate }) {
               {[
                 { name: 'Voice Mock Interviews', id: 'features' },
                 { name: 'Role Practice Library', id: 'roles' },
+                { name: 'Plans & Pricing', id: 'pricing' },
                 { name: 'Performance Analytics', id: 'analysis' },
                 { name: 'How It Works', id: 'how-it-works' },
                 { name: 'Company Question Bank', id: 'companies' },

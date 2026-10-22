@@ -7,6 +7,8 @@ export default function Navbar({
   onStartInterview,
   onOpenLogin,
   onOpenContact,
+  onNavigateToDashboard,
+  onNavigateToHome,
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -28,14 +30,28 @@ export default function Navbar({
       return;
     }
 
+    if (item.page === 'dashboard') {
+      if (onNavigate) onNavigate('dashboard');
+      else if (onNavigateToDashboard) onNavigateToDashboard();
+      return;
+    }
+
     if (item.page === 'companies') {
       if (onNavigate) onNavigate('companies');
       return;
     }
 
-    // Navigating to a section on home
+    // Navigating to a section on home (e.g. hero, pricing, reviews)
     if (onNavigate) {
       onNavigate('home', item.id);
+    } else if (onNavigateToHome) {
+      onNavigateToHome();
+      if (item.id && item.id !== 'hero') {
+        setTimeout(() => {
+          const el = document.getElementById(item.id);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 120);
+      }
     } else {
       const element = document.getElementById(item.id);
       if (element) {
@@ -46,8 +62,9 @@ export default function Navbar({
 
   const navItems = [
     { label: 'HOME', page: 'home', id: 'hero' },
-    { label: 'DASHBOARD', page: 'home', id: 'features' },
+    { label: 'DASHBOARD', page: 'dashboard', id: 'dashboard' },
     { label: 'COMPANIES', page: 'companies', id: 'companies' },
+    { label: 'PLANS', page: 'home', id: 'pricing' },
     { label: 'REVIEWS', page: 'home', id: 'reviews' },
     { label: 'CONTACT US', id: 'contact', isContact: true },
   ];
@@ -82,6 +99,7 @@ export default function Navbar({
           onClick={(e) => {
             e.preventDefault();
             if (onNavigate) onNavigate('home', 'hero');
+            else if (onNavigateToHome) onNavigateToHome();
             else window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           style={{
@@ -114,6 +132,7 @@ export default function Navbar({
               fontWeight: 500,
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
+              color: 'var(--text-primary)',
             }}
           >
             Intervista
@@ -132,6 +151,7 @@ export default function Navbar({
           {navItems.map((item) => {
             const isActive =
               (item.page === 'companies' && currentPage === 'companies') ||
+              (item.page === 'dashboard' && currentPage === 'dashboard') ||
               (item.page === 'home' && item.id === 'hero' && currentPage === 'home' && !scrolled);
 
             return (
@@ -244,6 +264,7 @@ export default function Navbar({
           {navItems.map((item) => {
             const isActive =
               (item.page === 'companies' && currentPage === 'companies') ||
+              (item.page === 'dashboard' && currentPage === 'dashboard') ||
               (item.page === 'home' && item.id === 'hero' && currentPage === 'home' && !scrolled);
 
             return (

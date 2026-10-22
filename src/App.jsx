@@ -8,8 +8,10 @@ import InterviewShowcase from './components/InterviewShowcase';
 import RoleCards from './components/RoleCards';
 import PerformanceReport from './components/PerformanceReport';
 import ReviewsSection from './components/ReviewsSection';
+import PricingSection from './components/PricingSection';
 import CtaBanner from './components/CtaBanner';
 import Footer from './components/Footer';
+import Dashboard from './components/Dashboard';
 
 // Modals
 import SetupModal from './components/SetupModal';
@@ -20,10 +22,12 @@ import LegalModal from './components/LegalModal';
 import ContactModal from './components/ContactModal';
 
 export default function App() {
-  // Page Routing State ('home' | 'companies')
-  const [currentPage, setCurrentPage] = useState(() => {
-    if (typeof window !== 'undefined' && window.location.hash.startsWith('#companies')) {
-      return 'companies';
+  // Page / View State ('home' | 'dashboard' | 'companies')
+  const [currentView, setCurrentView] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      if (hash.startsWith('#companies')) return 'companies';
+      if (hash === '#dashboard') return 'dashboard';
     }
     return 'home';
   });
@@ -52,13 +56,15 @@ export default function App() {
     const handleHashChange = () => {
       const hash = window.location.hash;
       if (hash.startsWith('#companies')) {
-        setCurrentPage('companies');
+        setCurrentView('companies');
         const parts = hash.split('/');
         if (parts[1]) {
           setTargetCompany(parts[1]);
         }
+      } else if (hash === '#dashboard') {
+        setCurrentView('dashboard');
       } else {
-        setCurrentPage('home');
+        setCurrentView('home');
       }
     };
 
@@ -67,9 +73,12 @@ export default function App() {
   }, []);
 
   const handleNavigate = (page, sectionId) => {
-    setCurrentPage(page);
+    setCurrentView(page);
     if (page === 'companies') {
       window.location.hash = '#companies';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (page === 'dashboard') {
+      window.location.hash = '#dashboard';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       if (sectionId && sectionId !== 'hero') {
@@ -79,11 +88,14 @@ export default function App() {
           if (el) el.scrollIntoView({ behavior: 'smooth' });
         }, 120);
       } else {
-        window.location.hash = '#';
+        window.location.hash = '#home';
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
   };
+
+  const handleNavigateToDashboard = () => handleNavigate('dashboard');
+  const handleNavigateToHome = () => handleNavigate('home');
 
   // Handlers
   const handleStartInterview = (role = 'Software Engineer') => {
@@ -111,18 +123,34 @@ export default function App() {
     setLiveDemoOpen(true);
   };
 
-  const handleViewSampleReport = () => {
-    setReportData({
-      role: 'Software Engineer',
-      level: 'Mid Level',
-      overallScore: 88,
-      scores: {
-        communication: 92,
-        technicalDepth: 86,
-        problemSolving: 89,
-        confidence: 84,
-      },
-    });
+  const handleViewSampleReport = (customData = null) => {
+    if (customData) {
+      setReportData({
+        role: customData.role || 'Software Engineer',
+        level: customData.level || 'Mid Level',
+        overallScore: customData.overallScore || 86,
+        scores: customData.scores || {
+          communication: 90,
+          technicalDepth: 86,
+          problemSolving: 88,
+          confidence: 82,
+        },
+        strengths: customData.strengths,
+        improvements: customData.improvements,
+      });
+    } else {
+      setReportData({
+        role: 'Software Engineer',
+        level: 'Mid Level',
+        overallScore: 88,
+        scores: {
+          communication: 92,
+          technicalDepth: 86,
+          problemSolving: 89,
+          confidence: 84,
+        },
+      });
+    }
     setReportModalOpen(true);
   };
 
@@ -139,69 +167,104 @@ export default function App() {
 
   return (
     <div className="intervista-app">
-      {/* 1. Navigation Bar with HOME, DASHBOARD, COMPANIES, REVIEWS, CONTACT US */}
-      <Navbar
-        currentPage={currentPage}
-        onNavigate={handleNavigate}
-        onStartInterview={() => handleStartInterview()}
-        onOpenLogin={() => setAuthModalOpen(true)}
-        onOpenContact={() => setContactModalOpen(true)}
-      />
-
-      {currentPage === 'home' ? (
-        <main>
-          {/* 2. Hero Section */}
-          <Hero
-            onStartInterview={handleStartInterview}
-            onWatchDemo={handleOpenDemo}
-          />
-
-          {/* 3. Trusted Companies Strip (click any company to open its preparation page) */}
-          <CompanyLogos
-            onSelectCompany={(companyId) => {
-              setTargetCompany(companyId);
-              handleNavigate('companies');
-            }}
-          />
-
-          {/* 4. How It Works */}
-          <HowItWorks onSelectStep={handleSelectStep} />
-
-          {/* 5. Interview Experience Showcase (Dashboard) */}
-          <InterviewShowcase onTryDemo={handleOpenDemo} />
-
-          {/* 6. Practice for Your Next Role */}
-          <RoleCards onSelectRole={handleStartInterview} />
-
-          {/* 7. Performance Report Section */}
-          <PerformanceReport onViewReport={handleViewSampleReport} />
-
-          {/* 8. Student Feedback & Infinite Review Loop */}
-          <ReviewsSection />
-
-          {/* 9. Final CTA Banner */}
-          <CtaBanner onStartInterview={handleStartInterview} />
-        </main>
-      ) : (
-        <main style={{ minHeight: '80vh' }}>
-          {/* Dedicated Companies Preparation Page */}
-          <CompaniesSection
-            activeCompanyId={targetCompany}
-            onCompanyChange={setTargetCompany}
-            onStartInterview={handleStartInterview}
-            onBackToHome={() => handleNavigate('home')}
-          />
-        </main>
+      {/* 1. DASHBOARD VIEW */}
+      {currentView === 'dashboard' && (
+        <Dashboard
+          onStartInterview={handleStartInterview}
+          onViewReport={handleViewSampleReport}
+          onBackToHome={handleNavigateToHome}
+        />
       )}
 
-      {/* Footer */}
-      <Footer
-        onOpenLegal={handleOpenLegal}
-        onSelectRole={handleStartInterview}
-        onNavigate={handleNavigate}
-      />
+      {/* 2. DEDICATED COMPANIES VIEW */}
+      {currentView === 'companies' && (
+        <>
+          <Navbar
+            currentPage="companies"
+            onNavigate={handleNavigate}
+            onStartInterview={() => handleStartInterview()}
+            onOpenLogin={() => setAuthModalOpen(true)}
+            onOpenContact={() => setContactModalOpen(true)}
+            onNavigateToDashboard={handleNavigateToDashboard}
+            onNavigateToHome={handleNavigateToHome}
+          />
 
-      {/* Interactive Flow Modals */}
+          <main style={{ minHeight: '80vh' }}>
+            <CompaniesSection
+              activeCompanyId={targetCompany}
+              onCompanyChange={setTargetCompany}
+              onStartInterview={handleStartInterview}
+              onBackToHome={handleNavigateToHome}
+            />
+          </main>
+
+          <Footer
+            onOpenLegal={handleOpenLegal}
+            onSelectRole={handleStartInterview}
+            onNavigate={handleNavigate}
+          />
+        </>
+      )}
+
+      {/* 3. HOME VIEW */}
+      {currentView === 'home' && (
+        <>
+          <Navbar
+            currentPage="home"
+            onNavigate={handleNavigate}
+            onStartInterview={() => handleStartInterview()}
+            onOpenLogin={() => setAuthModalOpen(true)}
+            onOpenContact={() => setContactModalOpen(true)}
+            onNavigateToDashboard={handleNavigateToDashboard}
+            onNavigateToHome={handleNavigateToHome}
+          />
+
+          <main>
+            {/* Hero Section */}
+            <Hero
+              onStartInterview={handleStartInterview}
+              onWatchDemo={handleOpenDemo}
+            />
+
+            {/* Trusted Companies Strip (click any logo to open its preparation page) */}
+            <CompanyLogos
+              onSelectCompany={(companyId) => {
+                setTargetCompany(companyId);
+                handleNavigate('companies');
+              }}
+            />
+
+            {/* How It Works */}
+            <HowItWorks onSelectStep={handleSelectStep} />
+
+            {/* Interview Experience Showcase (Dashboard Preview) */}
+            <InterviewShowcase onTryDemo={handleOpenDemo} />
+
+            {/* Role Selection */}
+            <RoleCards onSelectRole={handleStartInterview} />
+
+            {/* Performance Analytics Preview */}
+            <PerformanceReport onViewReport={() => handleViewSampleReport()} />
+
+            {/* Student Feedback & Infinite Review Loop */}
+            <ReviewsSection />
+
+            {/* Premium Plans & Checkout Section */}
+            <PricingSection onStartInterview={handleStartInterview} />
+
+            {/* Final CTA Banner */}
+            <CtaBanner onStartInterview={handleStartInterview} />
+          </main>
+
+          <Footer
+            onOpenLegal={handleOpenLegal}
+            onSelectRole={handleStartInterview}
+            onNavigate={handleNavigate}
+          />
+        </>
+      )}
+
+      {/* Interactive Flow Modals (Shared across Home, Dashboard & Companies) */}
       <SetupModal
         isOpen={setupModalOpen}
         onClose={() => setSetupModalOpen(false)}

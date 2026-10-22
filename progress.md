@@ -166,6 +166,15 @@ Intervista System Architecture
 - [x] **Aptitude & Behavioral Prep**: Tailored aptitude topics for services/campus companies (Accenture, TCS, Infosys, Wipro) and STAR-R behavioral framework prompts.
 - [x] **Integration & Cross-Navigation**: Connected company logos in the trusted strip to jump directly to specific company prep; linked "Start AI Mock Interview" in company headers to the setup modal.
 
+### Phase 6: AI Dashboard Overview Page (Matches Reference UI)
+- [x] **Collapsible Left Sidebar:** Intervista AI wordmark, collapse/expand toggle (`<` / `>`), active `Overview` state with champagne border & subtle glow, navigation items (`Mock Room`, `Analytics & Skills`, `Schedule & Feed`, `Career Prep`, `Settings`), and `← Back to Website` link.
+- [x] **Welcome Header:** *"Welcome Back, Mayankkk"*, completed mock sessions subtext, primary `+ Start New Interview →` pill button, upper-right notification bell with unread indicator dot, user avatar (`M`), and understated motivational card (*"Consistent practice today, bigger opportunities tomorrow."*).
+- [x] **Yearly Practice Activity Heatmap:** 12-month calendar (Jan–Dec), 53-week × 7-day contribution grid, progressive emerald green intensity tiers (`#064e3b`, `#047857`, `#10B981`, `#34D399`), interactive year navigation (`< 2026 >`), date & session count hover tooltips, and `Less → More` legend.
+- [x] **Recent Interviews:** 2-column left section with table rows for Google (86%), Microsoft (78%), Amazon (72%), and Tesla (65%), authentic vector logos, circular SVG score percentage gauges, dates, and interactive `View Report` buttons linked to report modals.
+- [x] **Topics to Work On:** 2-column right section with 3 skill cards (Technical depth 62%, Problem solving 71%, Communication 78%), monochrome icons, concise growth guidance, and champagne progress bars.
+- [x] **Two-Way Navigation & Routing:** Seamless switching between homepage and dashboard via top Navbar `DASHBOARD` / `HOME` tabs and browser hash (`#dashboard` / `#home`).
+- [x] **Responsive Layout:** Adaptive sidebar for desktop, top bar with mobile menu for small screens, and stacked responsive grid for mobile and tablet views.
+
 ---
 
 ## 5. Change Log & Activity Record
@@ -178,7 +187,10 @@ Intervista System Architecture
 | **2026-10-22** | **Reviews System, Nav Updates & Brand Colors** | 1) Built Student Feedback section with 4.9 rating, star distribution, "Write a Review" modal, and continuous infinite horizontal marquee loop. 2) Updated navbar to `HOME`, `DASHBOARD`, `COMPANIES`, `REVIEWS`, `CONTACT US`. 3) Removed "Live now" oval pill from Hero. 4) Added official brand color transitions to company logos on hover. |
 | **2026-10-22** | **Companies Tab & CardSwap Implementation** | Built full Companies Interview Preparation section: 1) Created `companyData.js` with all 15 companies, verified questions, resources, and topics from research guide. 2) Created `CardSwap.jsx` with GSAP perspective swaps. 3) Created `CompaniesSection.jsx` with synchronized 3-way company selection (CardSwap, searchable browser, left sidebar), real-time progress tracking, Core CS fundamentals, aptitude sections, and behavioral prompts. 4) Verified production build and visual interaction via browser automation. |
 | **2026-10-22** | **Separate Companies Page & Header Overlap Fix** | 1) Shifted Companies section from single-scroll home page to a dedicated separate page view (`#companies`) routed via React state + URL hash. 2) Fixed typography overlap where CardSwap cards were climbing 120px upwards into the section title/subtitle by centering card slot offsets around the stack midpoint and reducing vertical displacement. 3) Added breadcrumb navigation with "← Back to Home" button and active navbar gold indicators. |
+| **2026-10-22** | **Dashboard Overview Page (Matches Reference UI)** | Built dedicated Intervista AI Dashboard Overview page matching the reference screenshot: 1) Left sidebar with collapse control, 2) Welcome header with motivational card and Start Interview CTA, 3) 53-week yearly practice heatmap with year switcher and tooltips, 4) Recent interviews table with circular score rings and View Report modals, 5) Topics to work on with champagne progress bars. Integrated two-way navigation with Navbar and URL hashes. |
+| **2026-10-22** | **Premium Plans & Checkout Section** | Built premium pricing cards and interactive checkout modal with Razorpay simulation for subscription access. |
 
 ---
 
 > *Note: Update this file with new entries under the **Change Log** and tick off checklist items as features are implemented.*
+
