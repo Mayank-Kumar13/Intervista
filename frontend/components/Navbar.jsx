@@ -317,7 +317,7 @@ export default function Navbar({
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.22rem',
+            gap: '0.12rem',
             textDecoration: 'none',
             color: 'var(--text-primary)',
             cursor: 'pointer',
@@ -327,7 +327,7 @@ export default function Navbar({
           <div
             style={{
               position: 'relative',
-              height: '31px',
+              height: '32px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -339,7 +339,7 @@ export default function Navbar({
               src="/logo-emblem.png"
               alt="I"
               style={{
-                height: '31px',
+                height: '32px',
                 width: 'auto',
                 objectFit: 'contain',
                 display: 'block',
@@ -351,12 +351,18 @@ export default function Navbar({
           </div>
           <span
             style={{
-              fontFamily: 'var(--font-serif)',
-              fontSize: '1.25rem',
-              fontWeight: 500,
-              letterSpacing: '0.14em',
+              fontFamily: "'Cinzel', 'Playfair Display', serif",
+              fontSize: '1.32rem',
+              fontWeight: 700,
+              letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: 'var(--text-primary)',
+              background: 'linear-gradient(180deg, #FFFFFF 0%, #F6ECD8 22%, #DDB86C 60%, #9B7023 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 0 12px rgba(217, 183, 122, 0.35))',
+              display: 'inline-block',
+              lineHeight: 1,
+              marginTop: '4px',
             }}
           >
             Ntervista

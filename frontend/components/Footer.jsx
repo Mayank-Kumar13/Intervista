@@ -40,7 +40,7 @@ export default function Footer({ onOpenLegal, onNavigate, onOpenContact }) {
           className="footer-top-row"
         >
           {/* Brand */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.12rem' }}>
             <div
               style={{
                 position: 'relative',
@@ -65,12 +65,18 @@ export default function Footer({ onOpenLegal, onNavigate, onOpenContact }) {
             </div>
             <span
               style={{
-                fontFamily: 'var(--font-serif)',
-                fontSize: '1.15rem',
-                fontWeight: 500,
-                letterSpacing: '0.12em',
+                fontFamily: "'Cinzel', 'Playfair Display', serif",
+                fontSize: '1.22rem',
+                fontWeight: 700,
+                letterSpacing: '0.11em',
                 textTransform: 'uppercase',
-                color: 'var(--text-primary)',
+                background: 'linear-gradient(180deg, #FFFFFF 0%, #F6ECD8 22%, #DDB86C 60%, #9B7023 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                filter: 'drop-shadow(0 0 10px rgba(217, 183, 122, 0.35))',
+                display: 'inline-block',
+                lineHeight: 1,
+                marginTop: '3px',
               }}
             >
               Ntervista
