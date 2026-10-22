@@ -6,27 +6,27 @@ export default function LoadingScreen({ onComplete }) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    // Smooth progress bar fill
+    // Smooth progress bar fill timed for ~2.6s
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(progressInterval);
           return 100;
         }
-        return prev + 4;
+        return prev + 2;
       });
-    }, 45);
+    }, 50);
 
-    // Trigger fade out after 1.9s
+    // Trigger fade out after 3.0s (+1 sec longer)
     const fadeTimer = setTimeout(() => {
       setFading(true);
-    }, 1900);
+    }, 3000);
 
-    // Complete and unmount after 2.4s
+    // Complete and unmount after 3.5s (+1.1 sec longer)
     const doneTimer = setTimeout(() => {
       setVisible(false);
       if (onComplete) onComplete();
-    }, 2400);
+    }, 3500);
 
     return () => {
       clearInterval(progressInterval);
@@ -229,7 +229,7 @@ export default function LoadingScreen({ onComplete }) {
       {/* Animation Styles */}
       <style>{`
         .intro-loading-overlay {
-          transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s ease;
+          transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s ease;
         }
 
         .overlay-fade-out {
@@ -243,7 +243,7 @@ export default function LoadingScreen({ onComplete }) {
           inset: -12px;
           border-radius: 32px;
           background: radial-gradient(circle, rgba(217, 183, 122, 0.25) 0%, transparent 70%);
-          animation: auraBreathe 2s infinite ease-in-out;
+          animation: auraBreathe 2.4s infinite ease-in-out;
         }
 
         @keyframes auraBreathe {
@@ -253,7 +253,7 @@ export default function LoadingScreen({ onComplete }) {
 
         /* The Blinking Star Animation */
         .blinking-star-element {
-          animation: blinkShine 1.8s infinite ease-in-out;
+          animation: blinkShine 2s infinite ease-in-out;
           transform-origin: center center;
           filter: drop-shadow(0 0 12px rgba(255, 223, 133, 0.9));
         }
