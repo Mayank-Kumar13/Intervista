@@ -73,7 +73,6 @@ export default function Navbar({
     { label: 'DASHBOARD', page: 'dashboard', id: 'dashboard' },
     { label: 'COMPANIES', page: 'companies', id: 'companies' },
     { label: 'PLANS', page: 'plans', id: 'plans' },
-    { label: 'REVIEWS', page: 'home', id: 'reviews' },
     { label: 'CONTACT US', id: 'contact', isContact: true },
   ];
 
