@@ -173,9 +173,10 @@ export default function ProfilePage({
         padding: 'calc(var(--nav-height) + 2rem) 1.5rem 5rem 1.5rem',
         backgroundColor: 'var(--bg-base)',
         color: 'var(--text-primary)',
+        overflowX: 'hidden',
       }}
     >
-      <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1180px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         {/* Navigation Breadcrumb Bar */}
         <div
           style={{
@@ -183,6 +184,8 @@ export default function ProfilePage({
             alignItems: 'center',
             justifyContent: 'space-between',
             marginBottom: '1.75rem',
+            gap: '1rem',
+            flexWrap: 'wrap',
           }}
         >
           <button
@@ -198,6 +201,7 @@ export default function ProfilePage({
               fontWeight: 500,
               cursor: 'pointer',
               transition: 'color 0.2s',
+              padding: '0.2rem 0',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
             onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
@@ -258,12 +262,22 @@ export default function ProfilePage({
             }}
           />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.75rem', flexWrap: 'wrap', zIndex: 1 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1.75rem',
+              flexWrap: 'wrap',
+              zIndex: 1,
+              minWidth: 0,
+              flex: '1 1 320px',
+            }}
+          >
             {/* Avatar Circle */}
             <div
               style={{
-                width: '92px',
-                height: '92px',
+                width: '88px',
+                height: '88px',
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, #242424, #151515)',
                 border: '2px solid var(--accent-gold)',
@@ -272,7 +286,7 @@ export default function ProfilePage({
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'var(--accent-gold)',
-                fontSize: '2.5rem',
+                fontSize: '2.4rem',
                 fontFamily: 'var(--font-serif)',
                 fontWeight: 600,
                 flexShrink: 0,
@@ -282,7 +296,7 @@ export default function ProfilePage({
             </div>
 
             {/* Title & Info */}
-            <div>
+            <div style={{ minWidth: 0, flex: '1 1 240px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                 <span
                   style={{
@@ -317,11 +331,13 @@ export default function ProfilePage({
               <h1
                 className="serif-heading"
                 style={{
-                  fontSize: '2.2rem',
+                  fontSize: '2.1rem',
                   fontWeight: 400,
                   margin: '0 0 0.4rem 0',
                   color: 'var(--text-primary)',
-                  lineHeight: 1.2,
+                  lineHeight: 1.25,
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
                 }}
               >
                 Welcome, <span style={{ color: 'var(--accent-gold)' }}>{name}</span>
@@ -329,9 +345,12 @@ export default function ProfilePage({
               <p
                 style={{
                   color: 'var(--text-secondary)',
-                  fontSize: '0.9rem',
+                  fontSize: '0.88rem',
                   margin: 0,
                   maxWidth: '540px',
+                  lineHeight: 1.5,
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
                 }}
               >
                 Manage your credentials, track technical milestones, and build your AI-evaluated interview portfolio.
@@ -411,7 +430,7 @@ export default function ProfilePage({
               flexWrap: 'wrap',
             }}
           >
-            <div style={{ flex: 1, minWidth: '240px' }}>
+            <div style={{ flex: '1 1 240px', minWidth: 0 }}>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
                 Change Display Name
               </label>
@@ -429,6 +448,7 @@ export default function ProfilePage({
                   color: 'var(--text-primary)',
                   fontSize: '0.9rem',
                   outline: 'none',
+                  boxSizing: 'border-box',
                 }}
               />
             </div>
@@ -478,8 +498,8 @@ export default function ProfilePage({
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-              gap: '1rem',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))',
+              gap: '1.25rem',
             }}
           >
             {/* Field: Full Name */}
@@ -489,33 +509,62 @@ export default function ProfilePage({
                 border: '1px solid var(--border-card)',
                 borderRadius: '14px',
                 padding: '1.25rem',
+                minWidth: 0,
+                overflow: 'hidden',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--text-tertiary)' }}>
-                <User size={15} />
+                <User size={15} style={{ flexShrink: 0 }} />
                 <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                   Full Name
                 </span>
               </div>
-              <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 600 }}>{name}</strong>
+              <strong
+                style={{
+                  fontSize: '1.02rem',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  display: 'block',
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
+                  lineHeight: 1.4,
+                }}
+              >
+                {name}
+              </strong>
             </div>
 
-            {/* Field: Email Address */}
+            {/* Field: Email Address (Overflow Fixed with anywhere wrap) */}
             <div
               style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.02)',
                 border: '1px solid var(--border-card)',
                 borderRadius: '14px',
                 padding: '1.25rem',
+                minWidth: 0,
+                overflow: 'hidden',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--text-tertiary)' }}>
-                <Mail size={15} />
+                <Mail size={15} style={{ flexShrink: 0 }} />
                 <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                   Email Address
                 </span>
               </div>
-              <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 600 }}>{email}</strong>
+              <strong
+                title={email}
+                style={{
+                  fontSize: '0.98rem',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  display: 'block',
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
+                  lineHeight: 1.4,
+                }}
+              >
+                {email}
+              </strong>
             </div>
 
             {/* Field: Subscription Tier */}
@@ -525,26 +574,29 @@ export default function ProfilePage({
                 border: '1px solid var(--border-card)',
                 borderRadius: '14px',
                 padding: '1.25rem',
+                minWidth: 0,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                gap: '0.75rem',
+                flexWrap: 'wrap',
               }}
             >
-              <div>
+              <div style={{ minWidth: 0, flex: '1 1 120px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--text-tertiary)' }}>
-                  <Award size={15} />
+                  <Award size={15} style={{ flexShrink: 0 }} />
                   <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                     Subscription Tier
                   </span>
                 </div>
-                <strong style={{ fontSize: '1.05rem', color: 'var(--accent-gold)', fontWeight: 600 }}>
+                <strong style={{ fontSize: '1.02rem', color: 'var(--accent-gold)', fontWeight: 600, display: 'block' }}>
                   Pro Member ✦
                 </strong>
               </div>
               <button
                 onClick={() => onNavigate && onNavigate('plans')}
                 className="btn-ghost-outline"
-                style={{ padding: '0.4rem 0.8rem', fontSize: '0.78rem' }}
+                style={{ padding: '0.4rem 0.85rem', fontSize: '0.76rem', flexShrink: 0 }}
               >
                 Change Plan
               </button>
@@ -557,15 +609,19 @@ export default function ProfilePage({
                 border: '1px solid var(--border-card)',
                 borderRadius: '14px',
                 padding: '1.25rem',
+                minWidth: 0,
+                overflow: 'hidden',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--text-tertiary)' }}>
-                <Calendar size={15} />
+                <Calendar size={15} style={{ flexShrink: 0 }} />
                 <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                   Member Since
                 </span>
               </div>
-              <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 600 }}>{memberSince}</strong>
+              <strong style={{ fontSize: '1.02rem', color: 'var(--text-primary)', fontWeight: 600, display: 'block' }}>
+                {memberSince}
+              </strong>
             </div>
           </div>
         </section>
@@ -580,8 +636,8 @@ export default function ProfilePage({
             marginBottom: '2rem',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
-            <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div style={{ minWidth: 0, flex: '1 1 260px' }}>
               <span
                 style={{
                   fontSize: '0.72rem',
@@ -598,14 +654,14 @@ export default function ProfilePage({
               <h2 className="serif-heading" style={{ fontSize: '1.5rem', fontWeight: 400, margin: '0 0 0.3rem 0' }}>
                 Overall Interview Readiness
               </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
                 Aggregated progress across technical coding, system design, and audio fluency.
               </p>
             </div>
 
-            <div style={{ textAlign: 'right' }}>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block' }}>Candidate Readiness</span>
-              <strong style={{ fontSize: '1.8rem', color: 'var(--accent-gold)', fontFamily: 'var(--font-serif)' }}>
+              <strong style={{ fontSize: '1.8rem', color: 'var(--accent-gold)', fontFamily: 'var(--font-serif)', lineHeight: 1.2 }}>
                 {stats.readiness}%
               </strong>
             </div>
@@ -641,39 +697,39 @@ export default function ProfilePage({
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
               gap: '1rem',
             }}
           >
-            <div style={{ padding: '0.85rem 1rem', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+            <div style={{ padding: '0.9rem 1.1rem', borderRadius: '12px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)', minWidth: 0 }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Technical Depth</span>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                 <strong style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>88%</strong>
-                <span style={{ color: '#4ADE80', fontSize: '0.75rem' }}>✓ Advanced</span>
+                <span style={{ color: '#4ADE80', fontSize: '0.75rem', fontWeight: 600 }}>✓ Advanced</span>
               </div>
             </div>
 
-            <div style={{ padding: '0.85rem 1rem', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+            <div style={{ padding: '0.9rem 1.1rem', borderRadius: '12px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)', minWidth: 0 }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Audio Telemetry</span>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                 <strong style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>92%</strong>
-                <span style={{ color: '#4ADE80', fontSize: '0.75rem' }}>✓ Fluent</span>
+                <span style={{ color: '#4ADE80', fontSize: '0.75rem', fontWeight: 600 }}>✓ Fluent</span>
               </div>
             </div>
 
-            <div style={{ padding: '0.85rem 1rem', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+            <div style={{ padding: '0.9rem 1.1rem', borderRadius: '12px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)', minWidth: 0 }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Behavioral (STAR)</span>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                 <strong style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>82%</strong>
-                <span style={{ color: 'var(--accent-gold)', fontSize: '0.75rem' }}>● In Progress</span>
+                <span style={{ color: 'var(--accent-gold)', fontSize: '0.75rem', fontWeight: 600 }}>● In Progress</span>
               </div>
             </div>
 
-            <div style={{ padding: '0.85rem 1rem', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+            <div style={{ padding: '0.9rem 1.1rem', borderRadius: '12px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.05)', minWidth: 0 }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>System Architecture</span>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                 <strong style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>78%</strong>
-                <span style={{ color: 'var(--accent-gold)', fontSize: '0.75rem' }}>● In Progress</span>
+                <span style={{ color: 'var(--accent-gold)', fontSize: '0.75rem', fontWeight: 600 }}>● In Progress</span>
               </div>
             </div>
           </div>
@@ -714,7 +770,7 @@ export default function ProfilePage({
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
               gap: '1.25rem',
             }}
           >
@@ -726,7 +782,7 @@ export default function ProfilePage({
                 borderRadius: '16px',
                 padding: '1.5rem',
                 textAlign: 'center',
-                transition: 'transform 0.2s',
+                minWidth: 0,
               }}
             >
               <div
@@ -758,7 +814,7 @@ export default function ProfilePage({
                 borderRadius: '16px',
                 padding: '1.5rem',
                 textAlign: 'center',
-                transition: 'transform 0.2s',
+                minWidth: 0,
               }}
             >
               <div
@@ -790,7 +846,7 @@ export default function ProfilePage({
                 borderRadius: '16px',
                 padding: '1.5rem',
                 textAlign: 'center',
-                transition: 'transform 0.2s',
+                minWidth: 0,
               }}
             >
               <div
@@ -822,7 +878,7 @@ export default function ProfilePage({
                 borderRadius: '16px',
                 padding: '1.5rem',
                 textAlign: 'center',
-                transition: 'transform 0.2s',
+                minWidth: 0,
               }}
             >
               <div
@@ -859,7 +915,7 @@ export default function ProfilePage({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <div>
+            <div style={{ minWidth: 0, flex: '1 1 260px' }}>
               <span
                 style={{
                   fontSize: '0.72rem',
@@ -890,6 +946,7 @@ export default function ProfilePage({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.35rem',
+                flexShrink: 0,
               }}
             >
               <Plus size={14} />
@@ -909,6 +966,7 @@ export default function ProfilePage({
                 padding: '0.85rem',
                 borderRadius: '12px',
                 border: '1px dashed var(--accent-gold)',
+                flexWrap: 'wrap',
               }}
             >
               <input
@@ -918,7 +976,7 @@ export default function ProfilePage({
                 value={newSkillInput}
                 onChange={(e) => setNewSkillInput(e.target.value)}
                 style={{
-                  flex: 1,
+                  flex: '1 1 200px',
                   backgroundColor: '#191919',
                   border: '1px solid var(--border-card)',
                   borderRadius: '8px',
@@ -958,7 +1016,8 @@ export default function ProfilePage({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  transition: 'all 0.2s',
+                  maxWidth: '100%',
+                  overflowWrap: 'anywhere',
                 }}
               >
                 <span>{skill}</span>
@@ -973,6 +1032,7 @@ export default function ProfilePage({
                     padding: 0,
                     display: 'flex',
                     alignItems: 'center',
+                    flexShrink: 0,
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = '#EF4444')}
                   onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-tertiary)')}
@@ -994,8 +1054,8 @@ export default function ProfilePage({
             marginBottom: '2rem',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div style={{ minWidth: 0, flex: '1 1 240px' }}>
               <span
                 style={{
                   fontSize: '0.72rem',
@@ -1016,7 +1076,7 @@ export default function ProfilePage({
             <button
               onClick={() => onNavigate && onNavigate('dashboard')}
               className="btn-ghost-outline"
-              style={{ padding: '0.45rem 0.95rem', fontSize: '0.8rem' }}
+              style={{ padding: '0.45rem 0.95rem', fontSize: '0.8rem', flexShrink: 0 }}
             >
               View Full History →
             </button>
@@ -1038,18 +1098,18 @@ export default function ProfilePage({
                   flexWrap: 'wrap',
                 }}
               >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                    <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>{session.company}</strong>
+                <div style={{ minWidth: 0, flex: '1 1 200px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
+                    <strong style={{ fontSize: '1.02rem', color: 'var(--text-primary)' }}>{session.company}</strong>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>•</span>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{session.role}</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', overflowWrap: 'anywhere' }}>{session.role}</span>
                   </div>
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>{session.date}</span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
                   <div style={{ textAlign: 'right' }}>
-                    <strong style={{ fontSize: '1.25rem', color: session.score >= 90 ? '#4ADE80' : 'var(--accent-gold)', display: 'block' }}>
+                    <strong style={{ fontSize: '1.25rem', color: session.score >= 90 ? '#4ADE80' : 'var(--accent-gold)', display: 'block', lineHeight: 1.2 }}>
                       {session.score}%
                     </strong>
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>{session.status}</span>
@@ -1091,7 +1151,7 @@ export default function ProfilePage({
             flexWrap: 'wrap',
           }}
         >
-          <div>
+          <div style={{ minWidth: 0, flex: '1 1 260px' }}>
             <span
               style={{
                 fontSize: '0.72rem',
@@ -1108,7 +1168,7 @@ export default function ProfilePage({
             <h2 className="serif-heading" style={{ fontSize: '1.5rem', fontWeight: 400, margin: '0 0 0.3rem 0' }}>
               Account Settings & Preferences
             </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
               Manage password updates, audio telemetry storage, or sign out from this device.
             </p>
           </div>
@@ -1152,7 +1212,7 @@ export default function ProfilePage({
             backgroundColor: '#121212',
             border: '1px solid rgba(217, 183, 122, 0.35)',
             borderRadius: '24px',
-            padding: '3rem',
+            padding: '2.5rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1162,7 +1222,7 @@ export default function ProfilePage({
               'radial-gradient(circle at 90% 50%, rgba(217, 183, 122, 0.12) 0%, transparent 50%), linear-gradient(135deg, #151515 0%, #0F0F0F 100%)',
           }}
         >
-          <div>
+          <div style={{ minWidth: 0, flex: '1 1 300px' }}>
             <span
               style={{
                 fontSize: '0.72rem',
@@ -1179,16 +1239,17 @@ export default function ProfilePage({
             <h2
               className="serif-heading"
               style={{
-                fontSize: '2rem',
+                fontSize: '1.9rem',
                 fontWeight: 400,
                 margin: '0 0 0.5rem 0',
                 lineHeight: 1.25,
+                overflowWrap: 'anywhere',
               }}
             >
               Keep practicing.{' '}
               <span style={{ color: 'var(--accent-gold)' }}>Your next offer is closer.</span>
             </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, maxWidth: '520px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', margin: 0, maxWidth: '520px', lineHeight: 1.5 }}>
               Simulate high-pressure voice rounds with instant diagnostic evaluations tailored to top companies.
             </p>
           </div>
@@ -1211,6 +1272,18 @@ export default function ProfilePage({
           </button>
         </section>
       </div>
+
+      {/* Responsive media rules for Profile Page */}
+      <style>{`
+        @media (max-width: 640px) {
+          .profile-page section {
+            padding: 1.5rem !important;
+          }
+          .profile-page h1 {
+            font-size: 1.65rem !important;
+          }
+        }
+      `}</style>
     </main>
   );
 }
