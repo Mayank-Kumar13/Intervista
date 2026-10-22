@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
-import { X, Check, ShieldCheck, Zap, Lock, CreditCard, Smartphone, Building, Sparkles, ArrowRight, Tag } from 'lucide-react';
+import {
+  X,
+  Check,
+  ShieldCheck,
+  Zap,
+  Lock,
+  Sparkles,
+  ArrowRight,
+  Tag,
+  Copy,
+  QrCode,
+  CheckCircle2,
+  AlertCircle,
+  HelpCircle,
+} from 'lucide-react';
 
 export default function CheckoutModal({
   isOpen,
@@ -8,13 +22,8 @@ export default function CheckoutModal({
   isYearly,
   onStartInterview,
 }) {
-  const [paymentMethod, setPaymentMethod] = useState('upi');
-  const [upiId, setUpiId] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
-  const [cardName, setCardName] = useState('');
-  const [selectedBank, setSelectedBank] = useState('HDFC Bank');
+  const [upiRefNumber, setUpiRefNumber] = useState('');
+  const [copiedUpi, setCopiedUpi] = useState(false);
 
   // Coupon state
   const [couponCode, setCouponCode] = useState('');
@@ -25,8 +34,11 @@ export default function CheckoutModal({
   // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [refError, setRefError] = useState('');
 
   if (!isOpen || !plan) return null;
+
+  const upiId = '9310664653@ptsbi';
 
   // Calculate pricing
   const basePrice = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
@@ -34,32 +46,55 @@ export default function CheckoutModal({
   const finalPrice = Math.max(0, basePrice - discountAmount);
 
   const handleApplyCoupon = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setCouponError('');
     setCouponSuccess('');
     const clean = couponCode.trim().toUpperCase();
-    if (clean === 'INTERVISTA20' || clean === 'HACKATHON20') {
+
+    if (clean === 'NEW10') {
+      setDiscountPercent(25);
+      setCouponSuccess('25% discount applied successfully with NEW10!');
+    } else if (clean === 'INTERVISTA20') {
       setDiscountPercent(20);
       setCouponSuccess('20% discount applied successfully!');
-    } else if (clean === 'WELCOME10') {
-      setDiscountPercent(10);
-      setCouponSuccess('10% discount applied successfully!');
     } else if (clean === 'TOPCANDIDATE') {
       setDiscountPercent(30);
-      setCouponSuccess('Special 30% candidate pass applied!');
+      setCouponSuccess('30% candidate pass applied!');
     } else {
-      setCouponError('Invalid coupon. Try "INTERVISTA20" for 20% off.');
+      setCouponError('Invalid coupon code. Try "NEW10" for 25% off.');
     }
   };
 
-  const handleProcessPayment = (e) => {
-    e.preventDefault();
-    setIsProcessing(true);
+  const applyNew10Direct = () => {
+    setCouponCode('NEW10');
+    setDiscountPercent(25);
+    setCouponError('');
+    setCouponSuccess('25% discount applied successfully with NEW10!');
+  };
 
+  const handleCopyUpi = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(upiId);
+      setCopiedUpi(true);
+      setTimeout(() => setCopiedUpi(false), 2000);
+    }
+  };
+
+  const handleVerifyPayment = (e) => {
+    e.preventDefault();
+    setRefError('');
+
+    const cleanRef = upiRefNumber.trim();
+    if (!cleanRef || cleanRef.length < 8) {
+      setRefError('Please enter a valid 12-digit UPI Reference / UTR Number from your payment receipt.');
+      return;
+    }
+
+    setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
       setIsSuccess(true);
-    }, 1400);
+    }, 1500);
   };
 
   const handleClose = () => {
@@ -69,21 +104,9 @@ export default function CheckoutModal({
     setCouponCode('');
     setCouponSuccess('');
     setCouponError('');
+    setUpiRefNumber('');
+    setRefError('');
     onClose();
-  };
-
-  const formatCardNumber = (val) => {
-    const raw = val.replace(/\D/g, '').slice(0, 16);
-    const groups = raw.match(/.{1,4}/g);
-    return groups ? groups.join(' ') : raw;
-  };
-
-  const formatExpiry = (val) => {
-    const raw = val.replace(/\D/g, '').slice(0, 4);
-    if (raw.length >= 3) {
-      return `${raw.slice(0, 2)}/${raw.slice(2)}`;
-    }
-    return raw;
   };
 
   return (
@@ -92,15 +115,15 @@ export default function CheckoutModal({
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxWidth: '560px',
+          maxWidth: '540px',
           width: '94%',
-          padding: '2.2rem 2.2rem',
-          backgroundColor: '#121212',
-          border: '1px solid rgba(217, 183, 122, 0.3)',
+          padding: '2.2rem 2rem',
+          backgroundColor: '#111111',
+          border: '1px solid rgba(217, 183, 122, 0.35)',
           borderRadius: '24px',
-          boxShadow: '0 30px 80px rgba(0, 0, 0, 0.95), 0 0 40px rgba(217, 183, 122, 0.1)',
+          boxShadow: '0 30px 80px rgba(0, 0, 0, 0.95), 0 0 50px rgba(217, 183, 122, 0.12)',
           position: 'relative',
-          maxHeight: '90vh',
+          maxHeight: '92vh',
           overflowY: 'auto',
         }}
       >
@@ -121,6 +144,7 @@ export default function CheckoutModal({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            transition: 'color 0.2s ease',
           }}
           onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
           onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
@@ -130,8 +154,8 @@ export default function CheckoutModal({
 
         {!isSuccess ? (
           <div>
-            {/* Header */}
-            <div style={{ marginBottom: '1.5rem' }}>
+            {/* Modal Header */}
+            <div style={{ marginBottom: '1.4rem' }}>
               <div
                 style={{
                   display: 'inline-flex',
@@ -150,7 +174,7 @@ export default function CheckoutModal({
                 }}
               >
                 <Sparkles size={11} />
-                <span>Upgrade to Premium</span>
+                <span>UPI Instant Checkout</span>
               </div>
               <h3
                 className="serif-heading"
@@ -161,28 +185,28 @@ export default function CheckoutModal({
                   marginBottom: '0.35rem',
                 }}
               >
-                Complete your <span className="gold-italic">{plan.name}</span> plan
+                Upgrade to <span className="gold-italic">{plan.name}</span>
               </h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                Instant access to unlimited voice simulations & deep scoring analytics.
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.84rem' }}>
+                Scan the QR code or pay via UPI ID and submit your UTR reference to activate.
               </p>
             </div>
 
             {/* Plan Summary Card */}
             <div
               style={{
-                backgroundColor: '#181818',
+                backgroundColor: '#161616',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '16px',
-                padding: '1.15rem 1.25rem',
-                marginBottom: '1.5rem',
+                padding: '1.1rem 1.25rem',
+                marginBottom: '1.25rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
               }}
             >
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
                   <span style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--text-primary)' }}>
                     {plan.name}
                   </span>
@@ -196,11 +220,11 @@ export default function CheckoutModal({
                       fontWeight: 600,
                     }}
                   >
-                    {isYearly ? 'Annual Billing (Save 25%)' : 'Monthly Billing'}
+                    {isYearly ? 'Annual (25% off)' : 'Monthly'}
                   </span>
                 </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
-                  {isYearly ? 'Billed annually · Cancel anytime' : 'Billed monthly · Cancel anytime'}
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
+                  Unlimited Voice Mocks · Full Performance Scorecard
                 </div>
               </div>
 
@@ -216,7 +240,7 @@ export default function CheckoutModal({
                     ₹{basePrice.toLocaleString('en-IN')}
                   </div>
                 )}
-                <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--accent-gold)', lineHeight: 1.1 }}>
+                <div style={{ fontSize: '1.45rem', fontWeight: 700, color: 'var(--accent-gold)', lineHeight: 1.1 }}>
                   ₹{finalPrice.toLocaleString('en-IN')}
                 </div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
@@ -225,7 +249,45 @@ export default function CheckoutModal({
               </div>
             </div>
 
-            {/* Coupon Code Strip */}
+            {/* Special Discount Code Hint Pill */}
+            {discountPercent === 0 && (
+              <div
+                onClick={applyNew10Direct}
+                style={{
+                  backgroundColor: 'rgba(217, 183, 122, 0.08)',
+                  border: '1px dashed rgba(217, 183, 122, 0.4)',
+                  borderRadius: '12px',
+                  padding: '0.65rem 0.9rem',
+                  marginBottom: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(217, 183, 122, 0.14)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(217, 183, 122, 0.08)')}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Tag size={15} color="var(--accent-gold)" />
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)' }}>
+                    Apply code <strong style={{ color: 'var(--accent-gold)', letterSpacing: '0.05em' }}>NEW10</strong> for <strong style={{ color: '#4ADE80' }}>25% OFF</strong>!
+                  </span>
+                </div>
+                <span
+                  style={{
+                    fontSize: '0.74rem',
+                    color: 'var(--accent-gold)',
+                    fontWeight: 600,
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Tap to Apply
+                </span>
+              </div>
+            )}
+
+            {/* Coupon Code Input */}
             <div style={{ marginBottom: '1.5rem' }}>
               <form
                 onSubmit={handleApplyCoupon}
@@ -243,7 +305,7 @@ export default function CheckoutModal({
                   />
                   <input
                     type="text"
-                    placeholder="Coupon code (e.g. INTERVISTA20)"
+                    placeholder="Enter Coupon (e.g. NEW10)"
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value)}
                     style={{
@@ -253,7 +315,7 @@ export default function CheckoutModal({
                       borderRadius: '10px',
                       padding: '0.62rem 0.85rem 0.62rem 2.2rem',
                       color: 'var(--text-primary)',
-                      fontSize: '0.82rem',
+                      fontSize: '0.84rem',
                       textTransform: 'uppercase',
                     }}
                   />
@@ -262,7 +324,7 @@ export default function CheckoutModal({
                   type="submit"
                   className="btn-secondary"
                   style={{
-                    padding: '0.62rem 1.1rem',
+                    padding: '0.62rem 1.15rem',
                     fontSize: '0.82rem',
                     borderRadius: '10px',
                     whiteSpace: 'nowrap',
@@ -272,269 +334,228 @@ export default function CheckoutModal({
                 </button>
               </form>
               {couponSuccess && (
-                <div style={{ fontSize: '0.78rem', color: '#4ADE80', marginTop: '5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ fontSize: '0.78rem', color: '#4ADE80', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Check size={13} /> {couponSuccess}
                 </div>
               )}
               {couponError && (
-                <div style={{ fontSize: '0.78rem', color: '#F87171', marginTop: '5px' }}>
+                <div style={{ fontSize: '0.78rem', color: '#F87171', marginTop: '6px' }}>
                   {couponError}
                 </div>
               )}
             </div>
 
-            {/* Payment Method Selector */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label
+            {/* UPI QR Payment Container */}
+            <div
+              style={{
+                backgroundColor: '#161616',
+                border: '1px solid rgba(217, 183, 122, 0.25)',
+                borderRadius: '18px',
+                padding: '1.4rem',
+                marginBottom: '1.5rem',
+                textAlign: 'center',
+                position: 'relative',
+              }}
+            >
+              <div
                 style={{
-                  display: 'block',
-                  fontSize: '0.78rem',
+                  fontSize: '0.76rem',
                   fontWeight: 600,
-                  color: 'var(--text-secondary)',
+                  color: 'var(--text-tertiary)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
-                  marginBottom: '0.65rem',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
                 }}
               >
-                Select Payment Method
-              </label>
+                <QrCode size={14} color="var(--accent-gold)" />
+                <span>Scan with any UPI App</span>
+              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                {[
-                  { id: 'upi', label: 'UPI / QR', icon: Smartphone },
-                  { id: 'card', label: 'Cards', icon: CreditCard },
-                  { id: 'netbanking', label: 'NetBanking', icon: Building },
-                ].map((m) => {
-                  const Icon = m.icon;
-                  const active = paymentMethod === m.id;
-                  return (
-                    <button
-                      type="button"
-                      key={m.id}
-                      onClick={() => setPaymentMethod(m.id)}
-                      style={{
-                        backgroundColor: active ? 'rgba(217, 183, 122, 0.12)' : '#181818',
-                        border: active ? '1px solid var(--accent-gold)' : '1px solid rgba(255, 255, 255, 0.08)',
-                        borderRadius: '12px',
-                        padding: '0.75rem 0.5rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '6px',
-                        cursor: 'pointer',
-                        color: active ? 'var(--accent-gold)' : 'var(--text-secondary)',
-                        transition: 'all 0.2s',
-                      }}
-                    >
-                      <Icon size={18} />
-                      <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{m.label}</span>
-                    </button>
-                  );
-                })}
+              {/* QR Image Frame */}
+              <div
+                style={{
+                  display: 'inline-block',
+                  backgroundColor: '#FFFFFF',
+                  padding: '10px',
+                  borderRadius: '16px',
+                  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), 0 0 25px rgba(217, 183, 122, 0.2)',
+                  border: '2px solid var(--accent-gold)',
+                  marginBottom: '1rem',
+                }}
+              >
+                <img
+                  src="/upi-qr.png"
+                  alt="UPI QR Code"
+                  style={{
+                    width: '180px',
+                    height: '180px',
+                    display: 'block',
+                    borderRadius: '8px',
+                    objectFit: 'contain',
+                  }}
+                />
+              </div>
+
+              {/* Amount to pay badge */}
+              <div style={{ marginBottom: '1rem' }}>
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: 'rgba(217, 183, 122, 0.1)',
+                    border: '1px solid rgba(217, 183, 122, 0.3)',
+                    padding: '4px 12px',
+                    borderRadius: '9999px',
+                    fontSize: '0.84rem',
+                    fontWeight: 600,
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  <span>Pay:</span>
+                  <span style={{ color: 'var(--accent-gold)', fontSize: '0.95rem' }}>
+                    ₹{finalPrice.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Supported UPI Apps Pills */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  flexWrap: 'wrap',
+                  marginBottom: '1.25rem',
+                }}
+              >
+                {['Google Pay', 'PhonePe', 'Paytm', 'BHIM', 'CRED'].map((app) => (
+                  <span
+                    key={app}
+                    style={{
+                      fontSize: '0.7rem',
+                      backgroundColor: '#202020',
+                      border: '1px solid rgba(255, 255, 255, 0.06)',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    {app}
+                  </span>
+                ))}
+              </div>
+
+              {/* UPI ID Row with Copy */}
+              <div
+                style={{
+                  backgroundColor: '#1D1D1D',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '10px',
+                  padding: '0.65rem 0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '10px',
+                }}
+              >
+                <div style={{ textAlign: 'left', overflow: 'hidden' }}>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
+                    UPI ID (VPA)
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.88rem',
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    {upiId}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCopyUpi}
+                  style={{
+                    backgroundColor: copiedUpi ? '#22C55E' : 'rgba(217, 183, 122, 0.15)',
+                    border: '1px solid rgba(217, 183, 122, 0.3)',
+                    color: copiedUpi ? '#000' : 'var(--accent-gold)',
+                    borderRadius: '8px',
+                    padding: '0.45rem 0.75rem',
+                    fontSize: '0.76rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.2s ease',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {copiedUpi ? (
+                    <>
+                      <Check size={13} /> Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={13} /> Copy ID
+                    </>
+                  )}
+                </button>
               </div>
             </div>
 
-            {/* Form per Payment Method */}
-            <form onSubmit={handleProcessPayment}>
-              {paymentMethod === 'upi' && (
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <div
-                    style={{
-                      backgroundColor: '#161616',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
-                      borderRadius: '14px',
-                      padding: '1.1rem',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.85rem',
-                    }}
-                  >
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.76rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
-                        Enter UPI ID / VPA
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. yourname@okhdfcbank"
-                        value={upiId}
-                        onChange={(e) => setUpiId(e.target.value)}
-                        style={{
-                          width: '100%',
-                          backgroundColor: '#1E1E1E',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                          borderRadius: '8px',
-                          padding: '0.65rem 0.85rem',
-                          color: 'var(--text-primary)',
-                          fontSize: '0.86rem',
-                        }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>Popular apps:</span>
-                      {['Google Pay', 'PhonePe', 'Paytm', 'CRED'].map((app) => (
-                        <span
-                          key={app}
-                          style={{
-                            fontSize: '0.72rem',
-                            backgroundColor: '#222',
-                            padding: '2px 7px',
-                            borderRadius: '4px',
-                            color: 'var(--text-secondary)',
-                          }}
-                        >
-                          {app}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {paymentMethod === 'card' && (
-                <div
+            {/* Verification: UPI Reference / UTR Number Form */}
+            <form onSubmit={handleVerifyPayment}>
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label
                   style={{
-                    backgroundColor: '#161616',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: '14px',
-                    padding: '1.1rem',
-                    marginBottom: '1.5rem',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.8rem',
+                    display: 'block',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    color: 'var(--text-primary)',
+                    marginBottom: '0.4rem',
                   }}
                 >
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
-                      Cardholder Name
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Mayank Kumar"
-                      value={cardName}
-                      onChange={(e) => setCardName(e.target.value)}
-                      style={{
-                        width: '100%',
-                        backgroundColor: '#1E1E1E',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '8px',
-                        padding: '0.65rem 0.85rem',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.86rem',
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
-                      Card Number
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="4532 •••• •••• 8821"
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                      maxLength={19}
-                      style={{
-                        width: '100%',
-                        backgroundColor: '#1E1E1E',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '8px',
-                        padding: '0.65rem 0.85rem',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.86rem',
-                        letterSpacing: '0.05em',
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.76rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
-                        Expiry (MM/YY)
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="08/28"
-                        value={cardExpiry}
-                        onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
-                        maxLength={5}
-                        style={{
-                          width: '100%',
-                          backgroundColor: '#1E1E1E',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                          borderRadius: '8px',
-                          padding: '0.65rem 0.85rem',
-                          color: 'var(--text-primary)',
-                          fontSize: '0.86rem',
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.76rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
-                        CVV / CVC
-                      </label>
-                      <input
-                        type="password"
-                        required
-                        placeholder="•••"
-                        value={cardCvv}
-                        onChange={(e) => setCardCvv(e.target.value.slice(0, 4))}
-                        maxLength={4}
-                        style={{
-                          width: '100%',
-                          backgroundColor: '#1E1E1E',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                          borderRadius: '8px',
-                          padding: '0.65rem 0.85rem',
-                          color: 'var(--text-primary)',
-                          fontSize: '0.86rem',
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {paymentMethod === 'netbanking' && (
-                <div
-                  style={{
-                    backgroundColor: '#161616',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: '14px',
-                    padding: '1.1rem',
-                    marginBottom: '1.5rem',
+                  Enter UPI Reference / UTR No. <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 4289XXXXXXXX (12-digit Ref / UTR No.)"
+                  value={upiRefNumber}
+                  onChange={(e) => {
+                    setUpiRefNumber(e.target.value);
+                    if (refError) setRefError('');
                   }}
-                >
-                  <label style={{ display: 'block', fontSize: '0.76rem', color: 'var(--text-secondary)', marginBottom: '0.65rem' }}>
-                    Select Preferred Bank
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                    {['HDFC Bank', 'ICICI Bank', 'SBI', 'Axis Bank', 'Kotak Bank', 'Other Banks'].map((bank) => (
-                      <button
-                        type="button"
-                        key={bank}
-                        onClick={() => setSelectedBank(bank)}
-                        style={{
-                          backgroundColor: selectedBank === bank ? 'rgba(217, 183, 122, 0.15)' : '#202020',
-                          border: selectedBank === bank ? '1px solid var(--accent-gold)' : '1px solid rgba(255, 255, 255, 0.06)',
-                          borderRadius: '8px',
-                          padding: '0.55rem 0.4rem',
-                          fontSize: '0.76rem',
-                          fontWeight: 500,
-                          color: selectedBank === bank ? 'var(--accent-gold)' : 'var(--text-secondary)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {bank}
-                      </button>
-                    ))}
-                  </div>
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#181818',
+                    border: refError ? '1px solid #EF4444' : '1px solid rgba(217, 183, 122, 0.4)',
+                    borderRadius: '10px',
+                    padding: '0.75rem 0.95rem',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.88rem',
+                    fontFamily: 'monospace',
+                    letterSpacing: '0.04em',
+                  }}
+                />
+                <div style={{ fontSize: '0.73rem', color: 'var(--text-tertiary)', marginTop: '5px' }}>
+                  Found on your payment success receipt in GPay / PhonePe / Paytm / BHIM app.
                 </div>
-              )}
+                {refError && (
+                  <div style={{ fontSize: '0.78rem', color: '#F87171', marginTop: '5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <AlertCircle size={13} /> {refError}
+                  </div>
+                )}
+              </div>
 
               {/* Submit Button */}
               <button
@@ -557,24 +578,25 @@ export default function CheckoutModal({
                   cursor: isProcessing ? 'not-allowed' : 'pointer',
                   boxShadow: '0 8px 25px rgba(217, 183, 122, 0.3)',
                   marginBottom: '1rem',
+                  transition: 'all 0.2s ease',
                 }}
               >
                 {isProcessing ? (
                   <>
                     <span className="pulse-dot" style={{ backgroundColor: '#090909' }} />
-                    <span>Processing Secure Payment...</span>
+                    <span>Verifying UTR with UPI Gateway...</span>
                   </>
                 ) : (
                   <>
                     <Lock size={15} />
-                    <span>Pay ₹{finalPrice.toLocaleString('en-IN')} & Activate Plan</span>
+                    <span>Verify & Activate {plan.name}</span>
                     <ArrowRight size={16} />
                   </>
                 )}
               </button>
             </form>
 
-            {/* Security Guarantee Strip */}
+            {/* Trust Guarantee Strip */}
             <div
               style={{
                 display: 'flex',
@@ -589,20 +611,20 @@ export default function CheckoutModal({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <ShieldCheck size={13} color="#4ADE80" />
-                <span>256-Bit SSL Secured</span>
+                <span>Instant Verification</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Zap size={13} color="var(--accent-gold)" />
-                <span>Instant Activation</span>
+                <span>Zero Latency Activation</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Lock size={13} />
-                <span>Cancel Anytime</span>
+                <span>7-Day Refund Policy</span>
               </div>
             </div>
           </div>
         ) : (
-          /* Payment Success View */
+          /* Payment Verified Success View */
           <div style={{ textAlign: 'center', padding: '1.5rem 0.5rem' }}>
             <div
               style={{
@@ -618,19 +640,19 @@ export default function CheckoutModal({
                 boxShadow: '0 0 30px rgba(34, 197, 94, 0.3)',
               }}
             >
-              <Check size={32} color="#22C55E" />
+              <CheckCircle2 size={34} color="#22C55E" />
             </div>
 
             <span
               style={{
-                fontSize: '0.75rem',
-                fontWeight: 600,
+                fontSize: '0.74rem',
+                fontWeight: 700,
                 color: 'var(--accent-gold)',
-                letterSpacing: '0.1em',
+                letterSpacing: '0.12em',
                 textTransform: 'uppercase',
               }}
             >
-              Payment Confirmed
+              Payment Verified Successfully
             </span>
 
             <h3
@@ -654,28 +676,34 @@ export default function CheckoutModal({
                 margin: '0 auto 1.5rem auto',
               }}
             >
-              Your subscription is now active! All unlimited AI voice mock interviews,
-              deep performance metrics, and top-tier company question banks are unlocked.
+              Your UTR Reference has been verified! All unlimited AI voice mock interviews,
+              follow-up questions, and company question sets are now unlocked.
             </p>
 
             <div
               style={{
                 backgroundColor: '#181818',
                 borderRadius: '12px',
-                padding: '0.85rem 1rem',
+                padding: '0.85rem 1.2rem',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
                 display: 'inline-flex',
-                alignItems: 'center',
-                gap: '12px',
+                flexDirection: 'column',
+                gap: '4px',
                 marginBottom: '2rem',
                 fontSize: '0.8rem',
+                textAlign: 'left',
               }}
             >
-              <span style={{ color: 'var(--text-tertiary)' }}>Receipt ID:</span>
-              <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace', fontWeight: 600 }}>
-                INV-2026-{(Math.random() * 89999 + 10000).toFixed(0)}
-              </span>
-              <span style={{ color: '#22C55E', fontWeight: 600 }}>● PAID</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <span style={{ color: 'var(--text-tertiary)' }}>UTR Ref:</span>
+                <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace', fontWeight: 600 }}>
+                  {upiRefNumber}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <span style={{ color: 'var(--text-tertiary)' }}>Status:</span>
+                <span style={{ color: '#22C55E', fontWeight: 600 }}>● VERIFIED & ACTIVE</span>
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '0.85rem', justifyContent: 'center' }}>
