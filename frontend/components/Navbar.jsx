@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowRight, Menu, X, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowRight, Menu, X } from 'lucide-react';
+import { gsap } from 'gsap';
 
 export default function Navbar({
   currentPage = 'home',
@@ -15,6 +16,24 @@ export default function Navbar({
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // GSAP Animation Refs for PillNav
+  const circleRefs = useRef([]);
+  const tlRefs = useRef([]);
+  const activeTweenRefs = useRef([]);
+  const logoRef = useRef(null);
+  const logoImgRef = useRef(null);
+  const logoTweenRef = useRef(null);
+  const navItemsRef = useRef(null);
+  const mobileMenuRef = useRef(null);
+
+  const navItems = [
+    { label: 'HOME', page: 'home', id: 'hero' },
+    { label: 'DASHBOARD', page: 'dashboard', id: 'dashboard' },
+    { label: 'COMPANIES', page: 'companies', id: 'companies' },
+    { label: 'PLANS', page: 'plans', id: 'plans' },
+    { label: 'CONTACT US', id: 'contact', isContact: true },
+  ];
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -22,6 +41,189 @@ export default function Navbar({
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // PillNav rising circle & text flip GSAP setup
+  useEffect(() => {
+    const layout = () => {
+      circleRefs.current.forEach((circle, index) => {
+        if (!circle?.parentElement) return;
+
+        const pill = circle.parentElement;
+        const rect = pill.getBoundingClientRect();
+        const { width: w, height: h } = rect;
+        if (!w || !h) return;
+
+        // Calculate radius and origin for rising circle to completely fill the pill
+        const R = ((w * w) / 4 + h * h) / (2 * h);
+        const D = Math.ceil(2 * R) + 2;
+        const delta = Math.ceil(R - Math.sqrt(Math.max(0, R * R - (w * w) / 4))) + 1;
+        const originY = D - delta;
+
+        circle.style.width = `${D}px`;
+        circle.style.height = `${D}px`;
+        circle.style.bottom = `-${delta}px`;
+
+        gsap.set(circle, {
+          xPercent: -50,
+          scale: 0,
+          transformOrigin: `50% ${originY}px`,
+        });
+
+        const label = pill.querySelector('.pill-label');
+        const hoverLabel = pill.querySelector('.pill-label-hover');
+
+        if (label) gsap.set(label, { y: 0 });
+        if (hoverLabel) gsap.set(hoverLabel, { y: h + 14, opacity: 0 });
+
+        tlRefs.current[index]?.kill();
+        const tl = gsap.timeline({ paused: true });
+
+        tl.to(
+          circle,
+          {
+            scale: 1.25,
+            xPercent: -50,
+            duration: 0.7,
+            ease: 'power3.out',
+            overwrite: 'auto',
+          },
+          0
+        );
+
+        if (label) {
+          tl.to(
+            label,
+            {
+              y: -(h + 8),
+              duration: 0.55,
+              ease: 'power3.out',
+              overwrite: 'auto',
+            },
+            0
+          );
+        }
+
+        if (hoverLabel) {
+          gsap.set(hoverLabel, { y: Math.ceil(h + 14), opacity: 0 });
+          tl.to(
+            hoverLabel,
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.55,
+              ease: 'power3.out',
+              overwrite: 'auto',
+            },
+            0
+          );
+        }
+
+        tlRefs.current[index] = tl;
+      });
+    };
+
+    layout();
+    const onResize = () => layout();
+    window.addEventListener('resize', onResize);
+
+    if (document.fonts) {
+      document.fonts.ready.then(layout).catch(() => {});
+    }
+
+    // Entrance Animation
+    if (navItemsRef.current) {
+      const listItems = navItemsRef.current.querySelectorAll('li');
+      gsap.set(listItems, { opacity: 0, y: -8 });
+      gsap.to(listItems, {
+        opacity: 1,
+        y: 0,
+        duration: 0.5,
+        stagger: 0.05,
+        ease: 'power2.out',
+        delay: 0.1,
+      });
+    }
+
+    if (logoRef.current) {
+      gsap.set(logoRef.current, { scale: 0.9, opacity: 0 });
+      gsap.to(logoRef.current, {
+        scale: 1,
+        opacity: 1,
+        duration: 0.6,
+        ease: 'back.out(1.7)',
+      });
+    }
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+      tlRefs.current.forEach((tl) => tl?.kill());
+      activeTweenRefs.current.forEach((tw) => tw?.kill());
+      logoTweenRef.current?.kill();
+    };
+  }, [navItems.length]);
+
+  const handleEnter = (i) => {
+    const tl = tlRefs.current[i];
+    if (!tl) return;
+    activeTweenRefs.current[i]?.kill();
+    activeTweenRefs.current[i] = tl.tweenTo(tl.duration(), {
+      duration: 0.38,
+      ease: 'power3.out',
+      overwrite: 'auto',
+    });
+  };
+
+  const handleLeave = (i) => {
+    const tl = tlRefs.current[i];
+    if (!tl) return;
+    activeTweenRefs.current[i]?.kill();
+    activeTweenRefs.current[i] = tl.tweenTo(0, {
+      duration: 0.32,
+      ease: 'power3.out',
+      overwrite: 'auto',
+    });
+  };
+
+  const handleLogoEnter = () => {
+    const img = logoImgRef.current;
+    if (!img) return;
+    logoTweenRef.current?.kill();
+    logoTweenRef.current = gsap.to(img, {
+      rotate: 360,
+      duration: 0.8,
+      ease: 'elastic.out(1, 0.5)',
+      overwrite: 'auto',
+      onComplete: () => gsap.set(img, { rotate: 0 }),
+    });
+  };
+
+  const toggleMobileMenu = () => {
+    const newState = !mobileMenuOpen;
+    setMobileMenuOpen(newState);
+
+    const menu = mobileMenuRef.current;
+    if (menu) {
+      if (newState) {
+        gsap.set(menu, { display: 'flex', opacity: 0, y: -15 });
+        gsap.to(menu, {
+          opacity: 1,
+          y: 0,
+          duration: 0.35,
+          ease: 'power3.out',
+        });
+      } else {
+        gsap.to(menu, {
+          opacity: 0,
+          y: -15,
+          duration: 0.25,
+          ease: 'power3.in',
+          onComplete: () => {
+            gsap.set(menu, { display: 'none' });
+          },
+        });
+      }
+    }
+  };
 
   const handleNavClick = (e, item) => {
     e.preventDefault();
@@ -49,7 +251,7 @@ export default function Navbar({
       return;
     }
 
-    // Navigating to a section on home (e.g. hero, reviews)
+    // Navigating to a section on home (e.g. hero)
     if (onNavigate) {
       onNavigate('home', item.id);
     } else if (onNavigateToHome) {
@@ -67,14 +269,6 @@ export default function Navbar({
       }
     }
   };
-
-  const navItems = [
-    { label: 'HOME', page: 'home', id: 'hero' },
-    { label: 'DASHBOARD', page: 'dashboard', id: 'dashboard' },
-    { label: 'COMPANIES', page: 'companies', id: 'companies' },
-    { label: 'PLANS', page: 'plans', id: 'plans' },
-    { label: 'CONTACT US', id: 'contact', isContact: true },
-  ];
 
   return (
     <header
@@ -100,9 +294,11 @@ export default function Navbar({
           height: 'var(--nav-height)',
         }}
       >
-        {/* Brand Logo */}
+        {/* Brand Logo with Rotating GSAP Interaction */}
         <a
           href="#home"
+          ref={logoRef}
+          onMouseEnter={handleLogoEnter}
           onClick={(e) => {
             e.preventDefault();
             if (onNavigate) onNavigate('home', 'hero');
@@ -118,13 +314,12 @@ export default function Navbar({
             cursor: 'pointer',
           }}
         >
-          {/* Intervista Official Logo */}
           <div
             style={{
               position: 'relative',
-              width: '30px',
-              height: '30px',
-              borderRadius: '7px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
               overflow: 'hidden',
               border: '1px solid rgba(217, 183, 122, 0.4)',
               boxShadow: '0 0 12px rgba(217, 183, 122, 0.25)',
@@ -136,13 +331,15 @@ export default function Navbar({
             }}
           >
             <img
+              ref={logoImgRef}
               src="/logo.png"
-              alt="Intervista"
+              alt="Intervista Logo"
               style={{
                 width: '100%',
                 height: '100%',
                 objectFit: 'cover',
                 display: 'block',
+                pointerEvents: 'none',
               }}
             />
           </div>
@@ -160,66 +357,164 @@ export default function Navbar({
           </span>
         </a>
 
-        {/* Desktop Navigation Links */}
-        <nav
+        {/* Desktop GSAP PillNav Container */}
+        <div
+          ref={navItemsRef}
+          className="desktop-pill-nav"
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '2rem',
+            height: '44px',
+            backgroundColor: 'rgba(17, 17, 17, 0.85)',
+            border: '1px solid rgba(255, 255, 255, 0.09)',
+            borderRadius: '9999px',
+            padding: '0 5px',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
           }}
-          className="desktop-nav"
         >
-          {navItems.map((item) => {
-            const isActive =
-              (item.page === 'companies' && activePage === 'companies') ||
-              (item.page === 'dashboard' && activePage === 'dashboard') ||
-              (item.page === 'plans' && activePage === 'plans') ||
-              (item.page === 'home' && item.id === 'hero' && activePage === 'home' && !scrolled);
+          <ul
+            role="menubar"
+            style={{
+              listStyle: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              margin: 0,
+              padding: 0,
+              height: '100%',
+            }}
+          >
+            {navItems.map((item, i) => {
+              const isActive =
+                (item.page === 'companies' && activePage === 'companies') ||
+                (item.page === 'dashboard' && activePage === 'dashboard') ||
+                (item.page === 'plans' && activePage === 'plans') ||
+                (item.page === 'home' && item.id === 'hero' && activePage === 'home' && !scrolled);
 
-            return (
-              <a
-                key={item.label}
-                href={`#${item.id}`}
-                onClick={(e) => handleNavClick(e, item)}
-                style={{
-                  color: isActive ? 'var(--accent-gold)' : 'var(--text-secondary)',
-                  textDecoration: 'none',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.08em',
-                  transition: 'color var(--transition-fast)',
-                  position: 'relative',
-                  padding: '0.4rem 0',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) e.currentTarget.style.color = 'var(--text-primary)';
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) e.currentTarget.style.color = 'var(--text-secondary)';
-                }}
-              >
-                {item.label}
-                {isActive && (
-                  <span
+              return (
+                <li key={item.label} role="none" style={{ display: 'flex', alignItems: 'center' }}>
+                  <a
+                    role="menuitem"
+                    href={`#${item.id}`}
+                    onClick={(e) => handleNavClick(e, item)}
+                    onMouseEnter={() => handleEnter(i)}
+                    onMouseLeave={() => handleLeave(i)}
+                    className="pill-nav-item"
                     style={{
-                      position: 'absolute',
-                      bottom: 0,
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      width: '16px',
-                      height: '2px',
-                      backgroundColor: 'var(--accent-gold)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '34px',
+                      padding: '0 16px',
                       borderRadius: '9999px',
-                      boxShadow: '0 0 8px rgba(217, 183, 122, 0.6)',
+                      textDecoration: 'none',
+                      cursor: 'pointer',
+                      backgroundColor: isActive ? 'rgba(217, 183, 122, 0.12)' : 'transparent',
+                      border: isActive ? '1px solid rgba(217, 183, 122, 0.3)' : '1px solid transparent',
+                      transition: 'background-color 0.25s ease, border-color 0.25s ease',
                     }}
-                  />
-                )}
-              </a>
-            );
-          })}
-        </nav>
+                  >
+                    {/* Rising Circle Background Animation */}
+                    <span
+                      ref={(el) => {
+                        circleRefs.current[i] = el;
+                      }}
+                      className="hover-circle"
+                      style={{
+                        position: 'absolute',
+                        left: '50%',
+                        bottom: 0,
+                        borderRadius: '50%',
+                        zIndex: 1,
+                        display: 'block',
+                        pointerEvents: 'none',
+                        background: 'linear-gradient(135deg, #F5E7C8 0%, #D9B77A 100%)',
+                        willChange: 'transform',
+                      }}
+                      aria-hidden="true"
+                    />
 
-        {/* Right CTA Buttons */}
+                    {/* Stacked Labels for Vertical Flip Animation */}
+                    <span
+                      className="label-stack"
+                      style={{
+                        position: 'relative',
+                        display: 'inline-block',
+                        lineHeight: 1,
+                        zIndex: 2,
+                        overflow: 'hidden',
+                        padding: '2px 0',
+                      }}
+                    >
+                      <span
+                        className="pill-label"
+                        style={{
+                          position: 'relative',
+                          zIndex: 2,
+                          display: 'inline-block',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          letterSpacing: '0.08em',
+                          color: isActive ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                          willChange: 'transform',
+                        }}
+                      >
+                        {item.label}
+                      </span>
+
+                      <span
+                        className="pill-label-hover"
+                        style={{
+                          position: 'absolute',
+                          left: 0,
+                          top: '2px',
+                          zIndex: 3,
+                          display: 'inline-block',
+                          width: '100%',
+                          textAlign: 'center',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          letterSpacing: '0.08em',
+                          color: '#0A0A0A',
+                          willChange: 'transform, opacity',
+                        }}
+                        aria-hidden="true"
+                      >
+                        {item.label}
+                      </span>
+                    </span>
+
+                    {/* Active Tab Glow Dot */}
+                    {isActive && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          bottom: '3px',
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          width: '4px',
+                          height: '4px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--accent-gold)',
+                          boxShadow: '0 0 6px rgba(217, 183, 122, 0.8)',
+                          zIndex: 4,
+                          pointerEvents: 'none',
+                        }}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        {/* Right CTA Actions */}
         <div
           className="desktop-actions"
           style={{
@@ -255,7 +550,7 @@ export default function Navbar({
 
         {/* Mobile Hamburger Button */}
         <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onClick={toggleMobileMenu}
           aria-label="Toggle navigation menu"
           className="mobile-toggle"
           style={{
@@ -271,86 +566,87 @@ export default function Navbar({
         </button>
       </div>
 
-      {/* Mobile Menu Dropdown */}
-      {mobileMenuOpen && (
-        <div
-          style={{
-            backgroundColor: '#0F0F0F',
-            borderBottom: '1px solid var(--border-card)',
-            padding: '1.5rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1.25rem',
-          }}
-        >
-          {navItems.map((item) => {
-            const isActive =
-              (item.page === 'companies' && activePage === 'companies') ||
-              (item.page === 'dashboard' && activePage === 'dashboard') ||
-              (item.page === 'plans' && activePage === 'plans') ||
-              (item.page === 'home' && item.id === 'hero' && activePage === 'home' && !scrolled);
+      {/* Mobile Menu Dropdown with GSAP transition */}
+      <div
+        ref={mobileMenuRef}
+        style={{
+          display: 'none',
+          backgroundColor: '#0F0F0F',
+          borderBottom: '1px solid var(--border-card)',
+          padding: '1.5rem',
+          flexDirection: 'column',
+          gap: '1rem',
+        }}
+      >
+        {navItems.map((item) => {
+          const isActive =
+            (item.page === 'companies' && activePage === 'companies') ||
+            (item.page === 'dashboard' && activePage === 'dashboard') ||
+            (item.page === 'plans' && activePage === 'plans') ||
+            (item.page === 'home' && item.id === 'hero' && activePage === 'home' && !scrolled);
 
-            return (
-              <a
-                key={item.label}
-                href={`#${item.id}`}
-                onClick={(e) => handleNavClick(e, item)}
-                style={{
-                  color: isActive ? 'var(--accent-gold)' : 'var(--text-primary)',
-                  textDecoration: 'none',
-                  fontSize: '0.95rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.08em',
-                  padding: '0.25rem 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <span>{item.label}</span>
-                {isActive && (
-                  <span
-                    style={{
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      backgroundColor: 'var(--accent-gold)',
-                      boxShadow: '0 0 6px var(--accent-gold)',
-                    }}
-                  />
-                )}
-              </a>
-            );
-          })}
-          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenLogin();
+          return (
+            <a
+              key={item.label}
+              href={`#${item.id}`}
+              onClick={(e) => handleNavClick(e, item)}
+              style={{
+                color: isActive ? 'var(--accent-gold)' : 'var(--text-primary)',
+                textDecoration: 'none',
+                fontSize: '0.92rem',
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                padding: '0.4rem 0.75rem',
+                borderRadius: '8px',
+                backgroundColor: isActive ? 'rgba(217, 183, 122, 0.08)' : 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
               }}
-              className="btn-ghost-outline"
-              style={{ flex: 1 }}
             >
-              Log in
-            </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onStartInterview();
-              }}
-              className="btn-primary"
-              style={{ flex: 1 }}
-            >
-              Start Interview
-              <ArrowRight size={15} />
-            </button>
-          </div>
+              <span>{item.label}</span>
+              {isActive && (
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--accent-gold)',
+                    boxShadow: '0 0 6px var(--accent-gold)',
+                  }}
+                />
+              )}
+            </a>
+          );
+        })}
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              onOpenLogin();
+            }}
+            className="btn-ghost-outline"
+            style={{ flex: 1 }}
+          >
+            Log in
+          </button>
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              onStartInterview();
+            }}
+            className="btn-primary"
+            style={{ flex: 1 }}
+          >
+            Start Interview
+            <ArrowRight size={15} />
+          </button>
         </div>
-      )}
+      </div>
 
       <style>{`
-        @media (max-width: 868px) {
-          .desktop-nav, .desktop-actions {
+        @media (max-width: 960px) {
+          .desktop-pill-nav, .desktop-actions {
             display: none !important;
           }
           .mobile-toggle {
