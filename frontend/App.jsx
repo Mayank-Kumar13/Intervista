@@ -204,6 +204,7 @@ export default function App() {
             onOpenLegal={handleOpenLegal}
             onSelectRole={handleStartInterview}
             onNavigate={handleNavigate}
+            onOpenContact={() => setContactModalOpen(true)}
           />
         </>
       )}
@@ -244,6 +245,7 @@ export default function App() {
             onOpenLegal={handleOpenLegal}
             onSelectRole={handleStartInterview}
             onNavigate={handleNavigate}
+            onOpenContact={() => setContactModalOpen(true)}
           />
         </>
       )}
@@ -262,6 +264,7 @@ export default function App() {
             onOpenLegal={handleOpenLegal}
             onSelectRole={handleStartInterview}
             onNavigate={handleNavigate}
+            onOpenContact={() => setContactModalOpen(true)}
           />
         </>
       )}

@@ -1,27 +1,18 @@
 import React from 'react';
 
-export default function Footer({ onOpenLegal, onSelectRole, onNavigate }) {
-  const scrollTo = (id) => {
-    if (id === 'companies') {
-      if (onNavigate) onNavigate('companies');
-      else {
-        const el = document.getElementById(id);
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }
-      return;
-    }
-    if (id === 'pricing' || id === 'plans') {
-      if (onNavigate) onNavigate('plans');
-      else {
-        window.location.hash = '#plans';
-      }
+export default function Footer({ onOpenLegal, onNavigate, onOpenContact }) {
+  const handleNav = (page, sectionId) => {
+    if (page === 'contact') {
+      if (onOpenContact) onOpenContact();
       return;
     }
     if (onNavigate) {
-      onNavigate('home', id);
+      onNavigate(page, sectionId);
     } else {
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
+      if (page === 'plans') window.location.hash = '#plans';
+      else if (page === 'companies') window.location.hash = '#companies';
+      else if (page === 'dashboard') window.location.hash = '#dashboard';
+      else window.location.hash = '#home';
     }
   };
 
@@ -29,218 +20,90 @@ export default function Footer({ onOpenLegal, onSelectRole, onNavigate }) {
     <footer
       style={{
         backgroundColor: '#070707',
-        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-        padding: '5rem 0 3rem 0',
+        borderTop: '1px solid rgba(255, 255, 255, 0.07)',
+        padding: '3.2rem 0 2.2rem 0',
         position: 'relative',
       }}
     >
       <div className="container">
-        {/* Main Footer Grid */}
+        {/* Main Minimalist Row */}
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: '2fr 1fr 1fr 1fr',
-            gap: '3.5rem',
-            marginBottom: '4rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '1.5rem',
+            paddingBottom: '2rem',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
           }}
-          className="footer-grid"
+          className="footer-top-row"
         >
-          {/* Brand Info */}
-          <div>
-            <div
+          {/* Brand */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <svg
+              width="17"
+              height="17"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 0L14.2 9.8L24 12L14.2 14.2L12 24L9.8 14.2L0 12L9.8 9.8L12 0Z"
+                fill="var(--accent-gold)"
+              />
+            </svg>
+            <span
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.65rem',
-                marginBottom: '1.25rem',
+                fontFamily: 'var(--font-serif)',
+                fontSize: '1.15rem',
+                fontWeight: 500,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'var(--text-primary)',
               }}
             >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 0L14.2 9.8L24 12L14.2 14.2L12 24L9.8 14.2L0 12L9.8 9.8L12 0Z"
-                  fill="var(--accent-gold)"
-                />
-              </svg>
-              <span
-                style={{
-                  fontFamily: 'var(--font-serif)',
-                  fontSize: '1.25rem',
-                  fontWeight: 500,
-                  letterSpacing: '0.14em',
-                  textTransform: 'uppercase',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                Intervista
-              </span>
-            </div>
-
-            <p
+              Intervista
+            </span>
+            <span
               style={{
-                color: 'var(--text-secondary)',
-                fontSize: '0.9rem',
-                lineHeight: 1.65,
-                maxWidth: '340px',
-                marginBottom: '1.5rem',
-              }}
-            >
-              The premier AI-powered mock interview simulator. Experience realistic voice conversations, adaptive questions, and instant granular feedback.
-            </p>
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
                 color: 'var(--text-tertiary)',
-                fontSize: '0.8rem',
+                fontSize: '0.82rem',
+                marginLeft: '0.4rem',
               }}
             >
-              <span className="pulse-dot" style={{ width: '6px', height: '6px' }} />
-              <span>Real-time voice models online</span>
-            </div>
+              · Voice-first AI mock interview practice
+            </span>
           </div>
 
-          {/* Column 1: Product */}
-          <div>
-            <h4
-              style={{
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                marginBottom: '1.25rem',
-              }}
-            >
-              Product
-            </h4>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {[
-                { name: 'Role Practice Library', id: 'roles' },
-                { name: 'Plans & Pricing', id: 'pricing' },
-                { name: 'How It Works', id: 'how-it-works' },
-                { name: 'Company Question Bank', id: 'companies' },
-                { name: 'Student Reviews', id: 'reviews' },
-              ].map((link, idx) => (
-                <li key={idx}>
-                  <button
-                    onClick={() => scrollTo(link.id)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--text-secondary)',
-                      fontSize: '0.88rem',
-                      cursor: 'pointer',
-                      padding: 0,
-                      textAlign: 'left',
-                      transition: 'color var(--transition-fast)',
-                    }}
-                    onMouseEnter={(e) => (e.target.style.color = 'var(--text-primary)')}
-                    onMouseLeave={(e) => (e.target.style.color = 'var(--text-secondary)')}
-                  >
-                    {link.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Column 2: Resources */}
-          <div>
-            <h4
-              style={{
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                marginBottom: '1.25rem',
-              }}
-            >
-              Resources
-            </h4>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {[
-                'Software Engineer Guide',
-                'Product Sense Frameworks',
-                'System Design Cheatsheet',
-                'Behavioral STAR Method',
-                'Interview Scoring Rubric',
-              ].map((res, idx) => (
-                <li key={idx}>
-                  <button
-                    onClick={() => onSelectRole && onSelectRole(res)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--text-secondary)',
-                      fontSize: '0.88rem',
-                      cursor: 'pointer',
-                      padding: 0,
-                      textAlign: 'left',
-                      transition: 'color var(--transition-fast)',
-                    }}
-                    onMouseEnter={(e) => (e.target.style.color = 'var(--text-primary)')}
-                    onMouseLeave={(e) => (e.target.style.color = 'var(--text-secondary)')}
-                  >
-                    {res}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Column 3: Company & Trust */}
-          <div>
-            <h4
-              style={{
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                marginBottom: '1.25rem',
-              }}
-            >
-              Company
-            </h4>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {[
-                'About Intervista',
-                'Engineering & AI Core',
-                'Privacy Principles',
-                'Security & Audio Retention',
-                'Contact Support',
-              ].map((item, idx) => (
-                <li key={idx}>
-                  <button
-                    onClick={() => onOpenLegal && onOpenLegal(item)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--text-secondary)',
-                      fontSize: '0.88rem',
-                      cursor: 'pointer',
-                      padding: 0,
-                      textAlign: 'left',
-                      transition: 'color var(--transition-fast)',
-                    }}
-                    onMouseEnter={(e) => (e.target.style.color = 'var(--text-primary)')}
-                    onMouseLeave={(e) => (e.target.style.color = 'var(--text-secondary)')}
-                  >
-                    {item}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* Clean Essential Links */}
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '1.75rem', flexWrap: 'wrap' }}>
+            {[
+              { label: 'Home', page: 'home', id: 'hero' },
+              { label: 'Dashboard', page: 'dashboard' },
+              { label: 'Companies', page: 'companies' },
+              { label: 'Plans', page: 'plans' },
+              { label: 'Contact', page: 'contact' },
+            ].map((link) => (
+              <button
+                key={link.label}
+                onClick={() => handleNav(link.page, link.id)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.86rem',
+                  cursor: 'pointer',
+                  padding: 0,
+                  transition: 'color var(--transition-fast)',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+              >
+                {link.label}
+              </button>
+            ))}
+          </nav>
         </div>
 
         {/* Bottom Bar: Copyright & Legal */}
@@ -249,45 +112,36 @@ export default function Footer({ onOpenLegal, onSelectRole, onNavigate }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-            paddingTop: '2rem',
+            paddingTop: '1.5rem',
             flexWrap: 'wrap',
             gap: '1rem',
+            fontSize: '0.8rem',
+            color: 'var(--text-tertiary)',
           }}
+          className="footer-bottom-row"
         >
-          <div
-            style={{
-              color: 'var(--text-tertiary)',
-              fontSize: '0.82rem',
-            }}
-          >
-            © {new Date().getFullYear()} Intervista AI. All rights reserved. Built for ambitious candidates.
+          <div>
+            © {new Date().getFullYear()} Intervista AI. All rights reserved.
           </div>
 
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1.75rem',
-            }}
-          >
-            {['Privacy Policy', 'Terms of Service', 'Security', 'Audio Ethics'].map((leg, i) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            {['Privacy Policy', 'Terms of Service'].map((legal) => (
               <button
-                key={i}
-                onClick={() => onOpenLegal && onOpenLegal(leg)}
+                key={legal}
+                onClick={() => onOpenLegal && onOpenLegal(legal)}
                 style={{
                   background: 'none',
                   border: 'none',
                   color: 'var(--text-tertiary)',
-                  fontSize: '0.82rem',
+                  fontSize: '0.8rem',
                   cursor: 'pointer',
                   padding: 0,
                   transition: 'color var(--transition-fast)',
                 }}
-                onMouseEnter={(e) => (e.target.style.color = 'var(--text-secondary)')}
-                onMouseLeave={(e) => (e.target.style.color = 'var(--text-tertiary)')}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-tertiary)')}
               >
-                {leg}
+                {legal}
               </button>
             ))}
           </div>
@@ -295,15 +149,11 @@ export default function Footer({ onOpenLegal, onSelectRole, onNavigate }) {
       </div>
 
       <style>{`
-        @media (max-width: 900px) {
-          .footer-grid {
-            grid-template-columns: 1fr 1fr !important;
-            gap: 2.5rem !important;
-          }
-        }
-        @media (max-width: 580px) {
-          .footer-grid {
-            grid-template-columns: 1fr !important;
+        @media (max-width: 640px) {
+          .footer-top-row, .footer-bottom-row {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 1.25rem !important;
           }
         }
       `}</style>
