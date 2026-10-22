@@ -317,32 +317,29 @@ export default function Navbar({
             cursor: 'pointer',
           }}
         >
+          {/* Official Intervista Emblem ('i' with shining star) - Transparent, no black box */}
           <div
             style={{
               position: 'relative',
-              width: '32px',
               height: '32px',
-              borderRadius: '8px',
-              overflow: 'hidden',
-              border: '1px solid rgba(217, 183, 122, 0.4)',
-              boxShadow: '0 0 12px rgba(217, 183, 122, 0.25)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: '#0a0a0a',
               flexShrink: 0,
             }}
           >
             <img
               ref={logoImgRef}
-              src="/logo.png"
+              src="/logo-emblem.png"
               alt="Intervista Logo"
               style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
+                height: '32px',
+                width: 'auto',
+                objectFit: 'contain',
                 display: 'block',
                 pointerEvents: 'none',
+                filter: 'drop-shadow(0 0 10px rgba(217, 183, 122, 0.55))',
+                transition: 'transform 0.3s ease, filter 0.3s ease',
               }}
             />
           </div>

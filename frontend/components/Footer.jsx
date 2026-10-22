@@ -44,27 +44,22 @@ export default function Footer({ onOpenLegal, onNavigate, onOpenContact }) {
             <div
               style={{
                 position: 'relative',
-                width: '28px',
-                height: '28px',
-                borderRadius: '7px',
-                overflow: 'hidden',
-                border: '1px solid rgba(217, 183, 122, 0.4)',
-                boxShadow: '0 0 10px rgba(217, 183, 122, 0.25)',
+                height: '30px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: '#0a0a0a',
                 flexShrink: 0,
               }}
             >
               <img
-                src="/logo.png"
+                src="/logo-emblem.png"
                 alt="Intervista"
                 style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
+                  height: '30px',
+                  width: 'auto',
+                  objectFit: 'contain',
                   display: 'block',
+                  filter: 'drop-shadow(0 0 8px rgba(217, 183, 122, 0.45))',
                 }}
               />
             </div>

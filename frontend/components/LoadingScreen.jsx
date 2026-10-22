@@ -86,41 +86,41 @@ export default function LoadingScreen({ onComplete }) {
           zIndex: 1,
         }}
       >
-        {/* Emblem Wrapper */}
+        {/* Emblem Wrapper - Transparent, no black box */}
         <div
           style={{
             position: 'relative',
-            width: '124px',
-            height: '124px',
+            width: '65px',
+            height: '160px',
             marginBottom: '1.6rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           {/* Pulsing ambient ring behind emblem */}
           <div className="emblem-aura-ring" />
 
-          {/* Official Intervista Logo */}
+          {/* Official Intervista Transparent Emblem ('i' with star) */}
           <img
-            src="/logo.png"
+            src="/logo-emblem.png"
             alt="Intervista Emblem"
             style={{
-              width: '100%',
               height: '100%',
+              width: 'auto',
               objectFit: 'contain',
-              borderRadius: '24px',
-              border: '1px solid rgba(217, 183, 122, 0.35)',
-              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(217, 183, 122, 0.25)',
-              backgroundColor: '#0A0A0A',
               display: 'block',
+              filter: 'drop-shadow(0 0 25px rgba(217, 183, 122, 0.6))',
             }}
           />
 
-          {/* THE STAR BLINK ANIMATION OVERLAY (located at the logo's star center ~48%, ~36%) */}
+          {/* THE STAR BLINK ANIMATION OVERLAY (located at star center ~50%, ~19%) */}
           <div
             className="logo-star-blink-container"
             style={{
               position: 'absolute',
-              left: '48%',
-              top: '36%',
+              left: '50%',
+              top: '19%',
               transform: 'translate(-50%, -50%)',
               pointerEvents: 'none',
               zIndex: 10,
@@ -240,10 +240,11 @@ export default function LoadingScreen({ onComplete }) {
 
         .emblem-aura-ring {
           position: absolute;
-          inset: -12px;
-          border-radius: 32px;
-          background: radial-gradient(circle, rgba(217, 183, 122, 0.25) 0%, transparent 70%);
+          inset: -30px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(217, 183, 122, 0.28) 0%, transparent 70%);
           animation: auraBreathe 2.4s infinite ease-in-out;
+          pointer-events: none;
         }
 
         @keyframes auraBreathe {

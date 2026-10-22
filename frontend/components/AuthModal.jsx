@@ -105,30 +105,25 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
           <X size={20} />
         </button>
 
-        {/* Official Intervista Logo */}
+        {/* Official Intervista Emblem */}
         <div
           style={{
-            width: '54px',
-            height: '54px',
-            borderRadius: '14px',
-            overflow: 'hidden',
-            border: '1px solid rgba(217, 183, 122, 0.4)',
-            boxShadow: '0 0 20px rgba(217, 183, 122, 0.3)',
+            height: '56px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#0a0a0a',
             margin: '0 auto 1.25rem auto',
           }}
         >
           <img
-            src="/logo.png"
+            src="/logo-emblem.png"
             alt="Intervista"
             style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
+              height: '56px',
+              width: 'auto',
+              objectFit: 'contain',
               display: 'block',
+              filter: 'drop-shadow(0 0 16px rgba(217, 183, 122, 0.6))',
             }}
           />
         </div>
