@@ -40,11 +40,11 @@ export default function Footer({ onOpenLegal, onNavigate, onOpenContact }) {
           className="footer-top-row"
         >
           {/* Brand */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
             <div
               style={{
                 position: 'relative',
-                height: '30px',
+                height: '28px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -53,9 +53,9 @@ export default function Footer({ onOpenLegal, onNavigate, onOpenContact }) {
             >
               <img
                 src="/logo-emblem.png"
-                alt="Intervista"
+                alt="I"
                 style={{
-                  height: '30px',
+                  height: '28px',
                   width: 'auto',
                   objectFit: 'contain',
                   display: 'block',
@@ -73,7 +73,7 @@ export default function Footer({ onOpenLegal, onNavigate, onOpenContact }) {
                 color: 'var(--text-primary)',
               }}
             >
-              Intervista
+              Ntervista
             </span>
             <span
               style={{

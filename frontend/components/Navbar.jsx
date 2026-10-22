@@ -311,17 +311,17 @@ export default function Navbar({
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.65rem',
+            gap: '0.22rem',
             textDecoration: 'none',
             color: 'var(--text-primary)',
             cursor: 'pointer',
           }}
         >
-          {/* Official Intervista Emblem ('i' with shining star) - Transparent, no black box */}
+          {/* Official Intervista Emblem ('I' with shining star) - acts as first letter 'I' */}
           <div
             style={{
               position: 'relative',
-              height: '32px',
+              height: '31px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -331,9 +331,9 @@ export default function Navbar({
             <img
               ref={logoImgRef}
               src="/logo-emblem.png"
-              alt="Intervista Logo"
+              alt="I"
               style={{
-                height: '32px',
+                height: '31px',
                 width: 'auto',
                 objectFit: 'contain',
                 display: 'block',
@@ -353,7 +353,7 @@ export default function Navbar({
               color: 'var(--text-primary)',
             }}
           >
-            Intervista
+            Ntervista
           </span>
         </a>
 
