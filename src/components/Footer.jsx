@@ -105,6 +105,7 @@ export default function Footer({ onOpenLegal, onSelectRole }) {
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {[
                 { name: 'Role Practice Library', id: 'roles' },
+                { name: 'Plans & Pricing', id: 'pricing' },
                 { name: 'How It Works', id: 'how-it-works' },
                 { name: 'Company Question Bank', id: 'companies' },
                 { name: 'Student Reviews', id: 'reviews' },

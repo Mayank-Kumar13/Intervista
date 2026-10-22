@@ -4,6 +4,7 @@ import Hero from './components/Hero';
 import CompanyLogos from './components/CompanyLogos';
 import HowItWorks from './components/HowItWorks';
 import RoleCards from './components/RoleCards';
+import PricingSection from './components/PricingSection';
 import ReviewsSection from './components/ReviewsSection';
 import CtaBanner from './components/CtaBanner';
 import Footer from './components/Footer';
@@ -165,6 +166,9 @@ export default function App() {
 
             {/* 5. Practice for Your Next Role */}
             <RoleCards onSelectRole={handleStartInterview} />
+
+            {/* 6. Plans & Pricing Section */}
+            <PricingSection onStartInterview={handleStartInterview} />
 
             {/* 7. Student Feedback & Infinite Review Loop */}
             <ReviewsSection />

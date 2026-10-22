@@ -97,7 +97,7 @@ export default function Navbar({ onStartInterview, onOpenLogin, onOpenContact, o
             { label: 'HOME', id: 'hero' },
             { label: 'DASHBOARD', id: 'dashboard' },
             { label: 'COMPANIES', id: 'companies' },
-            { label: 'REVIEWS', id: 'reviews' },
+            { label: 'PLANS', id: 'pricing' },
             { label: 'CONTACT US', id: 'contact', isContact: true },
           ].map((item) => (
             <a
@@ -201,7 +201,7 @@ export default function Navbar({ onStartInterview, onOpenLogin, onOpenContact, o
             { label: 'HOME', id: 'hero' },
             { label: 'DASHBOARD', id: 'dashboard' },
             { label: 'COMPANIES', id: 'companies' },
-            { label: 'REVIEWS', id: 'reviews' },
+            { label: 'PLANS', id: 'pricing' },
             { label: 'CONTACT US', id: 'contact', isContact: true },
           ].map((item) => (
             <a
