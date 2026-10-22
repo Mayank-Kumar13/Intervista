@@ -3,9 +3,7 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import CompanyLogos from './components/CompanyLogos';
 import HowItWorks from './components/HowItWorks';
-import InterviewShowcase from './components/InterviewShowcase';
 import RoleCards from './components/RoleCards';
-import PerformanceReport from './components/PerformanceReport';
 import ReviewsSection from './components/ReviewsSection';
 import CtaBanner from './components/CtaBanner';
 import Footer from './components/Footer';
@@ -20,12 +18,9 @@ import LegalModal from './components/LegalModal';
 import ContactModal from './components/ContactModal';
 
 export default function App() {
-  // View state: 'home' | 'dashboard'
   const [currentView, setCurrentView] = useState(() => {
     return window.location.hash === '#dashboard' ? 'dashboard' : 'home';
   });
-
-  // Modal states
   const [setupModalOpen, setSetupModalOpen] = useState(false);
   const [selectedRoleForSetup, setSelectedRoleForSetup] = useState('Software Engineer');
 
@@ -125,12 +120,6 @@ export default function App() {
     setReportModalOpen(true);
   };
 
-  const handleSelectStep = (action) => {
-    if (action === 'role') handleStartInterview('Software Engineer');
-    else if (action === 'demo') handleOpenDemo();
-    else if (action === 'report') handleViewSampleReport();
-  };
-
   const handleOpenLegal = (topic) => {
     setLegalTopic(topic);
     setLegalModalOpen(true);
@@ -171,19 +160,13 @@ export default function App() {
             {/* 3. Trusted Companies Strip (with brand colors on hover) */}
             <CompanyLogos />
 
-            {/* 4. How It Works */}
-            <HowItWorks onSelectStep={handleSelectStep} />
+            {/* 4. How It Works (Informational 3-Step Flow) */}
+            <HowItWorks />
 
-            {/* 5. Interview Experience Showcase (Dashboard Preview) */}
-            <InterviewShowcase onTryDemo={handleOpenDemo} />
-
-            {/* 6. Practice for Your Next Role */}
+            {/* 5. Practice for Your Next Role */}
             <RoleCards onSelectRole={handleStartInterview} />
 
-            {/* 7. Performance Report Section */}
-            <PerformanceReport onViewReport={() => handleViewSampleReport()} />
-
-            {/* 8. Student Feedback & Infinite Review Loop */}
+            {/* 7. Student Feedback & Infinite Review Loop */}
             <ReviewsSection />
 
             {/* 9. Final CTA Banner */}

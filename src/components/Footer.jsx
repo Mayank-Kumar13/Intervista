@@ -104,11 +104,10 @@ export default function Footer({ onOpenLegal, onSelectRole }) {
             </h4>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {[
-                { name: 'Voice Mock Interviews', id: 'features' },
                 { name: 'Role Practice Library', id: 'roles' },
-                { name: 'Performance Analytics', id: 'analysis' },
                 { name: 'How It Works', id: 'how-it-works' },
                 { name: 'Company Question Bank', id: 'companies' },
+                { name: 'Student Reviews', id: 'reviews' },
               ].map((link, idx) => (
                 <li key={idx}>
                   <button
