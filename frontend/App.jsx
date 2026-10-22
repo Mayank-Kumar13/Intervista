@@ -184,6 +184,7 @@ export default function App() {
           onStartInterview={handleStartInterview}
           onViewReport={handleViewSampleReport}
           onBackToHome={handleNavigateToHome}
+          onNavigateToCompanies={() => handleNavigate('companies')}
         />
       )}
 

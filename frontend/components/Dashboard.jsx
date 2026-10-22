@@ -19,7 +19,8 @@ import {
   ArrowLeft,
   Menu,
   X,
-  CheckCircle2
+  CheckCircle2,
+  History,
 } from 'lucide-react';
 
 // Preset active practice days for 2026 (matching the ~18 practice days in screenshot)
@@ -135,7 +136,8 @@ const TOPICS_TO_WORK_ON = [
 export default function Dashboard({
   onStartInterview,
   onViewReport,
-  onBackToHome
+  onBackToHome,
+  onNavigateToCompanies,
 }) {
   const [selectedYear, setSelectedYear] = useState(2026);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -259,12 +261,45 @@ export default function Dashboard({
   };
 
   const navItems = [
-    { label: 'Overview', icon: Home, id: 'overview' },
-    { label: 'Mock Room', icon: Mic, id: 'mock-room', action: () => onStartInterview && onStartInterview('Software Engineer') },
-    { label: 'Analytics & Skills', icon: BarChart2, id: 'analytics', action: () => onViewReport && onViewReport({ role: 'Software Engineer', overallScore: 88 }) },
-    { label: 'Schedule & Feed', icon: Calendar, id: 'schedule' },
-    { label: 'Career Prep', icon: Briefcase, id: 'career-prep' },
-    { label: 'Settings', icon: Settings, id: 'settings' },
+    {
+      label: 'Overview',
+      icon: Home,
+      id: 'overview',
+      action: () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+    },
+    {
+      label: 'Mock Interview',
+      icon: Mic,
+      id: 'mock-interview',
+      action: () => {
+        if (onStartInterview) onStartInterview('Software Engineer');
+      },
+    },
+    {
+      label: 'History',
+      icon: History,
+      id: 'history',
+      action: () => {
+        const el = document.getElementById('recent-interviews');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      },
+    },
+    {
+      label: 'Career Prep',
+      icon: Briefcase,
+      id: 'career-prep',
+      action: () => {
+        if (onNavigateToCompanies) {
+          onNavigateToCompanies();
+        } else {
+          window.location.hash = '#companies';
+        }
+      },
+    },
   ];
 
   return (
@@ -300,110 +335,43 @@ export default function Dashboard({
         }}
         className="dashboard-sidebar"
       >
-        {/* Top: Logo & Collapse Button */}
+        {/* Top: Sidebar Collapse Toggle (No INTERVISTA logo text) */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: sidebarCollapsed ? 'center' : 'space-between',
-            marginBottom: '2.5rem',
+            justifyContent: sidebarCollapsed ? 'center' : 'flex-end',
+            marginBottom: '1.75rem',
             padding: '0 0.25rem',
           }}
         >
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              if (onBackToHome) onBackToHome();
-            }}
-            title="Back to Homepage"
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             style={{
+              width: '30px',
+              height: '30px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              color: 'var(--text-secondary)',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.65rem',
-              textDecoration: 'none',
-              color: 'var(--text-primary)',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+              e.currentTarget.style.color = 'var(--text-secondary)';
             }}
           >
-            {/* 4-point gold star */}
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              style={{ filter: 'drop-shadow(0 0 6px rgba(217, 183, 122, 0.6))', flexShrink: 0 }}
-            >
-              <path
-                d="M12 0L14.2 9.8L24 12L14.2 14.2L12 24L9.8 14.2L0 12L9.8 9.8L12 0Z"
-                fill="var(--accent-gold)"
-              />
-            </svg>
-            {!sidebarCollapsed && (
-              <span
-                style={{
-                  fontFamily: 'var(--font-serif)',
-                  fontSize: '1.2rem',
-                  fontWeight: 500,
-                  letterSpacing: '0.04em',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                Intervista AI
-              </span>
-            )}
-          </a>
-
-          {!sidebarCollapsed && (
-            <button
-              onClick={() => setSidebarCollapsed(true)}
-              title="Collapse sidebar"
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                color: 'var(--text-secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-                e.currentTarget.style.color = 'var(--text-primary)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
-                e.currentTarget.style.color = 'var(--text-secondary)';
-              }}
-            >
-              <ChevronLeft size={16} />
-            </button>
-          )}
-
-          {sidebarCollapsed && (
-            <button
-              onClick={() => setSidebarCollapsed(false)}
-              title="Expand sidebar"
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                color: 'var(--text-secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                marginTop: '0.5rem',
-              }}
-            >
-              <ChevronRight size={16} />
-            </button>
-          )}
+            {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
         </div>
 
         {/* Sidebar Nav Items */}
@@ -1007,6 +975,7 @@ export default function Dashboard({
                 D. RECENT INTERVIEWS (LEFT COLUMN)
                 ===================================================================== */}
             <section
+              id="recent-interviews"
               style={{
                 backgroundColor: '#111111',
                 border: '1px solid var(--border-card)',
@@ -1014,6 +983,7 @@ export default function Dashboard({
                 padding: '1.8rem 2rem',
                 display: 'flex',
                 flexDirection: 'column',
+                scrollMarginTop: 'calc(var(--nav-height, 72px) + 24px)',
               }}
             >
               {/* Section Header */}
