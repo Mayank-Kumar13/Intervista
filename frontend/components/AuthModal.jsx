@@ -1,20 +1,68 @@
-import React, { useState } from 'react';
-import { X, Sparkles, ArrowRight, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Sparkles, ArrowRight, Check, AlertCircle, Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
+import { registerUser, loginUser } from '../utils/auth';
 
-export default function AuthModal({ isOpen, onClose }) {
+export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAuthSuccess }) {
+  const [mode, setMode] = useState(initialMode); // 'login' | 'signup'
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+
+  // Reset form whenever modal opens or mode changes
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      setError('');
+      setSuccessMsg('');
+    }
+  }, [isOpen, initialMode]);
+
+  const switchMode = (newMode) => {
+    setMode(newMode);
+    setError('');
+    setSuccessMsg('');
+  };
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (email) {
-      setSubmitted(true);
+    setError('');
+    setSuccessMsg('');
+
+    if (mode === 'signup') {
+      if (password !== confirmPassword) {
+        setError('Passwords do not match.');
+        return;
+      }
+    }
+
+    setLoading(true);
+    try {
+      let user;
+      if (mode === 'signup') {
+        user = await registerUser({ name, email, password });
+        setSuccessMsg(`Welcome aboard, ${user.name}! Redirecting to Dashboard...`);
+      } else {
+        user = await loginUser({ email, password });
+        setSuccessMsg(`Welcome back, ${user.name}! Redirecting to Dashboard...`);
+      }
+
       setTimeout(() => {
-        setSubmitted(false);
+        setLoading(false);
+        if (onAuthSuccess) {
+          onAuthSuccess(user);
+        }
         onClose();
-      }, 1800);
+      }, 900);
+    } catch (err) {
+      setLoading(false);
+      setError(err.message || 'Authentication failed. Please try again.');
     }
   };
 
@@ -25,14 +73,17 @@ export default function AuthModal({ isOpen, onClose }) {
         onClick={(e) => e.stopPropagation()}
         style={{
           maxWidth: '440px',
-          padding: '2.5rem',
+          padding: '2.25rem',
           backgroundColor: '#121212',
-          textAlign: 'center',
+          border: '1px solid var(--border-card)',
+          borderRadius: '18px',
+          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.65)',
         }}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
+          aria-label="Close authentication modal"
           style={{
             position: 'absolute',
             top: '1.25rem',
@@ -42,7 +93,14 @@ export default function AuthModal({ isOpen, onClose }) {
             color: 'var(--text-secondary)',
             cursor: 'pointer',
             padding: '0.4rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '50%',
+            transition: 'color 0.2s',
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
         >
           <X size={20} />
         </button>
@@ -78,108 +136,410 @@ export default function AuthModal({ isOpen, onClose }) {
         <h3
           className="serif-heading"
           style={{
-            fontSize: '1.75rem',
+            fontSize: '1.65rem',
             fontWeight: 400,
-            marginBottom: '0.5rem',
+            marginBottom: '0.35rem',
+            textAlign: 'center',
+            color: 'var(--text-primary)',
           }}
         >
-          Welcome to Intervista
+          {mode === 'login' ? 'Sign In to Intervista' : 'Create an Account'}
         </h3>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '1.75rem' }}>
-          Sign in to track mock interview history, audio telemetry, and skill growth.
+        <p
+          style={{
+            color: 'var(--text-secondary)',
+            fontSize: '0.84rem',
+            marginBottom: '1.5rem',
+            textAlign: 'center',
+          }}
+        >
+          {mode === 'login'
+            ? 'Access your practice sessions, audio telemetry, and skill growth.'
+            : 'Join Intervista to simulate real technical and behavioral interviews.'}
         </p>
 
-        {submitted ? (
-          <div
+        {/* Tab Toggle: Log In / Sign Up */}
+        <div
+          style={{
+            display: 'flex',
+            backgroundColor: '#191919',
+            padding: '4px',
+            borderRadius: '9999px',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            marginBottom: '1.5rem',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => switchMode('login')}
             style={{
-              backgroundColor: 'rgba(34, 197, 94, 0.1)',
-              border: '1px solid rgba(34, 197, 94, 0.3)',
-              borderRadius: '12px',
-              padding: '1.5rem',
-              color: '#4ADE80',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '0.5rem',
+              flex: 1,
+              padding: '0.55rem 0',
+              borderRadius: '9999px',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '0.84rem',
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              transition: 'all 0.2s',
+              backgroundColor: mode === 'login' ? 'var(--accent-gold)' : 'transparent',
+              color: mode === 'login' ? '#0A0A0A' : 'var(--text-secondary)',
             }}
           >
-            <Check size={28} />
-            <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>Magic Sign-In Link Sent!</p>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Check your inbox to finish signing in.</p>
+            Log In
+          </button>
+          <button
+            type="button"
+            onClick={() => switchMode('signup')}
+            style={{
+              flex: 1,
+              padding: '0.55rem 0',
+              borderRadius: '9999px',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '0.84rem',
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              transition: 'all 0.2s',
+              backgroundColor: mode === 'signup' ? 'var(--accent-gold)' : 'transparent',
+              color: mode === 'signup' ? '#0A0A0A' : 'var(--text-secondary)',
+            }}
+          >
+            Sign Up
+          </button>
+        </div>
+
+        {/* Inline Error Notice */}
+        {error && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              borderRadius: '10px',
+              padding: '0.65rem 0.9rem',
+              color: '#F87171',
+              fontSize: '0.82rem',
+              marginBottom: '1.15rem',
+              textAlign: 'left',
+            }}
+          >
+            <AlertCircle size={16} style={{ flexShrink: 0 }} />
+            <span>{error}</span>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <button
-              type="button"
-              onClick={() => {
-                setSubmitted(true);
-                setTimeout(() => {
-                  setSubmitted(false);
-                  onClose();
-                }, 1500);
-              }}
-              className="btn-secondary"
+        )}
+
+        {/* Inline Success Notice */}
+        {successMsg && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              backgroundColor: 'rgba(34, 197, 94, 0.12)',
+              border: '1px solid rgba(34, 197, 94, 0.35)',
+              borderRadius: '10px',
+              padding: '0.65rem 0.9rem',
+              color: '#4ADE80',
+              fontSize: '0.82rem',
+              marginBottom: '1.15rem',
+              textAlign: 'left',
+            }}
+          >
+            <Check size={16} style={{ flexShrink: 0 }} />
+            <span>{successMsg}</span>
+          </div>
+        )}
+
+        {/* Auth Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+          {/* Name Field (Sign Up only) */}
+          {mode === 'signup' && (
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                  marginBottom: '0.35rem',
+                  textAlign: 'left',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                Full Name
+              </label>
+              <div style={{ position: 'relative' }}>
+                <User
+                  size={16}
+                  style={{
+                    position: 'absolute',
+                    left: '1rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--text-tertiary)',
+                  }}
+                />
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Alex Chen"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#191919',
+                    border: '1px solid var(--border-card)',
+                    borderRadius: '10px',
+                    padding: '0.7rem 1rem 0.7rem 2.6rem',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.86rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Email Field */}
+          <div>
+            <label
               style={{
-                width: '100%',
-                padding: '0.75rem',
-                fontSize: '0.88rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.65rem',
+                display: 'block',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                marginBottom: '0.35rem',
+                textAlign: 'left',
+                letterSpacing: '0.02em',
               }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24">
-                <path
-                  fill="#EA4335"
-                  d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
-                />
-                <path
-                  fill="#4285F4"
-                  d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5.1 3.7-8.9z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.8 0 12s.7 3.3 1.9 5.7l3.7-2.9z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"
-                />
-              </svg>
-              <span>Continue with Google</span>
-            </button>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.5rem 0' }}>
-              <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.08)' }} />
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>or</span>
-              <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.08)' }} />
+              Email Address
+            </label>
+            <div style={{ position: 'relative' }}>
+              <Mail
+                size={16}
+                style={{
+                  position: 'absolute',
+                  left: '1rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--text-tertiary)',
+                }}
+              />
+              <input
+                type="email"
+                required
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={{
+                  width: '100%',
+                  backgroundColor: '#191919',
+                  border: '1px solid var(--border-card)',
+                  borderRadius: '10px',
+                  padding: '0.7rem 1rem 0.7rem 2.6rem',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.86rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
             </div>
+          </div>
 
-            <input
-              type="email"
-              required
-              placeholder="candidate@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+          {/* Password Field */}
+          <div>
+            <label
               style={{
-                width: '100%',
-                backgroundColor: '#191919',
-                border: '1px solid var(--border-card)',
-                borderRadius: '9999px',
-                padding: '0.75rem 1.25rem',
-                color: 'var(--text-primary)',
-                fontSize: '0.88rem',
-                outline: 'none',
+                display: 'block',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                marginBottom: '0.35rem',
+                textAlign: 'left',
+                letterSpacing: '0.02em',
               }}
-            />
+            >
+              Password
+            </label>
+            <div style={{ position: 'relative' }}>
+              <Lock
+                size={16}
+                style={{
+                  position: 'absolute',
+                  left: '1rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--text-tertiary)',
+                }}
+              />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                minLength={6}
+                placeholder="At least 6 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{
+                  width: '100%',
+                  backgroundColor: '#191919',
+                  border: '1px solid var(--border-card)',
+                  borderRadius: '10px',
+                  padding: '0.7rem 2.6rem 0.7rem 2.6rem',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.86rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '0.85rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-tertiary)',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                }}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
 
-            <button type="submit" className="btn-primary" style={{ width: '100%', padding: '0.75rem' }}>
-              <span>Send Magic Link</span>
-              <ArrowRight size={15} />
-            </button>
-          </form>
-        )}
+          {/* Confirm Password Field (Sign Up only) */}
+          {mode === 'signup' && (
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                  marginBottom: '0.35rem',
+                  textAlign: 'left',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                Confirm Password
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Lock
+                  size={16}
+                  style={{
+                    position: 'absolute',
+                    left: '1rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--text-tertiary)',
+                  }}
+                />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  minLength={6}
+                  placeholder="Repeat your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#191919',
+                    border: '1px solid var(--border-card)',
+                    borderRadius: '10px',
+                    padding: '0.7rem 1rem 0.7rem 2.6rem',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.86rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Submit CTA */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary"
+            style={{
+              width: '100%',
+              padding: '0.78rem',
+              marginTop: '0.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              fontSize: '0.88rem',
+              fontWeight: 600,
+              opacity: loading ? 0.7 : 1,
+              cursor: loading ? 'wait' : 'pointer',
+            }}
+          >
+            <span>{loading ? 'Processing...' : mode === 'login' ? 'Sign In' : 'Create Account'}</span>
+            {!loading && <ArrowRight size={15} />}
+          </button>
+        </form>
+
+        {/* Bottom Switcher */}
+        <p
+          style={{
+            color: 'var(--text-secondary)',
+            fontSize: '0.8rem',
+            marginTop: '1.25rem',
+            textAlign: 'center',
+          }}
+        >
+          {mode === 'login' ? (
+            <>
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={() => switchMode('signup')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--accent-gold)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: 0,
+                  textDecoration: 'underline',
+                }}
+              >
+                Sign up
+              </button>
+            </>
+          ) : (
+            <>
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => switchMode('login')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--accent-gold)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: 0,
+                  textDecoration: 'underline',
+                }}
+              >
+                Log in
+              </button>
+            </>
+          )}
+        </p>
       </div>
     </div>
   );

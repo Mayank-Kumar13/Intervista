@@ -8,6 +8,9 @@ export default function Navbar({
   onNavigate,
   onStartInterview,
   onOpenLogin,
+  onOpenSignup,
+  currentUser,
+  onLogout,
   onOpenContact,
   onNavigateToDashboard,
   onNavigateToHome,
@@ -523,17 +526,84 @@ export default function Navbar({
             gap: '0.85rem',
           }}
         >
-          <button
-            onClick={onOpenLogin}
-            className="btn-ghost-outline"
-            style={{
-              padding: '0.52rem 1.25rem',
-              fontSize: '0.86rem',
-              color: 'var(--text-primary)',
-            }}
-          >
-            Log in
-          </button>
+          {currentUser ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div
+                onClick={() => (onNavigate ? onNavigate('dashboard') : onNavigateToDashboard && onNavigateToDashboard())}
+                title={currentUser.email}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.35rem 0.85rem',
+                  backgroundColor: 'rgba(217, 183, 122, 0.1)',
+                  border: '1px solid rgba(217, 183, 122, 0.3)',
+                  borderRadius: '9999px',
+                  color: 'var(--accent-gold)',
+                  fontSize: '0.84rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                <span
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--accent-gold)',
+                    color: '#0A0A0A',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                </span>
+                <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {currentUser.name || currentUser.email}
+                </span>
+              </div>
+              <button
+                onClick={onLogout}
+                className="btn-ghost-outline"
+                style={{
+                  padding: '0.52rem 1.1rem',
+                  fontSize: '0.84rem',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={onOpenLogin}
+                className="btn-ghost-outline"
+                style={{
+                  padding: '0.52rem 1.15rem',
+                  fontSize: '0.86rem',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                Log In
+              </button>
+              <button
+                onClick={onOpenSignup || onOpenLogin}
+                className="btn-ghost-outline"
+                style={{
+                  padding: '0.52rem 1.15rem',
+                  fontSize: '0.86rem',
+                  borderColor: 'var(--accent-gold)',
+                  color: 'var(--accent-gold)',
+                }}
+              >
+                Sign Up
+              </button>
+            </>
+          )}
           <button
             onClick={() => onStartInterview()}
             className="btn-primary"
@@ -619,24 +689,55 @@ export default function Navbar({
             </a>
           );
         })}
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-          <button
-            onClick={() => {
-              setMobileMenuOpen(false);
-              onOpenLogin();
-            }}
-            className="btn-ghost-outline"
-            style={{ flex: 1 }}
-          >
-            Log in
-          </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+          {currentUser ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--accent-gold)' }}>
+                👤 {currentUser.name || currentUser.email}
+              </span>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (onLogout) onLogout();
+                }}
+                className="btn-ghost-outline"
+                style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenLogin();
+                }}
+                className="btn-ghost-outline"
+                style={{ flex: 1 }}
+              >
+                Log In
+              </button>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (onOpenSignup) onOpenSignup();
+                  else onOpenLogin();
+                }}
+                className="btn-ghost-outline"
+                style={{ flex: 1, borderColor: 'var(--accent-gold)', color: 'var(--accent-gold)' }}
+              >
+                Sign Up
+              </button>
+            </div>
+          )}
           <button
             onClick={() => {
               setMobileMenuOpen(false);
               onStartInterview();
             }}
             className="btn-primary"
-            style={{ flex: 1 }}
+            style={{ width: '100%' }}
           >
             Start Interview
             <ArrowRight size={15} />

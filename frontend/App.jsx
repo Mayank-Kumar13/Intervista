@@ -20,8 +20,12 @@ import SampleReportModal from './components/SampleReportModal';
 import AuthModal from './components/AuthModal';
 import LegalModal from './components/LegalModal';
 import ContactModal from './components/ContactModal';
+import { getCurrentUser, logoutUser } from './utils/auth';
 
 export default function App() {
+  // Current authenticated user session
+  const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
+
   // Page / View State ('home' | 'dashboard' | 'companies' | 'plans')
   const [currentView, setCurrentView] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -47,6 +51,7 @@ export default function App() {
   const [reportData, setReportData] = useState(null);
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState('login');
   const [legalModalOpen, setLegalModalOpen] = useState(false);
   const [legalTopic, setLegalTopic] = useState('');
   const [contactModalOpen, setContactModalOpen] = useState(false);
@@ -56,7 +61,13 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
-      if (hash.startsWith('#companies')) {
+      if (hash === '#login') {
+        setAuthModalMode('login');
+        setAuthModalOpen(true);
+      } else if (hash === '#signup') {
+        setAuthModalMode('signup');
+        setAuthModalOpen(true);
+      } else if (hash.startsWith('#companies')) {
         setCurrentView('companies');
         const parts = hash.split('/');
         if (parts[1]) {
@@ -70,6 +81,15 @@ export default function App() {
         setCurrentView('home');
       }
     };
+
+    // Check hash on initial mount
+    if (window.location.hash === '#login') {
+      setAuthModalMode('login');
+      setAuthModalOpen(true);
+    } else if (window.location.hash === '#signup') {
+      setAuthModalMode('signup');
+      setAuthModalOpen(true);
+    }
 
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
@@ -165,6 +185,22 @@ export default function App() {
     setLegalModalOpen(true);
   };
 
+  const handleOpenAuth = (mode = 'login') => {
+    setAuthModalMode(mode);
+    setAuthModalOpen(true);
+  };
+
+  const handleAuthSuccess = (user) => {
+    setCurrentUser(user);
+    handleNavigate('dashboard');
+  };
+
+  const handleLogout = () => {
+    logoutUser();
+    setCurrentUser(null);
+    handleNavigate('home');
+  };
+
   return (
     <div className="intervista-app">
       {/* Cinematic Intro & Star Blink Loading Screen */}
@@ -174,9 +210,12 @@ export default function App() {
       <Navbar
         currentPage={currentView}
         currentView={currentView}
+        currentUser={currentUser}
+        onLogout={handleLogout}
         onNavigate={handleNavigate}
         onStartInterview={() => handleStartInterview()}
-        onOpenLogin={() => setAuthModalOpen(true)}
+        onOpenLogin={() => handleOpenAuth('login')}
+        onOpenSignup={() => handleOpenAuth('signup')}
         onOpenContact={() => setContactModalOpen(true)}
         onNavigateToDashboard={handleNavigateToDashboard}
         onNavigateToHome={handleNavigateToHome}
@@ -299,6 +338,8 @@ export default function App() {
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
+        initialMode={authModalMode}
+        onAuthSuccess={handleAuthSuccess}
       />
 
       <LegalModal
