@@ -11,6 +11,10 @@ import {
   Clock,
   Layers,
   Award,
+  FileText,
+  Upload,
+  X,
+  FileCheck,
 } from 'lucide-react';
 
 const COMPANIES = [
@@ -79,6 +83,15 @@ export default function MockInterviewSetupPage({ onLaunchSession, onBackToOvervi
   const [experienceLevel, setExperienceLevel] = useState('Mid Level (2-5 yrs)');
   const [duration, setDuration] = useState('30 min');
   const [customNotes, setCustomNotes] = useState('');
+
+  // Resume-Based Interview state
+  const [resumeModalOpen, setResumeModalOpen] = useState(false);
+  const [resumeFileName, setResumeFileName] = useState('');
+  const [resumeText, setResumeText] = useState('');
+  const [resumeRole, setResumeRole] = useState('Software Engineer');
+  const [resumeCompany, setResumeCompany] = useState('Google');
+  const [isAnalyzingResume, setIsAnalyzingResume] = useState(false);
+  const [resumeParsed, setResumeParsed] = useState(false);
 
   // Audio testing hardware state
   const [micTesting, setMicTesting] = useState(false);
@@ -164,6 +177,38 @@ export default function MockInterviewSetupPage({ onLaunchSession, onBackToOvervi
     }
   };
 
+  const handleResumeFileUpload = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      setResumeFileName(file.name);
+      setIsAnalyzingResume(true);
+      setTimeout(() => {
+        setIsAnalyzingResume(false);
+        setResumeParsed(true);
+      }, 700);
+    }
+  };
+
+  const handleResumeLaunch = () => {
+    stopMicTest();
+    setResumeModalOpen(false);
+    if (onLaunchSession) {
+      onLaunchSession({
+        role: resumeRole || jobRole,
+        company: resumeCompany || targetCompany,
+        level: experienceLevel.split(' ')[0],
+        language: domainTopic,
+        topic: 'Resume Deep Dive',
+        interviewType: 'Resume-Based Technical Interview',
+        duration,
+        notes: resumeText || (resumeFileName ? `Resume attached: ${resumeFileName}` : 'Comprehensive resume projects evaluation'),
+        isResumeBased: true,
+        resumeName: resumeFileName || 'Candidate Resume',
+        micEnabled: micTested || micTesting,
+      });
+    }
+  };
+
   return (
     <div style={{ maxWidth: '1280px', width: '100%', margin: '0 auto', color: 'var(--text-primary)' }}>
       {/* Top Navigation & Breadcrumb */}
@@ -213,7 +258,39 @@ export default function MockInterviewSetupPage({ onLaunchSession, onBackToOvervi
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.65rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Resume Based Interview Button */}
+            <button
+              onClick={() => setResumeModalOpen(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.55rem',
+                padding: '0.55rem 1.15rem',
+                borderRadius: '10px',
+                backgroundColor: 'rgba(217, 183, 122, 0.12)',
+                border: '1px solid var(--accent-gold)',
+                color: 'var(--accent-gold)',
+                fontSize: '0.84rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 0 16px rgba(217, 183, 122, 0.25)',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--accent-gold)';
+                e.currentTarget.style.color = '#080808';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(217, 183, 122, 0.12)';
+                e.currentTarget.style.color = 'var(--accent-gold)';
+              }}
+            >
+              <FileText size={16} />
+              <span>Resume Based Interview</span>
+              <Sparkles size={13} />
+            </button>
+
             <span
               style={{
                 display: 'inline-flex',
@@ -666,6 +743,79 @@ export default function MockInterviewSetupPage({ onLaunchSession, onBackToOvervi
           />
         </div>
 
+        {/* Resume Based Interview Banner */}
+        <div
+          style={{
+            marginTop: '1.5rem',
+            marginBottom: '1.75rem',
+            padding: '1rem 1.25rem',
+            borderRadius: '12px',
+            backgroundColor: 'rgba(217, 183, 122, 0.05)',
+            border: '1px dashed rgba(217, 183, 122, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '1rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(217, 183, 122, 0.12)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--accent-gold)',
+                flexShrink: 0,
+              }}
+            >
+              <FileText size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#FFFFFF' }}>
+                Want interview questions based directly on your resume?
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
+                Upload your resume to let the AI drill you on your exact past projects, architectures, and metrics.
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setResumeModalOpen(true)}
+            style={{
+              padding: '0.55rem 1.15rem',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(217, 183, 122, 0.15)',
+              border: '1px solid var(--accent-gold)',
+              color: 'var(--accent-gold)',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--accent-gold)';
+              e.currentTarget.style.color = '#080808';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(217, 183, 122, 0.15)';
+              e.currentTarget.style.color = 'var(--accent-gold)';
+            }}
+          >
+            <FileText size={14} />
+            <span>Resume Based Interview</span>
+            <ArrowRight size={13} />
+          </button>
+        </div>
+
         {/* Footer Row: Mic Check & Big Launch Button */}
         <div
           style={{
@@ -747,6 +897,267 @@ export default function MockInterviewSetupPage({ onLaunchSession, onBackToOvervi
           </button>
         </div>
       </div>
+
+      {/* Resume Based Interview Modal */}
+      {resumeModalOpen && (
+        <div
+          className="modal-overlay"
+          onClick={() => setResumeModalOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.82)',
+            backdropFilter: 'blur(10px)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+          }}
+        >
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#0d1117',
+              border: '1px solid rgba(217, 183, 122, 0.35)',
+              borderRadius: '20px',
+              maxWidth: '620px',
+              width: '100%',
+              padding: '2rem',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(217, 183, 122, 0.1)',
+              position: 'relative',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(217, 183, 122, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--accent-gold)',
+                  }}
+                >
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#FFFFFF' }}>
+                    Resume Based Interview
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', margin: '2px 0 0 0' }}>
+                    Personalized AI simulation calibrated to your resume & projects
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setResumeModalOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Target Role & Company for resume */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                  Target Company
+                </label>
+                <select
+                  value={resumeCompany}
+                  onChange={(e) => setResumeCompany(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    backgroundColor: '#080c14',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '8px',
+                    color: '#FFF',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  {COMPANIES.map((c) => (
+                    <option key={c} value={c} style={{ backgroundColor: '#0e131d' }}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                  Target Role
+                </label>
+                <select
+                  value={resumeRole}
+                  onChange={(e) => setResumeRole(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    backgroundColor: '#080c14',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '8px',
+                    color: '#FFF',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  {JOB_ROLES.map((r) => (
+                    <option key={r} value={r} style={{ backgroundColor: '#0e131d' }}>{r}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* File Upload Zone */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                Upload Resume (PDF, DOCX, TXT)
+              </label>
+              <label
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '1.75rem',
+                  border: resumeFileName ? '1px solid #22C55E' : '1px dashed rgba(217, 183, 122, 0.4)',
+                  borderRadius: '12px',
+                  backgroundColor: resumeFileName ? 'rgba(34, 197, 94, 0.05)' : '#080c14',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt"
+                  onChange={handleResumeFileUpload}
+                  style={{ display: 'none' }}
+                />
+                {resumeFileName ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#22C55E' }}>
+                    <CheckCircle2 size={20} />
+                    <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{resumeFileName}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>(Click to change)</span>
+                  </div>
+                ) : (
+                  <>
+                    <Upload size={24} color="var(--accent-gold)" style={{ marginBottom: '0.5rem' }} />
+                    <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#FFFFFF' }}>
+                      Click or drag & drop your resume file
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                      Supports PDF, Word, or plain text
+                    </div>
+                  </>
+                )}
+              </label>
+            </div>
+
+            {/* Paste Text / Key Highlights Area */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                Or Paste Resume Text / Project Summary
+              </label>
+              <textarea
+                rows={4}
+                placeholder="Paste key achievements, tech stack, and project bullet points here (e.g. Built microservices in Go & Kafka handling 10k RPS, migrated DB to Postgres)..."
+                value={resumeText}
+                onChange={(e) => setResumeText(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 0.95rem',
+                  backgroundColor: '#080c14',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '10px',
+                  color: '#FFFFFF',
+                  fontSize: '0.85rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  resize: 'vertical',
+                }}
+              />
+            </div>
+
+            {/* AI Analysis Preview Tag */}
+            {(resumeFileName || resumeText.length > 20) && (
+              <div
+                style={{
+                  marginBottom: '1.5rem',
+                  padding: '0.85rem 1rem',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(217, 183, 122, 0.08)',
+                  border: '1px solid rgba(217, 183, 122, 0.25)',
+                  fontSize: '0.8rem',
+                  color: 'var(--accent-gold)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                <Sparkles size={16} />
+                <span>
+                  AI Resume Parser Ready: Questions will probe your listed architecture decisions, technical trade-offs, and project impact.
+                </span>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={() => setResumeModalOpen(false)}
+                style={{
+                  padding: '0.75rem 1.25rem',
+                  borderRadius: '10px',
+                  backgroundColor: 'transparent',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.88rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleResumeLaunch}
+                style={{
+                  padding: '0.75rem 1.6rem',
+                  borderRadius: '10px',
+                  backgroundColor: 'var(--accent-gold)',
+                  border: 'none',
+                  color: '#080808',
+                  fontSize: '0.88rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 4px 18px rgba(217, 183, 122, 0.35)',
+                }}
+              >
+                <span>Start Resume-Based Interview</span>
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Responsive Breakpoints Style */}
       <style>{`

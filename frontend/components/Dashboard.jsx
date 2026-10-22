@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import MockInterviewSetupPage from './MockInterviewSetupPage';
+import CareerPrepDSAPage from './CareerPrepDSAPage';
 import {
   Home,
   Mic,
@@ -300,11 +301,8 @@ export default function Dashboard({
       icon: Briefcase,
       id: 'career-prep',
       action: () => {
-        if (onNavigateToCompanies) {
-          onNavigateToCompanies();
-        } else {
-          window.location.hash = '#companies';
-        }
+        setActiveNav('Career Prep');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       },
     },
   ];
@@ -390,6 +388,7 @@ export default function Dashboard({
             return (
               <button
                 key={item.label}
+                id={`nav-item-${item.id}`}
                 onClick={() => {
                   setActiveNav(item.label);
                   if (item.action) item.action();
@@ -509,6 +508,7 @@ export default function Dashboard({
           {navItems.map((item) => (
             <button
               key={item.label}
+              id={`mobile-nav-item-${item.id}`}
               onClick={() => {
                 setActiveNav(item.label);
                 if (item.action) item.action();
@@ -535,6 +535,17 @@ export default function Dashboard({
               onLaunchSession={(config) => {
                 if (onLaunchSession) onLaunchSession(config);
                 else if (onStartInterview) onStartInterview(config?.role || 'Software Engineer');
+              }}
+              onBackToOverview={() => {
+                setActiveNav('Overview');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
+          ) : activeNav === 'Career Prep' ? (
+            <CareerPrepDSAPage
+              onStartInterview={(title) => {
+                setActiveNav('Mock Interview');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               onBackToOverview={() => {
                 setActiveNav('Overview');

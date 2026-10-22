@@ -53,9 +53,29 @@ const SAMPLE_QUESTIONS = {
   ],
 };
 
+const RESUME_QUESTIONS = [
+  {
+    q: 'Based on your uploaded resume, walk me through the most technically challenging project you led. What architectural decisions or trade-offs did you make?',
+    hint: 'Focus on system design choices, bottlenecks encountered, metrics improved, and how you evaluated alternative tech stacks.',
+    idealAnswer: 'I outline the architecture, explain why we chose specific databases and patterns over others, discuss performance bottlenecks, and quantify the resulting latency or cost reductions.',
+  },
+  {
+    q: 'Looking at your past work experience, describe a critical production incident or bug you encountered. How did you diagnose, resolve, and prevent it from recurring?',
+    hint: 'Use the STAR method: Situation, Task, Action (monitoring, root cause, postmortem), and Result (runbooks, tests).',
+    idealAnswer: 'I tracked error spikes using distributed tracing, pinpointed a connection pool leak under heavy load, deployed an emergency fix, and authored automated load tests with alerts.',
+  },
+  {
+    q: 'How does your background and the specific technical skill set highlighted in your resume align with this target role and company?',
+    hint: 'Highlight core technical competencies, fast learning curve, and direct value you will bring to their engineering team.',
+    idealAnswer: 'My hands-on experience with modern scalable architectures and rapid prototyping directly aligns with their team goals and technical stack.',
+  },
+];
+
 export default function LiveDemoModal({ isOpen, onClose, config, onFinishInterview }) {
   const currentRole = config?.role || 'Software Engineer';
-  const questions = SAMPLE_QUESTIONS[currentRole] || SAMPLE_QUESTIONS['Software Engineer'];
+  const questions = config?.isResumeBased
+    ? RESUME_QUESTIONS
+    : (SAMPLE_QUESTIONS[currentRole] || SAMPLE_QUESTIONS['Software Engineer']);
 
   const [questionIdx, setQuestionIdx] = useState(0);
   const [seconds, setSeconds] = useState(0);
@@ -206,8 +226,17 @@ export default function LiveDemoModal({ isOpen, onClose, config, onFinishIntervi
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
             <span className="pulse-dot" />
             <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                {currentRole} Mock Interview
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                {config?.isResumeBased ? (
+                  <>
+                    <span>Resume-Based Interview</span>
+                    <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(217,183,122,0.15)', color: 'var(--accent-gold)', border: '1px solid rgba(217,183,122,0.3)', fontWeight: 500 }}>
+                      {config?.role || 'Resume Profile'}
+                    </span>
+                  </>
+                ) : (
+                  `${currentRole} Mock Interview`
+                )}
               </h3>
               <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
                 <span style={{ fontSize: '0.68rem', color: 'var(--accent-gold)' }}>
