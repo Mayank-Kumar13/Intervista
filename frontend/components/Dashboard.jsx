@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import MockInterviewSetupPage from './MockInterviewSetupPage';
 import {
   Home,
   Mic,
@@ -135,6 +136,7 @@ const TOPICS_TO_WORK_ON = [
 
 export default function Dashboard({
   onStartInterview,
+  onLaunchSession,
   onViewReport,
   onBackToHome,
   onNavigateToCompanies,
@@ -266,6 +268,7 @@ export default function Dashboard({
       icon: Home,
       id: 'overview',
       action: () => {
+        setActiveNav('Overview');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
     },
@@ -274,7 +277,8 @@ export default function Dashboard({
       icon: Mic,
       id: 'mock-interview',
       action: () => {
-        if (onStartInterview) onStartInterview('Software Engineer');
+        setActiveNav('Mock Interview');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       },
     },
     {
@@ -282,10 +286,13 @@ export default function Dashboard({
       icon: History,
       id: 'history',
       action: () => {
-        const el = document.getElementById('recent-interviews');
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        setActiveNav('Overview');
+        setTimeout(() => {
+          const el = document.getElementById('recent-interviews');
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
       },
     },
     {
@@ -523,66 +530,82 @@ export default function Dashboard({
         </div>
 
         <main style={{ padding: '2.5rem 3rem', maxWidth: '1360px', width: '100%', margin: '0 auto' }} className="dashboard-main-content">
-          {/* =========================================================================
-              B. WELCOME HEADER & MOTIVATIONAL CARD
-              ========================================================================= */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              gap: '2rem',
-              marginBottom: '2.5rem',
-              flexWrap: 'wrap',
-            }}
-            className="welcome-header-row"
-          >
-            {/* Left: Greeting, status & Start New Interview CTA */}
-            <div style={{ maxWidth: '620px' }}>
-              <h1
-                className="serif-heading"
+          {activeNav === 'Mock Interview' ? (
+            <MockInterviewSetupPage
+              onLaunchSession={(config) => {
+                if (onLaunchSession) onLaunchSession(config);
+                else if (onStartInterview) onStartInterview(config?.role || 'Software Engineer');
+              }}
+              onBackToOverview={() => {
+                setActiveNav('Overview');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
+          ) : (
+            <>
+              {/* =========================================================================
+                  B. WELCOME HEADER & MOTIVATIONAL CARD
+                  ========================================================================= */}
+              <div
                 style={{
-                  fontSize: 'clamp(2.2rem, 3.8vw, 3rem)',
-                  lineHeight: 1.15,
-                  marginBottom: '0.75rem',
-                  letterSpacing: '-0.02em',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: '2rem',
+                  marginBottom: '2.5rem',
+                  flexWrap: 'wrap',
                 }}
+                className="welcome-header-row"
               >
-                Welcome Back, <span style={{ color: 'var(--accent-gold)', fontStyle: 'italic', fontFamily: 'var(--font-serif)' }}>Mayankkk</span>
-              </h1>
+                {/* Left: Greeting, status & Start New Interview CTA */}
+                <div style={{ maxWidth: '620px' }}>
+                  <h1
+                    className="serif-heading"
+                    style={{
+                      fontSize: 'clamp(2.2rem, 3.8vw, 3rem)',
+                      lineHeight: 1.15,
+                      marginBottom: '0.75rem',
+                      letterSpacing: '-0.02em',
+                    }}
+                  >
+                    Welcome Back, <span style={{ color: 'var(--accent-gold)', fontStyle: 'italic', fontFamily: 'var(--font-serif)' }}>Mayankkk</span>
+                  </h1>
 
-              <p
-                style={{
-                  color: 'var(--text-secondary)',
-                  fontSize: '0.96rem',
-                  lineHeight: 1.55,
-                  marginBottom: '1.6rem',
-                }}
-              >
-                You have completed 1 mock interview session. Keep pushing to improve your score!
-              </p>
+                  <p
+                    style={{
+                      color: 'var(--text-secondary)',
+                      fontSize: '0.96rem',
+                      lineHeight: 1.55,
+                      marginBottom: '1.6rem',
+                    }}
+                  >
+                    You have completed 1 mock interview session. Keep pushing to improve your score!
+                  </p>
 
-              {/* + Start New Interview Button */}
-              <button
-                onClick={() => onStartInterview && onStartInterview('Software Engineer')}
-                className="btn-primary"
-                style={{
-                  padding: '0.75rem 1.6rem',
-                  fontSize: '0.92rem',
-                  fontWeight: 600,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.55rem',
-                  backgroundColor: 'var(--text-primary)',
-                  color: '#080808',
-                  borderRadius: '9999px',
-                  boxShadow: '0 4px 18px rgba(246, 240, 231, 0.15)',
-                }}
-              >
-                <Plus size={16} strokeWidth={2.5} />
-                <span>Start New Interview</span>
-                <ArrowRight size={15} />
-              </button>
+                  {/* + Start New Interview Button */}
+                  <button
+                    onClick={() => {
+                      setActiveNav('Mock Interview');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="btn-primary"
+                    style={{
+                      padding: '0.75rem 1.6rem',
+                      fontSize: '0.92rem',
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.55rem',
+                      backgroundColor: 'var(--text-primary)',
+                      color: '#080808',
+                      borderRadius: '9999px',
+                      boxShadow: '0 4px 18px rgba(246, 240, 231, 0.15)',
+                    }}
+                  >
+                    <Plus size={16} strokeWidth={2.5} />
+                    <span>Start New Interview</span>
+                    <ArrowRight size={15} />
+                  </button>
             </div>
 
             {/* Right: Notification Icon, Avatar & Motivational Card */}
@@ -1305,7 +1328,9 @@ export default function Dashboard({
               </div>
             </section>
           </div>
-        </main>
+        </>
+      )}
+    </main>
       </div>
 
       {/* Responsive Breakpoints Style */}

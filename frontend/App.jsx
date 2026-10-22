@@ -186,6 +186,7 @@ export default function App() {
       {currentView === 'dashboard' && (
         <Dashboard
           onStartInterview={handleStartInterview}
+          onLaunchSession={handleLaunchSession}
           onViewReport={handleViewSampleReport}
           onBackToHome={handleNavigateToHome}
           onNavigateToCompanies={() => handleNavigate('companies')}
