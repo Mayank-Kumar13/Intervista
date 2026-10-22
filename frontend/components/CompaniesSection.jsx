@@ -71,6 +71,7 @@ export default function CompaniesSection({
   const [progress, setProgress] = useState(loadProgress);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const contentRef = useRef(null);
+  const cardSwapWrapperRef = useRef(null);
 
   // Sync with prop if it changes
   useEffect(() => {
@@ -101,8 +102,8 @@ export default function CompaniesSection({
     saveProgress(progress);
   }, [progress]);
 
-  // Select company handler
-  const selectCompany = useCallback((id) => {
+  // Select company handler: animates to the selected company's card and scrolls to the card deck
+  const selectCompany = useCallback((id, shouldScrollToCards = true) => {
     setSelectedCompanyId(id);
     onCompanyChange?.(id);
     setActiveSection('overview');
@@ -110,10 +111,12 @@ export default function CompaniesSection({
     setDifficultyFilter('All');
     setExpandedQuestions({});
     setShowMobileSidebar(false);
-    // Scroll to content
-    setTimeout(() => {
-      contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+
+    if (shouldScrollToCards) {
+      setTimeout(() => {
+        cardSwapWrapperRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+    }
   }, [onCompanyChange]);
 
   // Toggle question solved state
@@ -245,16 +248,19 @@ export default function CompaniesSection({
         </div>
 
         {/* CardSwap Showcase */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginBottom: '4.5rem',
-          position: 'relative',
-          minHeight: '340px',
-          paddingTop: '2.5rem',
-          zIndex: 1,
-        }}
+        <div
+          ref={cardSwapWrapperRef}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '4.5rem',
+            position: 'relative',
+            minHeight: '340px',
+            paddingTop: '2.5rem',
+            zIndex: 1,
+          }}
           className="cardswap-wrapper"
         >
           <CardSwap
@@ -262,24 +268,31 @@ export default function CompaniesSection({
             height={220}
             cardDistance={28}
             verticalDistance={14}
-            delay={4500}
-            pauseOnHover={true}
+            autoPlay={false}
+            activeId={selectedCompanyId}
             skewAmount={3}
-            onCardClick={(idx) => selectCompany(FEATURED_COMPANY_IDS[idx])}
+            onCardClick={(cId) => selectCompany(cId, false)}
           >
-            {FEATURED_COMPANY_IDS.map((cId) => {
-              const company = COMPANIES.find(c => c.id === cId);
+            {COMPANIES.map((company) => {
+              const cId = company.id;
+              const isSelected = cId === selectedCompanyId;
+              const companyQs = [...company.reportedQuestions, ...company.practiceQuestions];
+              const companySolved = companyQs.filter(q => progress[q.id]?.solved).length;
               return (
-                <Card key={cId}>
+                <Card key={cId} id={cId} data-company-id={cId}>
                   <div style={{
                     height: '100%',
                     width: '100%',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
-                    padding: '1.5rem',
-                    background: `linear-gradient(135deg, rgba(${hexToRgb(company.brandColor)}, 0.15) 0%, var(--bg-card) 60%)`,
+                    padding: '1.4rem',
+                    background: `linear-gradient(135deg, rgba(${hexToRgb(company.brandColor)}, ${isSelected ? 0.22 : 0.12}) 0%, var(--bg-card) 65%)`,
                     position: 'relative',
+                    border: isSelected ? `1.5px solid ${company.brandColor}` : '1px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: isSelected ? `0 12px 35px rgba(${hexToRgb(company.brandColor)}, 0.25)` : '0 8px 25px rgba(0, 0, 0, 0.4)',
+                    borderRadius: '16px',
+                    transition: 'border 0.3s ease, box-shadow 0.3s ease',
                   }}>
                     {/* Brand accent bar */}
                     <div style={{
@@ -287,24 +300,45 @@ export default function CompaniesSection({
                       top: 0,
                       left: 0,
                       right: 0,
-                      height: '3px',
+                      height: '3.5px',
                       background: `linear-gradient(90deg, ${company.brandColor}, transparent)`,
                     }} />
 
                     <div>
                       <div style={{
-                        fontSize: '1.5rem',
-                        fontWeight: 700,
-                        color: company.brandColor,
-                        fontFamily: 'var(--font-sans)',
-                        marginBottom: '0.35rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '0.4rem',
                       }}>
-                        {company.name}
+                        <div style={{
+                          fontSize: '1.45rem',
+                          fontWeight: 700,
+                          color: company.brandColor,
+                          fontFamily: 'var(--font-sans)',
+                        }}>
+                          {company.name}
+                        </div>
+                        <span style={{
+                          fontSize: '0.7rem',
+                          padding: '0.2rem 0.55rem',
+                          borderRadius: '999px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          color: 'var(--text-secondary)',
+                          fontWeight: 500,
+                        }}>
+                          {companySolved}/{companyQs.length} solved
+                        </span>
                       </div>
                       <div style={{
-                        fontSize: '0.82rem',
+                        fontSize: '0.8rem',
                         color: 'var(--text-secondary)',
-                        lineHeight: 1.5,
+                        lineHeight: 1.45,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
                       }}>
                         {company.description}
                       </div>
@@ -314,16 +348,17 @@ export default function CompaniesSection({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
+                      marginTop: '0.65rem',
                     }}>
                       <div style={{
                         display: 'flex',
-                        gap: '0.5rem',
+                        gap: '0.45rem',
                         flexWrap: 'wrap',
                       }}>
                         {company.preparationFocus.slice(0, 3).map((f, i) => (
                           <span key={i} style={{
-                            fontSize: '0.65rem',
-                            padding: '0.2rem 0.5rem',
+                            fontSize: '0.64rem',
+                            padding: '0.2rem 0.45rem',
                             borderRadius: '9999px',
                             backgroundColor: 'rgba(255, 255, 255, 0.06)',
                             border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -333,7 +368,31 @@ export default function CompaniesSection({
                           </span>
                         ))}
                       </div>
-                      <ArrowRight size={16} style={{ color: company.brandColor, opacity: 0.7 }} />
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selectCompany(cId, false);
+                          setTimeout(() => {
+                            contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }, 60);
+                        }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          background: 'none',
+                          border: 'none',
+                          color: company.brandColor,
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          padding: '0.25rem 0.4rem',
+                        }}
+                      >
+                        <span>View Prep</span>
+                        <ArrowRight size={14} />
+                      </button>
                     </div>
                   </div>
                 </Card>
