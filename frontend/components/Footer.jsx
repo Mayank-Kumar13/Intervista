@@ -10,6 +10,13 @@ export default function Footer({ onOpenLegal, onSelectRole, onNavigate }) {
       }
       return;
     }
+    if (id === 'pricing' || id === 'plans') {
+      if (onNavigate) onNavigate('plans');
+      else {
+        window.location.hash = '#plans';
+      }
+      return;
+    }
     if (onNavigate) {
       onNavigate('home', id);
     } else {

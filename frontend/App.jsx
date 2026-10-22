@@ -6,6 +6,7 @@ import CompaniesSection from './components/CompaniesSection';
 import HowItWorks from './components/HowItWorks';
 import RoleCards from './components/RoleCards';
 import PricingSection from './components/PricingSection';
+import PlansPage from './components/PlansPage';
 import ReviewsSection from './components/ReviewsSection';
 import CtaBanner from './components/CtaBanner';
 import Footer from './components/Footer';
@@ -20,12 +21,13 @@ import LegalModal from './components/LegalModal';
 import ContactModal from './components/ContactModal';
 
 export default function App() {
-  // Page / View State ('home' | 'dashboard' | 'companies')
+  // Page / View State ('home' | 'dashboard' | 'companies' | 'plans')
   const [currentView, setCurrentView] = useState(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash;
       if (hash.startsWith('#companies')) return 'companies';
       if (hash === '#dashboard') return 'dashboard';
+      if (hash === '#plans' || hash === '#pricing') return 'plans';
     }
     return 'home';
   });
@@ -61,6 +63,8 @@ export default function App() {
         }
       } else if (hash === '#dashboard') {
         setCurrentView('dashboard');
+      } else if (hash === '#plans' || hash === '#pricing') {
+        setCurrentView('plans');
       } else {
         setCurrentView('home');
       }
@@ -77,6 +81,9 @@ export default function App() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (page === 'dashboard') {
       window.location.hash = '#dashboard';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (page === 'plans') {
+      window.location.hash = '#plans';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       if (sectionId && sectionId !== 'hero') {
@@ -208,6 +215,7 @@ export default function App() {
             <Hero
               onStartInterview={handleStartInterview}
               onWatchDemo={handleOpenDemo}
+              onNavigate={handleNavigate}
             />
 
             {/* Trusted Companies Strip (click any logo to open its preparation page) */}
@@ -224,14 +232,29 @@ export default function App() {
             {/* 5. Practice for Your Next Role */}
             <RoleCards onSelectRole={handleStartInterview} />
 
-            {/* 6. Plans & Pricing Section */}
-            <PricingSection onStartInterview={handleStartInterview} />
-
-            {/* 7. Student Feedback & Infinite Review Loop */}
+            {/* 6. Student Feedback & Infinite Review Loop */}
             <ReviewsSection />
 
-            {/* 8. Final CTA Banner */}
+            {/* 7. Final CTA Banner */}
             <CtaBanner onStartInterview={handleStartInterview} />
+          </main>
+
+          <Footer
+            onOpenLegal={handleOpenLegal}
+            onSelectRole={handleStartInterview}
+            onNavigate={handleNavigate}
+          />
+        </>
+      )}
+
+      {/* 4. DEDICATED PLANS & PRICING VIEW */}
+      {currentView === 'plans' && (
+        <>
+          <main style={{ minHeight: '80vh', paddingTop: 'var(--nav-height)' }}>
+            <PlansPage
+              onStartInterview={handleStartInterview}
+              onBackToHome={handleNavigateToHome}
+            />
           </main>
 
           <Footer

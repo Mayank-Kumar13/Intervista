@@ -43,7 +43,13 @@ export default function Navbar({
       return;
     }
 
-    // Navigating to a section on home (e.g. hero, pricing, reviews)
+    if (item.page === 'plans') {
+      if (onNavigate) onNavigate('plans');
+      else window.location.hash = '#plans';
+      return;
+    }
+
+    // Navigating to a section on home (e.g. hero, reviews)
     if (onNavigate) {
       onNavigate('home', item.id);
     } else if (onNavigateToHome) {
@@ -66,7 +72,7 @@ export default function Navbar({
     { label: 'HOME', page: 'home', id: 'hero' },
     { label: 'DASHBOARD', page: 'dashboard', id: 'dashboard' },
     { label: 'COMPANIES', page: 'companies', id: 'companies' },
-    { label: 'PLANS', page: 'home', id: 'pricing' },
+    { label: 'PLANS', page: 'plans', id: 'plans' },
     { label: 'REVIEWS', page: 'home', id: 'reviews' },
     { label: 'CONTACT US', id: 'contact', isContact: true },
   ];
@@ -154,6 +160,7 @@ export default function Navbar({
             const isActive =
               (item.page === 'companies' && activePage === 'companies') ||
               (item.page === 'dashboard' && activePage === 'dashboard') ||
+              (item.page === 'plans' && activePage === 'plans') ||
               (item.page === 'home' && item.id === 'hero' && activePage === 'home' && !scrolled);
 
             return (
@@ -267,6 +274,7 @@ export default function Navbar({
             const isActive =
               (item.page === 'companies' && activePage === 'companies') ||
               (item.page === 'dashboard' && activePage === 'dashboard') ||
+              (item.page === 'plans' && activePage === 'plans') ||
               (item.page === 'home' && item.id === 'hero' && activePage === 'home' && !scrolled);
 
             return (

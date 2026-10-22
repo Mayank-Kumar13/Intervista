@@ -2,7 +2,7 @@ import React from 'react';
 import { Mic, ArrowRight, Zap, MessageSquare, Target } from 'lucide-react';
 import LaptopMockup from './LaptopMockup';
 
-export default function Hero({ onStartInterview, onWatchDemo }) {
+export default function Hero({ onStartInterview, onWatchDemo, onNavigate }) {
   return (
     <section
       id="hero"
@@ -79,7 +79,13 @@ export default function Hero({ onStartInterview, onWatchDemo }) {
               </button>
 
               <a
-                href="#pricing"
+                href="#plans"
+                onClick={(e) => {
+                  if (onNavigate) {
+                    e.preventDefault();
+                    onNavigate('plans');
+                  }
+                }}
                 className="btn-secondary"
                 style={{
                   padding: '0.82rem 1.65rem',
