@@ -21,4 +21,22 @@ function requireAuth(req, res, next) {
   }
 }
 
-module.exports = { requireAuth };
+function optionalAuth(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    req.user = { id: 'guest_user', name: 'Guest Candidate', email: 'guest@intervista.ai' };
+    return next();
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    req.user = { id: 'guest_user', name: 'Guest Candidate', email: 'guest@intervista.ai' };
+    next();
+  }
+}
+
+module.exports = { requireAuth, optionalAuth };

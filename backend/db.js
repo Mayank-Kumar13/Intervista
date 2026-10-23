@@ -23,4 +23,10 @@ db.exec(`
   );
 `);
 
+// Ensure guest user exists for unauthenticated demo/guest interviews
+db.prepare(`
+  INSERT OR IGNORE INTO users (id, name, email, password_hash)
+  VALUES ('guest_user', 'Guest Candidate', 'guest@intervista.ai', 'none')
+`).run();
+
 module.exports = db;

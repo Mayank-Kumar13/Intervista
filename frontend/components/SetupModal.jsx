@@ -339,7 +339,7 @@ export default function SetupModal({ isOpen, onClose, initialRole, onStartSessio
             Cancel
           </button>
           <button onClick={handleLaunch} className="btn-primary" style={{ padding: '0.7rem 1.6rem' }}>
-            <span>Begin Mock Interview</span>
+            <span>Proceed to Device Setup</span>
             <ArrowRight size={16} />
           </button>
         </div>

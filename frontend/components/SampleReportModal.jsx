@@ -395,7 +395,7 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
         </div>
 
         {/* Key Strengths & Growth Areas */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '2.5rem' }} className="insights-grid">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '2rem' }} className="insights-grid">
           {/* Strengths */}
           <div
             style={{
@@ -450,6 +450,47 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
             </ul>
           </div>
         </div>
+
+        {/* Question-by-Question Breakdown (if available) */}
+        {reportData?.questionFeedback && reportData.questionFeedback.length > 0 && (
+          <div style={{ marginBottom: '2.5rem' }}>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Question Breakdown & Specific Advice
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {reportData.questionFeedback.map((qf, i) => (
+                <div
+                  key={i}
+                  style={{
+                    backgroundColor: '#141416',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '12px',
+                    padding: '1rem 1.25rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.4rem' }}>
+                    <div style={{ fontSize: '0.86rem', fontWeight: 600, color: '#FFFFFF' }}>
+                      {qf.question || `Prompt #${i + 1}`}
+                    </div>
+                    {qf.score && (
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-gold)', backgroundColor: 'rgba(217, 183, 122, 0.12)', padding: '2px 8px', borderRadius: '6px' }}>
+                        {qf.score}%
+                      </span>
+                    )}
+                  </div>
+                  {qf.candidateAnswer && (
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontStyle: 'italic' }}>
+                      "{qf.candidateAnswer.length > 180 ? qf.candidateAnswer.slice(0, 180) + '...' : qf.candidateAnswer}"
+                    </div>
+                  )}
+                  <div style={{ fontSize: '0.78rem', color: '#4ADE80', lineHeight: 1.45 }}>
+                    <strong>Interviewer Feedback:</strong> {qf.feedback}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>

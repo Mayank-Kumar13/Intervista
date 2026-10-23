@@ -14,8 +14,10 @@ import Footer from './components/Footer';
 import Dashboard from './components/Dashboard';
 import LoadingScreen from './components/LoadingScreen';
 
-// Modals
+// Modals & Flows
 import SetupModal from './components/SetupModal';
+import DeviceSetupModal from './components/DeviceSetupModal';
+import ImmersiveInterviewRoom from './components/ImmersiveInterviewRoom';
 import LiveDemoModal from './components/LiveDemoModal';
 import SampleReportModal from './components/SampleReportModal';
 import AuthModal from './components/AuthModal';
@@ -24,15 +26,15 @@ import ContactModal from './components/ContactModal';
 import { getCurrentUser, logoutUser } from './utils/auth';
 import { apiLogout } from './utils/api';
 
-
 export default function App() {
   // Current authenticated user session
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
 
-  // Page / View State ('home' | 'dashboard' | 'companies' | 'plans' | 'profile')
+  // Page / View State ('home' | 'dashboard' | 'companies' | 'plans' | 'profile' | 'interview')
   const [currentView, setCurrentView] = useState(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash;
+      if (hash.startsWith('#interview')) return 'interview';
       if (hash.startsWith('#companies')) return 'companies';
       if (hash === '#dashboard') return 'dashboard';
       if (hash === '#plans' || hash === '#pricing') return 'plans';
@@ -44,6 +46,17 @@ export default function App() {
   // Modal states
   const [setupModalOpen, setSetupModalOpen] = useState(false);
   const [selectedRoleForSetup, setSelectedRoleForSetup] = useState('Software Engineer');
+
+  // Device Setup (Hardware verification screen)
+  const [deviceSetupOpen, setDeviceSetupOpen] = useState(false);
+  const [interviewConfig, setInterviewConfig] = useState({
+    role: 'Software Engineer',
+    company: 'Google',
+    level: 'Mid Level',
+    interviewType: 'Technical Interview',
+    duration: '30 min',
+    interviewerPersona: 'chen',
+  });
 
   const [liveDemoOpen, setLiveDemoOpen] = useState(false);
   const [demoConfig, setDemoConfig] = useState({
@@ -71,6 +84,8 @@ export default function App() {
       } else if (hash === '#signup') {
         setAuthModalMode('signup');
         setAuthModalOpen(true);
+      } else if (hash.startsWith('#interview')) {
+        setCurrentView('interview');
       } else if (hash.startsWith('#companies')) {
         setCurrentView('companies');
         const parts = hash.split('/');
@@ -103,7 +118,9 @@ export default function App() {
 
   const handleNavigate = (page, sectionId) => {
     setCurrentView(page);
-    if (page === 'companies') {
+    if (page === 'interview') {
+      window.location.hash = '#interview';
+    } else if (page === 'companies') {
       window.location.hash = '#companies';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (page === 'dashboard') {
@@ -132,30 +149,54 @@ export default function App() {
   const handleNavigateToDashboard = () => handleNavigate('dashboard');
   const handleNavigateToHome = () => handleNavigate('home');
 
-  // Handlers
+  // Step 1: Start Interview triggers setup
   const handleStartInterview = (role = 'Software Engineer') => {
     setSelectedRoleForSetup(role === 'all' ? 'Software Engineer' : role);
     setSetupModalOpen(true);
   };
 
+  // Step 1 -> Step 2: From configuration modal, proceed to Hardware & Device Setup
   const handleLaunchSession = (config) => {
     setSetupModalOpen(false);
-    setDemoConfig(config);
-    setLiveDemoOpen(true);
+    setInterviewConfig(prev => ({
+      ...prev,
+      ...config,
+    }));
+    setDeviceSetupOpen(true);
   };
 
+  // Step 2 -> Step 3: From Device Setup, proceed directly into the Immersive AI Interview Room
+  const handleEnterInterviewRoom = (sessionSettings) => {
+    setDeviceSetupOpen(false);
+    setInterviewConfig(sessionSettings);
+    setCurrentView('interview');
+    window.location.hash = '#interview';
+  };
+
+  // Exit from Interview Room back to Dashboard
+  const handleExitInterviewRoom = () => {
+    handleNavigate('dashboard');
+  };
+
+  // Interview ended -> Present Comprehensive Evaluation Report
   const handleFinishInterview = (evaluationResults) => {
-    setLiveDemoOpen(false);
+    setCurrentView('dashboard');
+    window.location.hash = '#dashboard';
     setReportData(evaluationResults);
     setReportModalOpen(true);
   };
 
   const handleOpenDemo = () => {
-    setDemoConfig({
+    // Open device setup directly with standard software engineering configuration
+    setInterviewConfig({
       role: 'Software Engineer',
+      company: 'Google',
       level: 'Mid Level',
+      interviewType: 'Technical Interview',
+      duration: '30 min',
+      interviewerPersona: 'chen',
     });
-    setLiveDemoOpen(true);
+    setDeviceSetupOpen(true);
   };
 
   const handleViewSampleReport = (customData = null) => {
@@ -172,6 +213,7 @@ export default function App() {
         },
         strengths: customData.strengths,
         improvements: customData.improvements,
+        questionFeedback: customData.questionFeedback,
       });
     } else {
       setReportData({
@@ -211,26 +253,36 @@ export default function App() {
     handleNavigate('home');
   };
 
-
   return (
     <div className="intervista-app">
       {/* Cinematic Intro & Star Blink Loading Screen */}
       <LoadingScreen />
 
-      {/* Global Navigation Bar rendered at the top across all pages */}
-      <Navbar
-        currentPage={currentView}
-        currentView={currentView}
-        currentUser={currentUser}
-        onLogout={handleLogout}
-        onNavigate={handleNavigate}
-        onStartInterview={() => handleStartInterview()}
-        onOpenLogin={() => handleOpenAuth('login')}
-        onOpenSignup={() => handleOpenAuth('signup')}
-        onOpenContact={() => setContactModalOpen(true)}
-        onNavigateToDashboard={handleNavigateToDashboard}
-        onNavigateToHome={handleNavigateToHome}
-      />
+      {/* Global Navigation Bar rendered across standard views (hidden inside the Immersive Room for complete cinematic immersion) */}
+      {currentView !== 'interview' && (
+        <Navbar
+          currentPage={currentView}
+          currentView={currentView}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          onNavigate={handleNavigate}
+          onStartInterview={() => handleStartInterview()}
+          onOpenLogin={() => handleOpenAuth('login')}
+          onOpenSignup={() => handleOpenAuth('signup')}
+          onOpenContact={() => setContactModalOpen(true)}
+          onNavigateToDashboard={handleNavigateToDashboard}
+          onNavigateToHome={handleNavigateToHome}
+        />
+      )}
+
+      {/* 0. IMMERSIVE AI INTERVIEW ROOM (FIRST-PERSON VIEW) */}
+      {currentView === 'interview' && (
+        <ImmersiveInterviewRoom
+          config={interviewConfig}
+          onFinishInterview={handleFinishInterview}
+          onExitRoom={handleExitInterviewRoom}
+        />
+      )}
 
       {/* 1. DASHBOARD VIEW */}
       {currentView === 'dashboard' && (
@@ -275,7 +327,7 @@ export default function App() {
               onNavigate={handleNavigate}
             />
 
-            {/* Trusted Companies Strip (click any logo to open its preparation page) */}
+            {/* Trusted Companies Strip */}
             <CompanyLogos
               onSelectCompany={(companyId) => {
                 setTargetCompany(companyId);
@@ -344,7 +396,7 @@ export default function App() {
         </>
       )}
 
-      {/* Interactive Flow Modals (Shared across Home, Dashboard & Companies) */}
+      {/* Step 1: Configuration Modal */}
       <SetupModal
         isOpen={setupModalOpen}
         onClose={() => setSetupModalOpen(false)}
@@ -352,13 +404,15 @@ export default function App() {
         onStartSession={handleLaunchSession}
       />
 
-      <LiveDemoModal
-        isOpen={liveDemoOpen}
-        onClose={() => setLiveDemoOpen(false)}
-        config={demoConfig}
-        onFinishInterview={handleFinishInterview}
+      {/* Step 2: Device & Hardware Permission Setup Modal */}
+      <DeviceSetupModal
+        isOpen={deviceSetupOpen}
+        onClose={() => setDeviceSetupOpen(false)}
+        config={interviewConfig}
+        onEnterRoom={handleEnterInterviewRoom}
       />
 
+      {/* Step 4: Official Performance Report Modal */}
       <SampleReportModal
         isOpen={reportModalOpen}
         onClose={() => setReportModalOpen(false)}
@@ -366,6 +420,7 @@ export default function App() {
         onRetake={() => handleStartInterview(reportData?.role || 'Software Engineer')}
       />
 
+      {/* Additional Global Modals */}
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
