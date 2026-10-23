@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import MockInterviewSetupPage from './MockInterviewSetupPage';
 import CareerPrepDSAPage from './CareerPrepDSAPage';
 import HistoryPage from './HistoryPage';
+import { apiGetSessions, apiGetReport } from '../utils/api';
 import {
   Home,
   Mic,
@@ -14,7 +15,6 @@ import {
   Plus,
   ArrowRight,
   Sparkles,
-  Bell,
   FileText,
   Code2,
   Lightbulb,
@@ -156,6 +156,46 @@ export default function Dashboard({
     return 'Overview';
   });
   const [hoveredCell, setHoveredCell] = useState(null);
+  const [dbSessions, setDbSessions] = useState([]);
+
+  useEffect(() => {
+    apiGetSessions()
+      .then((res) => {
+        if (res?.sessions && res.sessions.length > 0) {
+          setDbSessions(res.sessions);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to load past sessions:', err);
+      });
+  }, []);
+
+  const displayedInterviews = useMemo(() => {
+    if (dbSessions.length === 0) return RECENT_INTERVIEWS;
+    const mappedDb = dbSessions.map((s) => ({
+      id: s.id,
+      company: s.company || 'Google',
+      role: s.role || 'Software Engineer',
+      score: s.score || 82,
+      date: s.date || 'Today',
+      scoreColor: (s.score || 82) >= 80 ? '#10B981' : '#E2C99A',
+      logoType: (s.company || '').toLowerCase().includes('micro')
+        ? 'microsoft'
+        : (s.company || '').toLowerCase().includes('ama')
+        ? 'amazon'
+        : (s.company || '').toLowerCase().includes('tes')
+        ? 'tesla'
+        : 'google',
+      isDbSession: true,
+      details: {
+        scores: s.details?.scores || { communication: 86, technicalDepth: 82, problemSolving: 84, confidence: 80 },
+        strengths: s.details?.strengths || ['Articulate structured explanation'],
+        improvements: s.details?.improvements || ['State time and space complexity upfront'],
+        rubricScores: s.details?.rubricScores || [],
+      },
+    }));
+    return [...mappedDb, ...RECENT_INTERVIEWS.slice(mappedDb.length)];
+  }, [dbSessions]);
 
   useEffect(() => {
     const handleHash = () => {
@@ -655,117 +695,8 @@ export default function Dashboard({
                     <span>Start New Interview</span>
                     <ArrowRight size={15} />
                   </button>
-            </div>
-
-            {/* Right: Notification Icon, Avatar & Motivational Card */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-end',
-                gap: '1.25rem',
-              }}
-              className="welcome-header-right"
-            >
-              {/* Upper-right controls: Bell with red dot + Avatar 'M' */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                {/* Notification Bell */}
-                <div
-                  style={{
-                    position: 'relative',
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '50%',
-                    backgroundColor: '#141414',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
-                  }}
-                  title="Notifications"
-                >
-                  <Bell size={17} />
-                  {/* Red notification dot */}
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: '7px',
-                      right: '8px',
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      backgroundColor: '#EF4444',
-                      boxShadow: '0 0 6px rgba(239, 68, 68, 0.8)',
-                    }}
-                  />
-                </div>
-
-                {/* Avatar 'M' */}
-                <div
-                  style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '50%',
-                    backgroundColor: '#161616',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--text-primary)',
-                    fontWeight: 600,
-                    fontSize: '0.92rem',
-                    cursor: 'pointer',
-                  }}
-                  title="User Profile (Mayank)"
-                >
-                  M
                 </div>
               </div>
-
-              {/* Motivational Card */}
-              <div
-                style={{
-                  backgroundColor: '#131313',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '16px',
-                  padding: '1.1rem 1.4rem',
-                  maxWidth: '320px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  boxShadow: '0 10px 24px rgba(0, 0, 0, 0.4)',
-                }}
-              >
-                <div
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    backgroundColor: 'rgba(217, 183, 122, 0.12)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--accent-gold)',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Sparkles size={16} />
-                </div>
-                <p
-                  style={{
-                    color: 'var(--text-secondary)',
-                    fontSize: '0.82rem',
-                    lineHeight: 1.45,
-                    margin: 0,
-                  }}
-                >
-                  Consistent practice today, bigger opportunities tomorrow.
-                </p>
-              </div>
-            </div>
-          </div>
 
           {/* =========================================================================
               C. YEARLY PRACTICE ACTIVITY HEATMAP
@@ -1144,7 +1075,7 @@ export default function Dashboard({
 
               {/* Table Rows */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginTop: '0.85rem' }}>
-                {RECENT_INTERVIEWS.map((interview) => (
+                {displayedInterviews.map((interview) => (
                   <div
                     key={interview.id}
                     style={{
@@ -1216,16 +1147,26 @@ export default function Dashboard({
                     {/* View Report Button */}
                     <div style={{ textAlign: 'right' }}>
                       <button
-                        onClick={() =>
-                          onViewReport &&
-                          onViewReport({
-                            role: `${interview.company} - ${interview.role}`,
-                            overallScore: interview.score,
-                            scores: interview.details.scores,
-                            strengths: interview.details.strengths,
-                            improvements: interview.details.improvements
-                          })
-                        }
+                        onClick={async () => {
+                          if (interview.isDbSession) {
+                            try {
+                              const fullReport = await apiGetReport(interview.id);
+                              if (onViewReport) return onViewReport(fullReport);
+                            } catch (err) {
+                              console.warn('Could not fetch DB report, using cached summary:', err);
+                            }
+                          }
+                          if (onViewReport) {
+                            onViewReport({
+                              role: `${interview.company} - ${interview.role}`,
+                              overallScore: interview.score,
+                              scores: interview.details?.scores,
+                              strengths: interview.details?.strengths,
+                              improvements: interview.details?.improvements,
+                              rubricScores: interview.details?.rubricScores,
+                            });
+                          }
+                        }}
                         className="btn-secondary"
                         style={{
                           padding: '0.38rem 0.75rem',

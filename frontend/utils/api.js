@@ -1,9 +1,9 @@
 /**
  * Intervista API Service
- * Centralized client for all backend communication.
+ * Centralized client for all backend communication with MongoDB Atlas & Express.
  */
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // ─── Token helpers ────────────────────────────────────────────────────────────
 export function getToken() {
@@ -32,11 +32,13 @@ async function request(method, path, body = null) {
       'Content-Type': 'application/json',
       ...authHeaders(),
     },
+    // Send and receive secure HttpOnly cookies across origins
+    credentials: 'include',
   };
   if (body) options.body = JSON.stringify(body);
 
   const res = await fetch(`${BASE_URL}${path}`, options);
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
     throw new Error(data.error || `Request failed (${res.status})`);
@@ -59,17 +61,53 @@ export async function apiLogin({ email, password }) {
   return data.user;
 }
 
-export function apiLogout() {
-  clearToken();
+export async function apiGoogleAuth({ credential }) {
+  const data = await request('POST', '/auth/google', { credential });
+  setToken(data.token);
+  localStorage.setItem('intervista_current_user', JSON.stringify(data.user));
+  return data.user;
+}
+
+export async function apiLogout() {
+  try {
+    await request('POST', '/auth/logout');
+  } catch (err) {
+    console.warn('[logout warning]', err.message);
+  } finally {
+    clearToken();
+  }
+}
+
+// ─── User Profile ─────────────────────────────────────────────────────────────
+export async function apiGetMe() {
+  const data = await request('GET', '/users/me');
+  if (data.user) {
+    localStorage.setItem('intervista_current_user', JSON.stringify(data.user));
+  }
+  return data.user;
+}
+
+export async function apiUpdateProfile({ name, skills, picture }) {
+  const data = await request('PATCH', '/users/me', { name, skills, picture });
+  if (data.user) {
+    localStorage.setItem('intervista_current_user', JSON.stringify(data.user));
+  }
+  return data.user;
 }
 
 // ─── Interview Session ────────────────────────────────────────────────────────
-export async function apiStartInterview({ role, company, interviewType, experience, duration, focusTopic }) {
-  return request('POST', '/interview/start', { role, company, interviewType, experience, duration, focusTopic });
+export async function apiStartInterview(payload) {
+  return request('POST', '/interview/start', payload);
 }
 
-export async function apiSendMessage({ sessionId, content, geminiInteractionId }) {
-  return request('POST', `/interview/${sessionId}/message`, { content, geminiInteractionId });
+export async function apiSendMessage({ sessionId, content, latencyMs, audioDurationMs, questionId, questionIndex }) {
+  return request('POST', `/interview/${sessionId}/message`, {
+    content,
+    latencyMs,
+    audioDurationMs,
+    questionId,
+    questionIndex,
+  });
 }
 
 export async function apiEndInterview(sessionId, metrics = null) {
@@ -83,6 +121,10 @@ export async function apiGetSessions() {
 
 export async function apiGetReport(reportId) {
   return request('GET', `/interview/report/${reportId}`);
+}
+
+export async function apiGetInterviewSchema() {
+  return request('GET', '/interview/schema');
 }
 
 // ─── Resume Analyzer ──────────────────────────────────────────────────────────
@@ -105,6 +147,6 @@ export async function apiGetSampleResumeAnalysis(role = 'Software Engineer') {
 
 // ─── Health ───────────────────────────────────────────────────────────────────
 export async function apiHealth() {
-  const res = await fetch(`${BASE_URL}/health`);
+  const res = await fetch(`${BASE_URL}/health`, { credentials: 'include' });
   return res.json();
 }
