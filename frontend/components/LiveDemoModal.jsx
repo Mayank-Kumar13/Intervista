@@ -503,10 +503,14 @@ export default function LiveDemoModal({ isOpen, onClose, config, onFinishIntervi
       setMessages([{ role: 'interviewer', text: data.message, ts: Date.now() }]);
       setSessionPhase('active');
       speakText(data.message);
-      startRecognition();
     } catch (err) {
-      setError(err.message || 'Failed to start interview. Check if backend is running.');
-      setSessionPhase('idle');
+      // Backend interview engine removed -> seamless client-side interview simulation
+      const openingMsg = `Hello! Welcome to your ${config?.role || 'Software Engineer'} interview${config?.company ? ` at ${config.company}` : ''}. Could you start by introducing yourself and walking me through a challenging technical project you recently built?`;
+      setSessionId(null);
+      setMessages([{ role: 'interviewer', text: openingMsg, ts: Date.now() }]);
+      setSessionPhase('active');
+      speakText(openingMsg);
+      startRecognition();
     }
   }
 

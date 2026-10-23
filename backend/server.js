@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 
 const authRoutes = require('./routes/auth');
-const interviewRoutes = require('./routes/interview');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -17,7 +16,6 @@ app.use(express.json({ limit: '2mb' }));
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
-app.use('/api/interview', interviewRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -38,7 +36,5 @@ app.use((err, req, res, next) => {
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`\n✦ Intervista Backend running on http://localhost:${PORT}`);
-  console.log(`  Auth:      POST /api/auth/register | POST /api/auth/login`);
-  console.log(`  Interview: POST /api/interview/start | POST /api/interview/:id/message | POST /api/interview/:id/end`);
-  console.log(`  Reports:   GET  /api/interview/sessions | GET /api/interview/report/:id\n`);
+  console.log(`  Auth: POST /api/auth/register | POST /api/auth/login | GET /api/auth/me\n`);
 });
