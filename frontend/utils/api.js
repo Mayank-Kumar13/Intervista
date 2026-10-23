@@ -85,6 +85,24 @@ export async function apiGetReport(reportId) {
   return request('GET', `/interview/report/${reportId}`);
 }
 
+// ─── Resume Analyzer ──────────────────────────────────────────────────────────
+export async function apiAnalyzeResume(payload) {
+  if (payload instanceof FormData) {
+    const res = await fetch(`${BASE_URL}/resume-analyzer/analyze`, {
+      method: 'POST',
+      body: payload,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to analyze resume.');
+    return data;
+  }
+  return request('POST', '/resume-analyzer/analyze', payload);
+}
+
+export async function apiGetSampleResumeAnalysis(role = 'Software Engineer') {
+  return request('GET', `/resume-analyzer/sample?role=${encodeURIComponent(role)}`);
+}
+
 // ─── Health ───────────────────────────────────────────────────────────────────
 export async function apiHealth() {
   const res = await fetch(`${BASE_URL}/health`);
