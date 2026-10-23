@@ -4,6 +4,7 @@ const cors = require('cors');
 
 const authRoutes = require('./routes/auth');
 const resumeAnalyzerRoutes = require('./resume_analyzer/routes');
+const reportRoutes = require('./reports/routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,6 +19,7 @@ app.use(express.json({ limit: '5mb' }));
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/resume-analyzer', resumeAnalyzerRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -39,5 +41,6 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`\n✦ Intervista Backend running on http://localhost:${PORT}`);
   console.log(`  Auth:            POST /api/auth/register | POST /api/auth/login | GET /api/auth/me`);
-  console.log(`  Resume Analyzer: POST /api/resume-analyzer/analyze | GET /api/resume-analyzer/sample\n`);
+  console.log(`  Resume Analyzer: POST /api/resume-analyzer/analyze | GET /api/resume-analyzer/sample`);
+  console.log(`  Reports & PDF:   POST /api/reports | GET /api/reports | GET /api/reports/:id/pdf\n`);
 });

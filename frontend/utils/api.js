@@ -76,13 +76,56 @@ export async function apiEndInterview(sessionId, metrics = null) {
   return request('POST', `/interview/${sessionId}/end`, metrics || {});
 }
 
-// ─── History & Reports ────────────────────────────────────────────────────────
+// ─── History & Reports (Task 4) ───────────────────────────────────────────────
 export async function apiGetSessions() {
   return request('GET', '/interview/sessions');
 }
 
 export async function apiGetReport(reportId) {
-  return request('GET', `/interview/report/${reportId}`);
+  return request('GET', `/reports/${reportId}`);
+}
+
+export async function apiSaveReport(reportPayload) {
+  return request('POST', '/reports', reportPayload);
+}
+
+export async function apiGetReports() {
+  return request('GET', '/reports');
+}
+
+export async function apiGetReportById(reportId) {
+  return request('GET', `/reports/${reportId}`);
+}
+
+export async function apiDownloadReportPdf(reportId, fileName = 'Intervista-Report.pdf') {
+  const token = getToken();
+  const headers = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${BASE_URL}/reports/${reportId}/pdf`, {
+    method: 'GET',
+    headers,
+  });
+
+  if (!res.ok) {
+    let errMessage = 'Failed to download report PDF';
+    try {
+      const errJson = await res.json();
+      errMessage = errJson.error || errMessage;
+    } catch (_) {}
+    throw new Error(errMessage);
+  }
+
+  const blob = await res.blob();
+  const blobUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.download = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1500);
+  return true;
 }
 
 // ─── Resume Analyzer ──────────────────────────────────────────────────────────

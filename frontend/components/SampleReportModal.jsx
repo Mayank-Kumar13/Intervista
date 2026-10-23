@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   X, 
   CheckCircle2, 
   AlertTriangle, 
   TrendingUp, 
   Download, 
-  Share2, 
   RotateCcw,
   Sparkles,
   MessageSquare,
@@ -15,57 +14,167 @@ import {
   Eye,
   Activity,
   ShieldCheck,
-  Camera,
-  Mic,
-  Info
+  BookOpen,
+  Target,
+  Clock,
+  HelpCircle,
+  Loader2,
+  RefreshCw,
+  Award
 } from 'lucide-react';
+import { apiDownloadReportPdf } from '../utils/api';
 
 export default function SampleReportModal({ isOpen, onClose, reportData, onRetake }) {
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [downloadError, setDownloadError] = useState(null);
+
   if (!isOpen) return null;
 
-  const score = reportData?.overallScore || 88;
+  const score = reportData?.overallScore ?? reportData?.score ?? 86;
   const roleName = reportData?.role || 'Software Engineer';
+  const company = reportData?.company || 'Intervista AI';
   const level = reportData?.level || 'Mid Level';
+  const reportId = reportData?.id || reportData?.sessionId || 'rep_seed_google_01';
 
-  const metrics = [
-    { label: 'Communication', score: reportData?.scores?.communication || 92, icon: MessageSquare },
-    { label: 'Technical Depth', score: reportData?.scores?.technicalDepth || 86, icon: Code2 },
-    { label: 'Problem Solving', score: reportData?.scores?.problemSolving || 89, icon: Lightbulb },
-    { label: 'Confidence', score: reportData?.scores?.confidence || 84, icon: BarChart3 },
+  // Criterion Scores & Weights
+  const criterionScores = reportData?.criterionScores || {
+    technicalKnowledge: reportData?.scores?.technicalDepth || 88,
+    problemSolving: reportData?.scores?.problemSolving || 85,
+    communication: reportData?.scores?.communication || 84,
+    confidence: reportData?.scores?.confidence || 82,
+  };
+
+  const criterionWeights = reportData?.criterionWeights || {
+    technicalKnowledge: 35,
+    problemSolving: 30,
+    communication: 20,
+    confidence: 15,
+  };
+
+  const criteriaList = [
+    { key: 'technicalKnowledge', label: 'Technical Depth & Knowledge', weight: criterionWeights.technicalKnowledge || 35, score: criterionScores.technicalKnowledge || 88, icon: Code2 },
+    { key: 'problemSolving', label: 'Problem Solving & Algorithmic Rigor', weight: criterionWeights.problemSolving || 30, score: criterionScores.problemSolving || 85, icon: Lightbulb },
+    { key: 'communication', label: 'Communication & Answer Structure', weight: criterionWeights.communication || 20, score: criterionScores.communication || 84, icon: MessageSquare },
+    { key: 'confidence', label: 'Confidence & Professional Poise', weight: criterionWeights.confidence || 15, score: criterionScores.confidence || 82, icon: BarChart3 },
   ];
 
-  // Vision Analysis Telemetry
-  const vision = reportData?.visionAnalysis || {
-    enabled: true,
-    postureScore: 88,
-    postureStatus: 'Upright & Centered',
-    gazeCenteredRatio: 86,
-    gazeStatus: 'Optimal Direct Focus',
-    headMovementStability: 'Stable & Poised',
-    suggestions: [
-      'Maintain direct eye contact with the camera lens when presenting complex architectural decisions.',
-      'Excellent upright posture maintained throughout the interview.'
-    ]
+  // Vision & Posture Telemetry
+  const rawVision = reportData?.visualObservations || reportData?.visionAnalysis;
+  const visionAssessed = rawVision && rawVision.enabled !== false && !String(rawVision.postureStatus).includes('Not assessed');
+  const vision = visionAssessed ? rawVision : {
+    enabled: false,
+    postureScore: null,
+    postureStatus: 'Not assessed',
+    gazeCenteredRatio: null,
+    gazeStatus: 'Not assessed',
+    headMovementStability: 'Not assessed',
+    suggestions: ['Camera was off or video tracking was unassessed for this session.']
   };
 
-  // Voice Analysis Telemetry
-  const voice = reportData?.voiceAnalysis || {
-    speakingPaceWpm: 142,
-    paceAssessment: 'Optimal Cadence (125-165 WPM)',
-    fillerWordsCount: 3,
-    fillerDetails: { um: 2, like: 1 },
-    fillerRatioPercent: 1.2,
-    pausesOver3s: 1,
-    clarityScore: 92,
-    suggestions: [
-      'Speaking cadence is optimal, natural, and conversational.',
-      'Replace filler sounds with intentional 1-second silent pauses to structure thoughts.'
-    ]
+  // Voice & Delivery Telemetry
+  const rawVoice = reportData?.verbalDelivery || reportData?.voiceAnalysis;
+  const voiceAssessed = rawVoice && rawVoice.speakingPaceWpm !== null && !String(rawVoice.paceAssessment).includes('Not assessed');
+  const voice = voiceAssessed ? rawVoice : {
+    speakingPaceWpm: null,
+    paceAssessment: 'Not assessed',
+    fillerWordsCount: null,
+    fillerRatioPercent: null,
+    pausesOver3s: null,
+    clarityScore: null,
+    suggestions: ['Microphone was muted or speech telemetry was unassessed.']
   };
 
-  const fillerSummary = Object.entries(voice.fillerDetails || {})
-    .map(([w, c]) => `"${w}": ${c}`)
-    .join(', ') || 'Minimal';
+  const fillerSummary = voice.fillerDetails
+    ? Object.entries(voice.fillerDetails).map(([w, c]) => `"${w}": ${c}`).join(', ')
+    : `${voice.fillerWordsCount || 0} filler instances`;
+
+  // Study Roadmap
+  const defaultRoadmap = [
+    {
+      topic: 'Big-O Complexity & Memory Limits',
+      reason: 'Implementation omitted explicit auxiliary memory footprint analysis upfront.',
+      priority: 'High',
+      objective: 'State Big-O time and space complexity proactively prior to implementation.',
+      exercise: 'Solve 3 Hard Tree & Graph questions on LeetCode while vocalizing recurrence relations.',
+      estimatedTime: 'Estimated Study Time: ~2.5 hrs',
+      suggestedQuestion: 'Can you walk through the space complexity trade-offs of an iterative BFS versus recursive DFS with deep call stacks?'
+    },
+    {
+      topic: 'Production System Observability',
+      reason: 'Architecture answer lacked concrete SLOs, p99 latency thresholds, and cache eviction policies.',
+      priority: 'Medium',
+      objective: 'Anchor system design recommendations in concrete operational telemetry.',
+      exercise: 'Draft a one-page architecture spec for a distributed cache with TTL and Redis cluster replication.',
+      estimatedTime: 'Estimated Study Time: ~3 hrs',
+      suggestedQuestion: 'How would you detect and mitigate a cache stampede during sudden traffic spikes?'
+    },
+    {
+      topic: 'Behavioral STAR Structuring',
+      reason: 'Situation and Task were overly detailed compared to concrete measurable Results.',
+      priority: 'Medium',
+      objective: 'Deliver crisp 2-minute behavioral narratives with quantifiable impact metrics.',
+      exercise: 'Record 3 behavioral stories focusing on % latency reduction or revenue impact.',
+      estimatedTime: 'Estimated Study Time: ~1.5 hrs',
+      suggestedQuestion: 'Tell me about a time you had to push back on an unreasonable engineering deadline.'
+    }
+  ];
+
+  const studyRoadmap = (reportData?.studyRoadmap && reportData.studyRoadmap.length > 0)
+    ? reportData.studyRoadmap
+    : defaultRoadmap;
+
+  // Knowledge Gaps
+  const defaultKnowledgeGaps = [
+    {
+      topic: 'Distributed Cache Invalidation & Stampede Mitigation',
+      evidence: 'Candidate discussed LRU eviction but did not address mutual exclusion locks or probabilistic early expiration under high concurrency.'
+    },
+    {
+      topic: 'Tail Latency (p99) Engineering',
+      evidence: 'System architecture focused on average response times rather than isolating downstream RPC outliers and backpressure.'
+    }
+  ];
+
+  const knowledgeGaps = (reportData?.knowledgeGaps && reportData.knowledgeGaps.length > 0)
+    ? reportData.knowledgeGaps
+    : defaultKnowledgeGaps;
+
+  // Download PDF Handler
+  const handleDownloadPdf = async () => {
+    setIsDownloadingPdf(true);
+    setDownloadError(null);
+    try {
+      await apiDownloadReportPdf(reportId, `${company}-${roleName}-Official-Report.pdf`);
+    } catch (err) {
+      console.error('PDF download error:', err);
+      setDownloadError(err.message || 'Server error while generating PDF. Please retry.');
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
+  const getPriorityStyle = (priority) => {
+    const p = String(priority).toLowerCase();
+    if (p === 'high') {
+      return {
+        bg: 'rgba(239, 68, 68, 0.12)',
+        color: '#F87171',
+        border: '1px solid rgba(239, 68, 68, 0.3)'
+      };
+    }
+    if (p === 'medium') {
+      return {
+        bg: 'rgba(217, 183, 122, 0.12)',
+        color: 'var(--accent-gold)',
+        border: '1px solid rgba(217, 183, 122, 0.3)'
+      };
+    }
+    return {
+      bg: 'rgba(52, 211, 153, 0.12)',
+      color: '#34D399',
+      border: '1px solid rgba(52, 211, 153, 0.3)'
+    };
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -73,13 +182,14 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxWidth: '840px',
+          maxWidth: '880px',
           padding: '2.5rem',
           backgroundColor: '#0F0F0F',
           borderRadius: '24px',
           border: '1px solid var(--border-gold)',
           maxHeight: '92vh',
           overflowY: 'auto',
+          boxShadow: '0 24px 64px rgba(0, 0, 0, 0.85)',
         }}
       >
         {/* Header */}
@@ -99,32 +209,37 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
                 OFFICIAL EVALUATION
               </span>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                • Session #{reportData?.sessionId ? reportData.sessionId.slice(-6).toUpperCase() : Math.floor(Math.random() * 8000 + 1000)}
+                • Report ID: {String(reportId).slice(-10).toUpperCase()}
               </span>
             </div>
-            <h3 style={{ fontSize: '1.35rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              Interview Performance Report
+            <h3 style={{ fontSize: '1.4rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+              Interview Performance & Study Report
             </h3>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              Role: <strong style={{ color: 'var(--text-primary)' }}>{roleName}</strong> ({level})
+            <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: '4px', marginBottom: 0 }}>
+              Company: <strong style={{ color: 'var(--accent-champagne)' }}>{company}</strong> • Role: <strong style={{ color: 'var(--text-primary)' }}>{roleName}</strong> ({level})
             </p>
           </div>
 
           <button
             onClick={onClose}
+            aria-label="Close report modal"
             style={{
               background: 'none',
               border: 'none',
               color: 'var(--text-secondary)',
               cursor: 'pointer',
               padding: '0.4rem',
+              borderRadius: '8px',
+              transition: 'color 0.2s',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Top Summary Banner */}
+        {/* 1. Top Summary Banner */}
         <div
           style={{
             backgroundColor: '#151515',
@@ -176,7 +291,7 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
           {/* Verdict and Trend */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              <span style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                 {score >= 80 ? 'Strong Interview Readiness' : 'Competent Performance with Key Growth Areas'}
               </span>
               <div
@@ -197,24 +312,29 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
                 <span>Tier-1 Tech Benchmark</span>
               </div>
             </div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', lineHeight: 1.55 }}>
-              {reportData?.summary || 'Candidate demonstrated strong conceptual foundations, structured answers, and quick problem resolution.'}
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', lineHeight: 1.55, margin: 0 }}>
+              {reportData?.summary || `The candidate demonstrated strong foundational trade-offs and structured communication for the ${roleName} role.`}
             </p>
           </div>
         </div>
 
-        {/* Competency Breakdown Bars */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Core Competencies
-          </h4>
+        {/* 2. Criterion Scorecard & Weights */}
+        <div style={{ marginBottom: '2.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Criterion Scorecard & Weights
+            </h4>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+              Total Weight: 100%
+            </span>
+          </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }} className="competency-grid">
-            {metrics.map((m, idx) => {
-              const Icon = m.icon;
+            {criteriaList.map((crit) => {
+              const Icon = crit.icon;
               return (
                 <div
-                  key={idx}
+                  key={crit.key}
                   style={{
                     backgroundColor: '#161616',
                     border: '1px solid rgba(255, 255, 255, 0.06)',
@@ -223,19 +343,24 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: 'var(--text-secondary)', fontSize: '0.84rem' }}>
                       <Icon size={14} color="var(--accent-gold)" />
-                      {m.label}
+                      {crit.label}
                     </span>
-                    <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.9rem' }}>
-                      {m.score}%
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', backgroundColor: 'rgba(255,255,255,0.04)', padding: '1px 6px', borderRadius: '4px' }}>
+                        Weight: {crit.weight}%
+                      </span>
+                      <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.9rem' }}>
+                        {crit.score}%
+                      </span>
+                    </div>
                   </div>
                   <div style={{ height: '5px', backgroundColor: '#222', borderRadius: '3px', overflow: 'hidden' }}>
                     <div
                       style={{
                         height: '100%',
-                        width: `${m.score}%`,
+                        width: `${crit.score}%`,
                         background: 'linear-gradient(90deg, #B59355, #E8D2A7)',
                       }}
                     />
@@ -246,19 +371,19 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
           </div>
         </div>
 
-        {/* ─── NEW: MULTIMODAL VISION & VOICE TELEMETRY CARDS ─────────────────── */}
+        {/* 3. Objective Multimodal Telemetry (Verbal & Visual) */}
         <div style={{ marginBottom: '2.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
             <span className="eyebrow-tag" style={{ color: 'var(--accent-gold)' }}>
               OBJECTIVE TELEMETRY
             </span>
             <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
-              • Vision Analysis + Voice Analysis
+              • Verbal Delivery Indicators + Optional Visual Observations
             </span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }} className="telemetry-grid">
-            {/* Card 1: Vision Tracking Telemetry */}
+            {/* Card 1: Vision / Camera Framing */}
             <div
               style={{
                 backgroundColor: '#141414',
@@ -273,54 +398,60 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.75rem' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: 'var(--accent-gold)', fontWeight: 600, fontSize: '0.9rem' }}>
                   <Eye size={17} />
-                  Vision & Posture Tracking
+                  Camera Framing & Posture
                 </span>
                 <span style={{
                   fontSize: '0.72rem', fontWeight: 600, padding: '2px 8px', borderRadius: '6px',
-                  backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#4ADE80', border: '1px solid rgba(34, 197, 94, 0.3)'
+                  backgroundColor: visionAssessed ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                  color: visionAssessed ? '#4ADE80' : 'var(--text-tertiary)',
+                  border: visionAssessed ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'
                 }}>
                   {vision.postureStatus}
                 </span>
               </div>
 
-              {/* Metrics rows */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Upright Posture Score</span>
-                    <strong style={{ color: 'var(--text-primary)' }}>{vision.postureScore}%</strong>
+              {visionAssessed ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Upright Posture Score</span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{vision.postureScore}%</strong>
+                    </div>
+                    <div style={{ height: '4px', backgroundColor: '#222', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ width: `${vision.postureScore}%`, height: '100%', backgroundColor: '#22C55E' }} />
+                    </div>
                   </div>
-                  <div style={{ height: '4px', backgroundColor: '#222', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ width: `${vision.postureScore}%`, height: '100%', backgroundColor: '#22C55E' }} />
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Camera Gaze Alignment</span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{vision.gazeCenteredRatio}% Center Focus</strong>
+                    </div>
+                    <div style={{ height: '4px', backgroundColor: '#222', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ width: `${vision.gazeCenteredRatio}%`, height: '100%', backgroundColor: 'var(--accent-gold)' }} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', paddingTop: '4px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Head Movement Stability</span>
+                    <span style={{ color: '#4ADE80', fontWeight: 600 }}>{vision.headMovementStability}</span>
                   </div>
                 </div>
-
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Camera Gaze Alignment</span>
-                    <strong style={{ color: 'var(--text-primary)' }}>{vision.gazeCenteredRatio}% Center Focus</strong>
-                  </div>
-                  <div style={{ height: '4px', backgroundColor: '#222', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ width: `${vision.gazeCenteredRatio}%`, height: '100%', backgroundColor: 'var(--accent-gold)' }} />
-                  </div>
+              ) : (
+                <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  Camera was not active during this interview. Posture and eye gaze metrics were not assessed.
                 </div>
+              )}
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', paddingTop: '4px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Head Movement Stability</span>
-                  <span style={{ color: '#4ADE80', fontWeight: 600 }}>{vision.headMovementStability}</span>
-                </div>
-              </div>
-
-              {/* Actionable Suggestion */}
               <div style={{ marginTop: 'auto', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '0.75rem', fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
                 <strong style={{ color: 'var(--accent-champagne)', display: 'block', marginBottom: '2px' }}>
-                  Actionable Vision Suggestion:
+                  Observation & Guidance:
                 </strong>
-                {vision.suggestions?.[0] || 'Maintain direct eye contact with the webcam lens during key technical points.'}
+                {vision.suggestions?.[0] || 'Maintain direct eye contact with the camera lens when presenting trade-offs.'}
               </div>
             </div>
 
-            {/* Card 2: Voice & Cadence Telemetry */}
+            {/* Card 2: Verbal Delivery Indicators */}
             <div
               style={{
                 backgroundColor: '#141414',
@@ -335,52 +466,60 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.75rem' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#4ADE80', fontWeight: 600, fontSize: '0.9rem' }}>
                   <Activity size={17} />
-                  Voice & Cadence Tracking
+                  Verbal Delivery & Cadence
                 </span>
                 <span style={{
                   fontSize: '0.72rem', fontWeight: 600, padding: '2px 8px', borderRadius: '6px',
-                  backgroundColor: 'rgba(217, 183, 122, 0.1)', color: 'var(--accent-gold)', border: '1px solid rgba(217, 183, 122, 0.3)'
+                  backgroundColor: voiceAssessed ? 'rgba(217, 183, 122, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                  color: voiceAssessed ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                  border: voiceAssessed ? '1px solid rgba(217, 183, 122, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'
                 }}>
                   {voice.paceAssessment}
                 </span>
               </div>
 
-              {/* Metrics rows */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Speaking Pace</span>
-                  <strong style={{ color: 'var(--text-primary)' }}>{voice.speakingPaceWpm} WPM</strong>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Filler Words Detected</span>
-                  <span style={{ color: voice.fillerWordsCount > 3 ? '#FBBF24' : '#4ADE80', fontWeight: 600 }}>
-                    {voice.fillerWordsCount} ({fillerSummary})
-                  </span>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Pauses Exceeding 3s</span>
-                  <strong style={{ color: 'var(--text-primary)' }}>{voice.pausesOver3s || 0} pauses</strong>
-                </div>
-
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Clarity & Cadence Index</span>
-                    <strong style={{ color: 'var(--text-primary)' }}>{voice.clarityScore}%</strong>
+              {voiceAssessed ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Speaking Pace</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{voice.speakingPaceWpm} WPM</strong>
                   </div>
-                  <div style={{ height: '4px', backgroundColor: '#222', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ width: `${voice.clarityScore}%`, height: '100%', backgroundColor: '#4ADE80' }} />
-                  </div>
-                </div>
-              </div>
 
-              {/* Actionable Suggestion */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Filler Words Count</span>
+                    <span style={{ color: (voice.fillerWordsCount || 0) > 4 ? '#FBBF24' : '#4ADE80', fontWeight: 600 }}>
+                      {voice.fillerWordsCount} ({fillerSummary})
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Pauses Exceeding 3s</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{voice.pausesOver3s || 0} pauses</strong>
+                  </div>
+
+                  {voice.clarityScore && (
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Clarity & Cadence Index</span>
+                        <strong style={{ color: 'var(--text-primary)' }}>{voice.clarityScore}%</strong>
+                      </div>
+                      <div style={{ height: '4px', backgroundColor: '#222', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ width: `${voice.clarityScore}%`, height: '100%', backgroundColor: '#4ADE80' }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  Microphone was not captured or was muted during session. Verbal cadence metrics were not assessed.
+                </div>
+              )}
+
               <div style={{ marginTop: 'auto', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '0.75rem', fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
                 <strong style={{ color: 'var(--accent-champagne)', display: 'block', marginBottom: '2px' }}>
-                  Actionable Voice Suggestion:
+                  Actionable Delivery Suggestion:
                 </strong>
-                {voice.suggestions?.[0] || 'Speaking cadence is optimal, natural, and conversational.'}
+                {voice.suggestions?.[0] || 'Replace filler words with deliberate 1-second silent pauses to structure thoughts.'}
               </div>
             </div>
           </div>
@@ -389,13 +528,13 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
           <div style={{ marginTop: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem', color: 'var(--text-tertiary)', padding: '0.5rem 0.8rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
             <ShieldCheck size={14} color="var(--accent-gold)" style={{ flexShrink: 0 }} />
             <span>
-              Privacy Transparency: Vision and voice metrics quantify measurable physical signals (posture stability, screen alignment, speech rate, pauses). They do not infer internal emotions or psychological traits.
+              Privacy Transparency: Visual & verbal metrics evaluate concrete physical signals (speech rate, filler words, posture stability). Missing telemetry is labeled "Not assessed" and never fabricated.
             </span>
           </div>
         </div>
 
-        {/* Key Strengths & Growth Areas */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '2rem' }} className="insights-grid">
+        {/* 4. Key Strengths & Priority Improvements */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '2.25rem' }} className="insights-grid">
           {/* Strengths */}
           <div
             style={{
@@ -409,16 +548,19 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
               <CheckCircle2 size={16} />
               <span>Key Strengths</span>
             </div>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.55rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
               {(reportData?.strengths && reportData.strengths.length > 0
                 ? reportData.strengths
                 : [
-                    'Explicitly structured technical trade-offs before implementation',
-                    'Maintained direct camera gaze alignment and upright posture',
-                    'Comfortable speech pace within optimal 125-165 WPM target',
+                    'Clean, articulate communication when breaking down algorithmic trade-offs.',
+                    'Strong grasp of time and space complexity with proactive edge case analysis.',
+                    'Structured architectural approach to microservices scalability.'
                   ]
               ).map((s, i) => (
-                <li key={i}>✓ {s}</li>
+                <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                  <span style={{ color: '#4ADE80' }}>✓</span>
+                  <span>{s}</span>
+                </li>
               ))}
             </ul>
           </div>
@@ -434,24 +576,157 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-gold)', fontSize: '0.86rem', fontWeight: 600, marginBottom: '0.75rem' }}>
               <Sparkles size={16} />
-              <span>Recommended Next Steps</span>
+              <span>Priority Improvements</span>
             </div>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.55rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
               {(reportData?.improvements && reportData.improvements.length > 0
                 ? reportData.improvements
                 : [
-                    'State time and space complexity (Big-O) upfront before diving into implementation',
-                    'Replace mid-sentence "um" or "like" with deliberate 1-second silent pauses',
-                    'Structure system design answers using top-down capacity estimation',
+                    'State Big-O time and space complexity upfront before expanding on code implementation.',
+                    'Incorporate concrete production metrics (e.g. p95 latency reduction) in system design answers.',
+                    'Structure behavioral answers using the STAR framework more tightly.'
                   ]
               ).map((item, i) => (
-                <li key={i}>→ {item}</li>
+                <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                  <span style={{ color: 'var(--accent-gold)' }}>→</span>
+                  <span>{item}</span>
+                </li>
               ))}
             </ul>
           </div>
         </div>
 
-        {/* Question-by-Question Breakdown (if available) */}
+        {/* 5. Identified Knowledge Gaps with Concrete Evidence */}
+        <div style={{ marginBottom: '2.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.85rem' }}>
+            <AlertTriangle size={16} color="var(--accent-gold)" />
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Identified Knowledge Gaps (Proven from Answers)
+            </h4>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {knowledgeGaps.map((kg, i) => (
+              <div
+                key={i}
+                style={{
+                  backgroundColor: '#151515',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  borderRadius: '12px',
+                  padding: '1rem 1.25rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.35rem' }}>
+                  <span style={{ fontSize: '0.86rem', fontWeight: 600, color: 'var(--accent-champagne)' }}>
+                    {kg.topic}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>Observed Evidence: </strong>
+                  {kg.evidence}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 6. Personalized Learning Roadmap */}
+        <div style={{ marginBottom: '2.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <BookOpen size={16} color="var(--accent-gold)" />
+              <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Personalized Study Roadmap
+              </h4>
+            </div>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+              Tailored to identified interview gaps
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {studyRoadmap.map((item, idx) => {
+              const pStyle = getPriorityStyle(item.priority);
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    backgroundColor: '#141416',
+                    border: '1px solid rgba(217, 183, 122, 0.18)',
+                    borderRadius: '14px',
+                    padding: '1.25rem 1.4rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <span
+                        style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          backgroundColor: pStyle.bg,
+                          color: pStyle.color,
+                          border: pStyle.border,
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {item.priority} Priority
+                      </span>
+                      <h5 style={{ fontSize: '0.94rem', fontWeight: 600, color: '#FFFFFF', margin: 0 }}>
+                        {item.topic}
+                      </h5>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.74rem', color: 'var(--accent-gold)' }}>
+                      <Clock size={12} />
+                      <span>{item.estimatedTime}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    <strong style={{ color: 'var(--text-primary)' }}>Why Identified: </strong>
+                    {item.reason}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.25rem' }} className="roadmap-grid-sub">
+                    <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--accent-gold)', fontSize: '0.75rem', fontWeight: 600, marginBottom: '4px' }}>
+                        <Target size={13} />
+                        <span>Learning Objective</span>
+                      </div>
+                      <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                        {item.objective}
+                      </div>
+                    </div>
+
+                    <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#4ADE80', fontSize: '0.75rem', fontWeight: 600, marginBottom: '4px' }}>
+                        <Award size={13} />
+                        <span>Recommended Practice Exercise</span>
+                      </div>
+                      <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                        {item.exercise}
+                      </div>
+                    </div>
+                  </div>
+
+                  {item.suggestedQuestion && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', backgroundColor: 'rgba(0,0,0,0.3)', padding: '0.55rem 0.8rem', borderRadius: '8px', borderLeft: '2px solid var(--accent-gold)' }}>
+                      <strong style={{ color: 'var(--accent-gold)' }}>Suggested Follow-up Practice Question: </strong>
+                      "{item.suggestedQuestion}"
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 7. Question-by-Question Breakdown */}
         {reportData?.questionFeedback && reportData.questionFeedback.length > 0 && (
           <div style={{ marginBottom: '2.5rem' }}>
             <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -465,7 +740,7 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
                     backgroundColor: '#141416',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
                     borderRadius: '12px',
-                    padding: '1rem 1.25rem',
+                    padding: '1.1rem 1.25rem',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.4rem' }}>
@@ -479,8 +754,8 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
                     )}
                   </div>
                   {qf.candidateAnswer && (
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontStyle: 'italic' }}>
-                      "{qf.candidateAnswer.length > 180 ? qf.candidateAnswer.slice(0, 180) + '...' : qf.candidateAnswer}"
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontStyle: 'italic', backgroundColor: 'rgba(0,0,0,0.25)', padding: '0.5rem 0.75rem', borderRadius: '6px' }}>
+                      "{qf.candidateAnswer.length > 200 ? qf.candidateAnswer.slice(0, 200) + '...' : qf.candidateAnswer}"
                     </div>
                   )}
                   <div style={{ fontSize: '0.78rem', color: '#4ADE80', lineHeight: 1.45 }}>
@@ -492,15 +767,59 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
           </div>
         )}
 
+        {/* Download Error Banner */}
+        {downloadError && (
+          <div
+            style={{
+              padding: '0.75rem 1rem',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '8px',
+              color: '#FCA5A5',
+              fontSize: '0.8rem',
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <span>{downloadError}</span>
+            <button
+              onClick={handleDownloadPdf}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#EF4444',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <button
-            onClick={() => window.print()}
+            onClick={handleDownloadPdf}
+            disabled={isDownloadingPdf}
             className="btn-secondary"
-            style={{ padding: '0.65rem 1.25rem', fontSize: '0.85rem' }}
+            style={{ padding: '0.65rem 1.35rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '7px' }}
           >
-            <Download size={15} />
-            <span>Export Report (PDF)</span>
+            {isDownloadingPdf ? (
+              <>
+                <Loader2 size={15} className="spin" />
+                <span>Generating Vector PDF...</span>
+              </>
+            ) : (
+              <>
+                <Download size={15} />
+                <span>Download Official PDF Report</span>
+              </>
+            )}
           </button>
 
           <div style={{ display: 'flex', gap: '0.85rem' }}>
@@ -521,7 +840,7 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
 
       <style>{`
         @media (max-width: 680px) {
-          .report-summary-grid, .telemetry-grid {
+          .report-summary-grid, .telemetry-grid, .roadmap-grid-sub {
             grid-template-columns: 1fr !important;
           }
           .competency-grid, .insights-grid {
