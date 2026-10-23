@@ -29,6 +29,8 @@ import {
 import { apiStartInterview, apiSendMessage, apiEndInterview, apiSaveReport } from '../utils/api';
 import { getCurrentUser } from '../utils/auth';
 import ThreeInterviewScene from './ThreeInterviewScene';
+import DeskCodingLaptop from './DeskCodingLaptop';
+import CandidatePOVHands from './CandidatePOVHands';
 
 export default function ImmersiveInterviewRoom({
   config,
@@ -79,8 +81,10 @@ export default function ImmersiveInterviewRoom({
   const [confirmEndModalOpen, setConfirmEndModalOpen] = useState(false);
   const [pipMinimized, setPipMinimized] = useState(false);
   const [showDeskResume, setShowDeskResume] = useState(false);
+  const [laptopExpanded, setLaptopExpanded] = useState(false);
+  const user = getCurrentUser();
   const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] = useState(true);
-  const [isQuestionCollapsed, setIsQuestionCollapsed] = useState(true);
+  const [isQuestionCollapsed, setIsQuestionCollapsed] = useState(false);
 
   // ─── Timer State ────────────────────────────────────────────────────────────
   const [secondsElapsed, setSecondsElapsed] = useState(0);
@@ -874,227 +878,511 @@ export default function ImmersiveInterviewRoom({
       </header>
 
       {/* =========================================================================
-          LAYER 3: MAIN STAGE — FLOATING QUESTION OVERLAY & LISTENING INDICATOR
+          LAYER 3: TOP-LEFT FLOATING SPEECH BUBBLE (MATCHING REFERENCE IMAGE)
           ========================================================================= */}
-      <main
+      <div
+        id="interview-question-bubble"
         style={{
-          position: 'relative',
-          zIndex: 10,
-          flex: 1,
+          position: 'absolute',
+          top: 'clamp(4.8rem, 10vh, 6.2rem)',
+          left: 'clamp(1.5rem, 4.5vw, 4.5rem)',
+          zIndex: 22,
+          maxWidth: isQuestionCollapsed ? '320px' : 'clamp(360px, 32vw, 480px)',
+          width: '90%',
+          backgroundColor: 'rgba(16, 26, 44, 0.82)',
+          border: '1.5px solid rgba(56, 189, 248, 0.55)',
+          borderRadius: '16px',
+          padding: '0.9rem 1.35rem',
+          backdropFilter: 'blur(20px)',
+          boxShadow: '0 12px 35px rgba(0, 0, 0, 0.65), 0 0 25px rgba(56, 189, 248, 0.28), inset 0 0 16px rgba(56, 189, 248, 0.1)',
+          animation: 'speechBubbleGlow 4s ease-in-out infinite, fadeInSlideDown 0.4s ease',
+          pointerEvents: 'auto',
+          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
+      >
+        {/* Speech Bubble Header: Question index & Audio replay */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: isQuestionCollapsed ? 0 : '0.65rem',
+            borderBottom: isQuestionCollapsed ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
+            paddingBottom: isQuestionCollapsed ? 0 : '0.45rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: '#38BDF8',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+              }}
+            >
+              <Sparkles size={11} />
+              Question {questionIndex} of {totalQuestions}
+            </span>
+            <span style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.7rem' }}>•</span>
+            <span style={{ fontSize: '0.68rem', color: 'rgba(255, 255, 255, 0.65)' }}>
+              {interviewType}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            {/* Replay Question Audio Button */}
+            <button
+              type="button"
+              onClick={() => speakText(currentQuestionText || 'Tell me about a time you led a project.')}
+              title="Listen to question again"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: '6px',
+                padding: '0.2rem 0.5rem',
+                color: isInterviewerSpeaking ? '#38BDF8' : 'rgba(255, 255, 255, 0.8)',
+                fontSize: '0.68rem',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Volume2 size={12} />
+              <span>{isInterviewerSpeaking ? 'Speaking...' : 'Replay'}</span>
+            </button>
+
+            {/* Collapse / Expand Toggle */}
+            <button
+              type="button"
+              onClick={() => setIsQuestionCollapsed(!isQuestionCollapsed)}
+              title={isQuestionCollapsed ? 'Expand Question' : 'Minimize Question'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: '6px',
+                padding: '0.2rem 0.4rem',
+                color: 'rgba(255, 255, 255, 0.8)',
+                cursor: 'pointer',
+              }}
+            >
+              {isQuestionCollapsed ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Current Question Text (Bold Uppercase matching Reference Image) */}
+        {!isQuestionCollapsed && (
+          <div
+            style={{
+              fontSize: 'clamp(0.92rem, 1.2vw, 1.12rem)',
+              fontWeight: 700,
+              lineHeight: 1.4,
+              color: '#FFFFFF',
+              letterSpacing: '0.035em',
+              textTransform: 'uppercase',
+              fontFamily: 'var(--font-sans)',
+            }}
+          >
+            {currentQuestionText ? currentQuestionText.toUpperCase() : 'TELL ME ABOUT A TIME YOU LED A PROJECT.'}
+          </div>
+        )}
+
+        {/* Subtle Progress Bar */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '3px',
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderBottomLeftRadius: '16px',
+            borderBottomRightRadius: '16px',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              height: '100%',
+              width: `${Math.min(100, (questionIndex / totalQuestions) * 100)}%`,
+              background: 'linear-gradient(90deg, #38BDF8, #818CF8)',
+              transition: 'width 0.4s ease',
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Attentive Listening Indicator below Speech Bubble */}
+      {isCandidateSpeaking && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 'clamp(11.5rem, 21vh, 13.5rem)',
+            left: 'clamp(1.5rem, 4.5vw, 4.5rem)',
+            zIndex: 22,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.55rem',
+            padding: '0.45rem 1rem',
+            borderRadius: '9999px',
+            backgroundColor: 'rgba(10, 14, 20, 0.85)',
+            border: '1px solid rgba(34, 197, 94, 0.4)',
+            backdropFilter: 'blur(16px)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(34, 197, 94, 0.2)',
+            animation: 'fadeIn 0.2s ease',
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            style={{
+              width: '7px',
+              height: '7px',
+              borderRadius: '50%',
+              backgroundColor: '#22C55E',
+              boxShadow: '0 0 8px #22C55E',
+            }}
+          />
+          <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#4ADE80' }}>
+            {interviewerName} is listening attentively...
+          </span>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2px', height: '12px', marginLeft: '3px' }}>
+            {[10, 18, 24, 14, 20, 12].map((h, i) => (
+              <div
+                key={i}
+                style={{
+                  width: '2px',
+                  height: `${Math.max(3, Math.round((h * micVolume) / 50))}px`,
+                  backgroundColor: '#4ADE80',
+                  borderRadius: '1px',
+                  transition: 'height 0.08s ease',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          LAYER 4: DESK PROPS & CODING LAPTOP (MATCHING REFERENCE IMAGE)
+          ========================================================================= */}
+      {/* 4A. Left Desk: Acrylic Vertical Resume Stand & Printed Resume Sheets */}
+      <div
+        onClick={() => setShowDeskResume(true)}
+        title="Click to view candidate's printed resume"
+        style={{
+          position: 'absolute',
+          bottom: 'clamp(4.2rem, 9vh, 7.5rem)',
+          left: 'clamp(1rem, 3.5vw, 3.8rem)',
+          zIndex: 16,
+          width: 'clamp(120px, 13vw, 175px)',
+          cursor: 'pointer',
+          transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+          perspective: '900px',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-4px) scale(1.03)';
+          e.currentTarget.style.filter = 'drop-shadow(0 14px 28px rgba(56, 189, 248, 0.35))';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+          e.currentTarget.style.filter = 'drop-shadow(0 12px 24px rgba(0, 0, 0, 0.6))';
+        }}
+      >
+        {/* Upright Transparent Acrylic Frame */}
+        <div
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.94)',
+            borderRadius: '6px',
+            padding: '0.6rem 0.65rem',
+            border: '2px solid rgba(255, 255, 255, 0.8)',
+            boxShadow: '0 12px 28px rgba(0, 0, 0, 0.45), inset 0 0 10px rgba(255, 255, 255, 0.9)',
+            color: '#1E293B',
+            transform: 'rotateY(4deg)',
+          }}
+        >
+          {/* Resume Header with Candidate Avatar Photo */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              borderBottom: '1px solid #E2E8F0',
+              paddingBottom: '0.35rem',
+              marginBottom: '0.35rem',
+            }}
+          >
+            <div
+              style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                backgroundColor: '#0284C7',
+                color: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: '0.62rem',
+                flexShrink: 0,
+              }}
+            >
+              {user?.name ? user.name.charAt(0) : 'C'}
+            </div>
+            <div style={{ overflow: 'hidden' }}>
+              <div style={{ fontWeight: 800, fontSize: '0.65rem', color: '#0F172A', whiteSpace: 'nowrap' }}>
+                Resume
+              </div>
+              <div style={{ fontSize: '0.5rem', color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {user?.name || 'Applicant Profile'}
+              </div>
+            </div>
+          </div>
+
+          {/* Mini Resume Lines */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.52rem' }}>
+            <div style={{ fontWeight: 700, color: '#0284C7', fontSize: '0.52rem', textTransform: 'uppercase' }}>
+              Experience
+            </div>
+            <div style={{ color: '#334155', lineHeight: 1.2 }}>
+              • {targetRole} ({experienceLevel})
+            </div>
+            <div style={{ color: '#64748B', lineHeight: 1.2 }}>
+              • Systems architecture & scaling
+            </div>
+
+            <div style={{ fontWeight: 700, color: '#0284C7', fontSize: '0.52rem', textTransform: 'uppercase', marginTop: '2px' }}>
+              Skills
+            </div>
+            <div style={{ color: '#475569', lineHeight: 1.2 }}>
+              React · Node · Python · DSA
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: '0.45rem',
+              paddingTop: '0.25rem',
+              borderTop: '1px dashed #CBD5E1',
+              textAlign: 'center',
+              fontSize: '0.48rem',
+              fontWeight: 700,
+              color: '#0284C7',
+            }}
+          >
+            Click to View Resume ↗
+          </div>
+        </div>
+
+        {/* Clear Acrylic Stand Foot on Desk */}
+        <div
+          style={{
+            width: '108%',
+            height: '7px',
+            marginLeft: '-4%',
+            backgroundColor: 'rgba(255, 255, 255, 0.45)',
+            backdropFilter: 'blur(4px)',
+            border: '1px solid rgba(255, 255, 255, 0.7)',
+            borderRadius: '2px 2px 4px 4px',
+            boxShadow: '0 6px 12px rgba(0, 0, 0, 0.35)',
+          }}
+        />
+
+        {/* Flat Printed Resume Sheets Lying on Desk */}
+        <div
+          style={{
+            marginTop: '8px',
+            width: '95px',
+            height: '42px',
+            backgroundColor: '#F8FAFC',
+            borderRadius: '2px',
+            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.5)',
+            border: '1px solid rgba(255, 255, 255, 0.6)',
+            padding: '4px',
+            transform: 'rotate(-4deg)',
+          }}
+        >
+          <div style={{ width: '40px', height: '3px', backgroundColor: '#94A3B8', marginBottom: '2px' }} />
+          <div style={{ width: '70px', height: '2px', backgroundColor: '#CBD5E1', marginBottom: '2px' }} />
+          <div style={{ width: '55px', height: '2px', backgroundColor: '#CBD5E1' }} />
+        </div>
+      </div>
+
+      {/* 4B. Desk Nameplate in front of Mr. Chen */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 'clamp(9rem, 18vh, 14rem)',
+          left: '50%',
+          transform: 'translateX(28%)',
+          zIndex: 15,
+          backgroundColor: '#111318',
+          border: '1.5px solid #D9B77A',
+          borderRadius: '3px',
+          padding: '0.3rem 0.85rem',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(217, 183, 122, 0.6)',
+          letterSpacing: '0.12em',
+          fontSize: 'clamp(0.6rem, 0.78vw, 0.72rem)',
+          fontWeight: 800,
+          color: '#F5E7C8',
+          textTransform: 'uppercase',
+          fontFamily: 'var(--font-sans)',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'flex-start',
-          padding: '0.1rem 2rem 0 2rem',
+          gap: '0.45rem',
           pointerEvents: 'none',
         }}
       >
-        {/* FLOATING TOP QUESTION / CC PILL (Minimal by default to keep full focus on 3D Talking Interviewer) */}
+        <span style={{ width: '4px', height: '4px', backgroundColor: '#D9B77A', borderRadius: '50%' }} />
+        <span>MR. J. CHEN — HIRING MANAGER</span>
+        <span style={{ width: '4px', height: '4px', backgroundColor: '#D9B77A', borderRadius: '50%' }} />
+      </div>
+
+      {/* 4C. Candidate Executive Desk Pad & Notes Tablet */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 14,
+          width: 'clamp(380px, 46vw, 620px)',
+          height: 'clamp(85px, 14vh, 130px)',
+          backgroundColor: '#10131A',
+          borderRadius: '16px 16px 0 0',
+          border: '1.5px solid #232733',
+          borderBottom: 'none',
+          boxShadow: '0 -6px 20px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          gap: '1.25rem',
+          padding: '0.6rem 1.25rem 0 1.25rem',
+        }}
+      >
+        {/* Notes Digital Tablet on Mat */}
         <div
-          id="interview-question-card"
+          onClick={() => setNotesDrawerOpen(true)}
+          title="Click to open candidate notes pad"
           style={{
-            maxWidth: isQuestionCollapsed ? '460px' : '560px',
-            width: '92%',
-            backgroundColor: 'rgba(16, 26, 44, 0.82)',
-            border: '1.5px solid rgba(56, 189, 248, 0.55)',
-            borderRadius: isQuestionCollapsed ? '9999px' : '18px',
-            padding: isQuestionCollapsed ? '0.45rem 1.15rem' : '0.85rem 1.6rem',
-            backdropFilter: 'blur(20px)',
-            boxShadow: '0 0 24px rgba(56, 189, 248, 0.28), inset 0 0 16px rgba(56, 189, 248, 0.12), 0 16px 45px rgba(0, 0, 0, 0.65)',
-            pointerEvents: 'auto',
-            animation: 'fadeInSlideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-            position: 'relative',
-            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            width: '125px',
+            height: '80px',
+            backgroundColor: '#F8FAFC',
+            borderRadius: '6px',
+            border: '2px solid #0F172A',
+            boxShadow: '0 8px 18px rgba(0, 0, 0, 0.5)',
+            padding: '0.4rem 0.5rem',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            color: '#0F172A',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 10px 22px rgba(56, 189, 248, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 8px 18px rgba(0, 0, 0, 0.5)';
           }}
         >
-          {/* Card Top Metadata: Question Counter & Audio Replay Button */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: isQuestionCollapsed ? 0 : '0.65rem',
-              borderBottom: isQuestionCollapsed ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
-              paddingBottom: isQuestionCollapsed ? 0 : '0.5rem',
+              borderBottom: '1px solid #CBD5E1',
+              paddingBottom: '0.2rem',
+              marginBottom: '0.2rem',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <span
-                style={{
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  color: '#38BDF8',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                }}
-              >
-                <Sparkles size={12} />
-                Question {questionIndex} of {totalQuestions}
-              </span>
-              <span style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.75rem' }}>•</span>
-              <span style={{ fontSize: '0.74rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-                {interviewType}
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-              {/* Replay Question Audio Button */}
-              <button
-                type="button"
-                onClick={() => speakText(currentQuestionText)}
-                title="Listen to question again"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  background: 'none',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  borderRadius: '8px',
-                  padding: '0.22rem 0.55rem',
-                  color: isInterviewerSpeaking ? '#38BDF8' : 'rgba(255, 255, 255, 0.7)',
-                  fontSize: '0.72rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <Volume2 size={13} />
-                <span>{isInterviewerSpeaking ? 'Speaking...' : 'Replay'}</span>
-              </button>
-
-              {/* Collapse / Expand Question Card Button */}
-              <button
-                type="button"
-                onClick={() => setIsQuestionCollapsed(!isQuestionCollapsed)}
-                title={isQuestionCollapsed ? 'Expand Question Card' : 'Minimize Card for Full View'}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  background: 'none',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  borderRadius: '8px',
-                  padding: '0.22rem 0.45rem',
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {isQuestionCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-              </button>
-            </div>
+            <span style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              Notes
+            </span>
+            <Edit3 size={10} color="#0284C7" />
           </div>
-
-          {/* Current Question Text (Collapsible & Uppercase matching Reference Image) */}
-          {!isQuestionCollapsed && (
-            <h1
-              style={{
-                fontSize: 'clamp(1.05rem, 1.4vw, 1.28rem)',
-                fontWeight: 700,
-                lineHeight: 1.45,
-                color: '#FFFFFF',
-                margin: '0 0 0.35rem 0',
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                textAlign: 'center',
-                fontFamily: 'var(--font-sans)',
-              }}
-            >
-              {currentQuestionText}
-            </h1>
-          )}
-
-          {/* Subtle Progress Bar */}
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: '3px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderBottomLeftRadius: '20px',
-              borderBottomRightRadius: '20px',
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                height: '100%',
-                width: `${Math.min(100, (questionIndex / totalQuestions) * 100)}%`,
-                background: 'linear-gradient(90deg, #38BDF8, #818CF8)',
-                transition: 'width 0.4s ease',
-              }}
-            />
+          <div style={{ fontSize: '0.48rem', color: '#475569', lineHeight: 1.3 }}>
+            • STAR framework ready{'\n'}
+            • Leadership & metrics{'\n'}
+            • High scalability
+          </div>
+          <div style={{ marginTop: 'auto', fontSize: '0.46rem', color: '#0284C7', fontWeight: 600 }}>
+            Tap to edit ✎
           </div>
         </div>
 
-        {/* ATTENTIVE LISTENING INDICATOR (Floats naturally when candidate speaks) */}
-        {isCandidateSpeaking && (
+        {/* Spiral Notepad & Pen */}
+        <div
+          style={{
+            width: '88px',
+            height: '80px',
+            backgroundColor: '#FEF3C7',
+            borderRadius: '4px',
+            boxShadow: '0 6px 14px rgba(0, 0, 0, 0.45)',
+            padding: '0.35rem 0.45rem',
+            borderLeft: '4px solid #D97706',
+            position: 'relative',
+          }}
+        >
+          <div style={{ fontSize: '0.5rem', fontWeight: 700, color: '#92400E', borderBottom: '1px dashed #D97706', paddingBottom: '2px', marginBottom: '3px' }}>
+            Two Sum Plan
+          </div>
+          <div style={{ fontSize: '0.46rem', color: '#78350F', lineHeight: 1.25 }}>
+            ✔ Hash map lookup{'\n'}
+            ✔ O(N) single pass{'\n'}
+            ✔ Return indices
+          </div>
+
+          {/* Silver Pen resting next to pad */}
           <div
             style={{
-              marginTop: '1.25rem',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.65rem',
-              padding: '0.55rem 1.25rem',
-              borderRadius: '9999px',
-              backgroundColor: 'rgba(10, 14, 20, 0.85)',
-              border: '1px solid rgba(34, 197, 94, 0.4)',
-              backdropFilter: 'blur(16px)',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(34, 197, 94, 0.2)',
-              animation: 'fadeIn 0.25s ease',
-              pointerEvents: 'auto',
+              position: 'absolute',
+              right: '-14px',
+              top: '10px',
+              width: '5px',
+              height: '62px',
+              backgroundColor: '#CBD5E1',
+              borderRadius: '2px',
+              boxShadow: '1px 2px 4px rgba(0,0,0,0.5)',
+              transform: 'rotate(12deg)',
             }}
-          >
-            <div
-              style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: '#22C55E',
-                boxShadow: '0 0 10px #22C55E',
-              }}
-            />
-            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#4ADE80' }}>
-              {interviewerName} is listening attentively...
-            </span>
+          />
+        </div>
+      </div>
 
-            {/* Candidate reactive audio level bars */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '2px', height: '14px', marginLeft: '4px' }}>
-              {[10, 18, 24, 14, 22, 12].map((h, i) => (
-                <div
-                  key={i}
-                  style={{
-                    width: '2px',
-                    height: `${Math.max(4, Math.round((h * micVolume) / 50))}px`,
-                    backgroundColor: '#4ADE80',
-                    borderRadius: '1px',
-                    transition: 'height 0.08s ease',
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-      </main>
+      {/* 4D. Candidate POV Hands in Foreground */}
+      <CandidatePOVHands isCandidateSpeaking={isCandidateSpeaking} />
 
+      {/* 4E. Live Coding Laptop on Right Desk */}
+      <DeskCodingLaptop
+        timer={formatTimer(secondsElapsed)}
+        isExpanded={laptopExpanded}
+        onToggleExpand={() => setLaptopExpanded(!laptopExpanded)}
+      />
 
       {/* =========================================================================
-          LAYER 5: CANDIDATE PIP WEBCAM FEED (BOTTOM RIGHT CORNER)
+          LAYER 5: CANDIDATE PIP WEBCAM FEED (TOP-RIGHT FLOATING)
           ========================================================================= */}
       <div
         style={{
           position: 'absolute',
-          bottom: '96px',
-          right: '2rem',
-          zIndex: 20,
-          width: pipMinimized ? '160px' : '250px',
+          top: 'clamp(4.8rem, 10vh, 6.2rem)',
+          right: 'clamp(1.5rem, 4vw, 4rem)',
+          zIndex: 22,
+          width: pipMinimized ? '135px' : '205px',
           aspectRatio: '16/9',
           backgroundColor: '#090C12',
-          borderRadius: '16px',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
+          borderRadius: '14px',
+          border: '1px solid rgba(255, 255, 255, 0.16)',
           overflow: 'hidden',
           boxShadow: '0 16px 36px rgba(0, 0, 0, 0.7)',
           transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -1129,8 +1417,8 @@ export default function ImmersiveInterviewRoom({
               color: 'var(--text-tertiary)',
             }}
           >
-            <CameraOff size={22} />
-            <span style={{ fontSize: '0.72rem' }}>Camera Off</span>
+            <CameraOff size={20} />
+            <span style={{ fontSize: '0.68rem' }}>Camera Off</span>
           </div>
         )}
 
@@ -1138,9 +1426,9 @@ export default function ImmersiveInterviewRoom({
         <div
           style={{
             position: 'absolute',
-            top: '8px',
-            left: '8px',
-            right: '8px',
+            top: '6px',
+            left: '6px',
+            right: '6px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1156,7 +1444,7 @@ export default function ImmersiveInterviewRoom({
               backdropFilter: 'blur(8px)',
               padding: '2px 6px',
               borderRadius: '9999px',
-              fontSize: '0.65rem',
+              fontSize: '0.62rem',
               fontWeight: 600,
               color: '#FFFFFF',
             }}
@@ -1181,15 +1469,15 @@ export default function ImmersiveInterviewRoom({
               border: 'none',
               borderRadius: '50%',
               color: '#FFFFFF',
-              width: '20px',
-              height: '20px',
+              width: '18px',
+              height: '18px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
             }}
           >
-            {pipMinimized ? <Maximize2 size={10} /> : <Minimize2 size={10} />}
+            {pipMinimized ? <Maximize2 size={9} /> : <Minimize2 size={9} />}
           </button>
         </div>
 
@@ -1197,10 +1485,10 @@ export default function ImmersiveInterviewRoom({
         <div
           style={{
             position: 'absolute',
-            bottom: '6px',
-            left: '8px',
-            right: '8px',
-            height: '3px',
+            bottom: '4px',
+            left: '6px',
+            right: '6px',
+            height: '2px',
             backgroundColor: 'rgba(255, 255, 255, 0.1)',
             borderRadius: '2px',
             overflow: 'hidden',
@@ -1596,6 +1884,166 @@ export default function ImmersiveInterviewRoom({
             ))}
           </div>
         </aside>
+      )}
+
+      {/* =========================================================================
+          LAYER 8.5: INTERACTIVE DESK RESUME INSPECTOR MODAL
+          ========================================================================= */}
+      {showDeskResume && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(5, 7, 10, 0.85)',
+            backdropFilter: 'blur(16px)',
+            zIndex: 10000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+            animation: 'fadeIn 0.2s ease',
+          }}
+          onClick={() => setShowDeskResume(false)}
+        >
+          <div
+            style={{
+              backgroundColor: '#0E131F',
+              border: '1.5px solid rgba(56, 189, 248, 0.35)',
+              borderRadius: '20px',
+              maxWidth: '680px',
+              width: '100%',
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              padding: '2rem',
+              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.85), 0 0 40px rgba(56, 189, 248, 0.15)',
+              color: '#F1F5F9',
+              position: 'relative',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '1rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '50%',
+                    backgroundColor: '#0284C7',
+                    color: '#FFFFFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: '1.1rem',
+                  }}
+                >
+                  {user?.name ? user.name.charAt(0) : 'C'}
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#FFFFFF' }}>
+                    {user?.name || 'Candidate Resume'}
+                  </h2>
+                  <div style={{ fontSize: '0.82rem', color: '#38BDF8', fontWeight: 600 }}>
+                    {targetRole} · {experienceLevel} · Applying to {targetCompany}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowDeskResume(false)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '50%',
+                  color: '#FFFFFF',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Resume Summary */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#38BDF8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.35rem' }}>
+                Professional Summary
+              </div>
+              <p style={{ margin: 0, fontSize: '0.88rem', color: '#CBD5E1', lineHeight: 1.6 }}>
+                Results-driven {targetRole} with a strong foundation in scalable distributed systems, algorithms, and full-stack architecture. Demonstrated track record delivering high-impact solutions, collaborating across cross-functional engineering teams, and optimizing production latency.
+              </p>
+            </div>
+
+            {/* Core Competencies */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#38BDF8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.45rem' }}>
+                Technical Competencies
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                {['Python', 'JavaScript (ES6+)', 'React / Next.js', 'Node.js', 'Data Structures & Algorithms', 'System Architecture', 'PostgreSQL / MongoDB', 'Docker / Kubernetes', 'REST / GraphQL APIs'].map((skill, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      padding: '0.25rem 0.65rem',
+                      borderRadius: '9999px',
+                      backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                      color: '#E0F2FE',
+                      fontSize: '0.76rem',
+                    }}
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Experience */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#38BDF8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.45rem' }}>
+                Relevant Experience
+              </div>
+
+              <div style={{ marginBottom: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                  <span style={{ fontWeight: 700, color: '#FFFFFF', fontSize: '0.9rem' }}>Lead Software Engineer — High Scale Cloud Tech</span>
+                  <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>2022 – Present</span>
+                </div>
+                <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#94A3B8', fontSize: '0.82rem', lineHeight: 1.5 }}>
+                  <li>Designed and executed high-throughput data processing services handling over 100K queries/second.</li>
+                  <li>Spearheaded architectural refactoring that cut API response latency by 38% and reduced operational costs.</li>
+                </ul>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                  <span style={{ fontWeight: 700, color: '#FFFFFF', fontSize: '0.9rem' }}>Software Engineer — Enterprise Systems</span>
+                  <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>2020 – 2022</span>
+                </div>
+                <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#94A3B8', fontSize: '0.82rem', lineHeight: 1.5 }}>
+                  <li>Built resilient client-facing web applications with interactive state management and automated CI/CD tests.</li>
+                  <li>Partnered with product managers and UX designers to deliver enterprise features with 99.98% crash-free sessions.</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Education */}
+            <div>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#38BDF8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.35rem' }}>
+                Education & Credentials
+              </div>
+              <div style={{ fontSize: '0.84rem', color: '#CBD5E1' }}>
+                <strong>B.S. in Computer Science & Engineering</strong> · Top Tier Technical University
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* =========================================================================
