@@ -82,12 +82,28 @@ export default function ImmersiveInterviewRoom({
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [isInterviewerSpeaking, setIsInterviewerSpeaking] = useState(false);
   const [isCandidateSpeaking, setIsCandidateSpeaking] = useState(false);
+  const [interviewerAudioLevel, setInterviewerAudioLevel] = useState(0);
+  const [characterState, setCharacterState] = useState('idle'); // 'idle' | 'listening' | 'speaking' | 'thinking' | 'ending'
+
+  // Refs for instantaneous access in RAF and audio listeners
+  const isInterviewerSpeakingRef = useRef(false);
+  const isMicMutedRef = useRef(!config?.isMicActive);
+  const audioCadenceTimerRef = useRef(null);
 
   // ─── Hardware & Device Controls ─────────────────────────────────────────────
   const [isMicMuted, setIsMicMuted] = useState(!config?.isMicActive);
   const [isCameraOff, setIsCameraOff] = useState(!config?.isCameraActive);
   const [isScreenSharing, setIsScreenSharing] = useState(!!config?.isScreenShareActive);
   const [micVolume, setMicVolume] = useState(0);
+
+  // Keep refs in sync
+  useEffect(() => {
+    isInterviewerSpeakingRef.current = isInterviewerSpeaking;
+  }, [isInterviewerSpeaking]);
+
+  useEffect(() => {
+    isMicMutedRef.current = isMicMuted;
+  }, [isMicMuted]);
 
   // ─── UI Drawers & Overlays ──────────────────────────────────────────────────
   const [notesDrawerOpen, setNotesDrawerOpen] = useState(false);
@@ -115,10 +131,6 @@ export default function ImmersiveInterviewRoom({
   const recognitionRef = useRef(null);
   const transcriptScrollRef = useRef(null);
   const interviewerFinishedSpeakingAtRef = useRef(Date.now());
-  const isMicMutedRef = useRef(isMicMuted);
-  useEffect(() => {
-    isMicMutedRef.current = isMicMuted;
-  }, [isMicMuted]);
 
   const trackerRef = useRef(null);
 
@@ -204,10 +216,22 @@ export default function ImmersiveInterviewRoom({
               setMicVolume(vol);
 
               // Update candidate speaking state if sound is detected and mic isn't muted
-              if (vol > 15 && !isMicMutedRef.current) {
+              if (vol > 16 && !isMicMutedRef.current) {
                 setIsCandidateSpeaking(true);
+
+                // TURN-TAKING BARGE-IN INTERRUPTION HANDLING:
+                // If candidate speaks while interviewer is speaking, cancel immediately!
+                if (isInterviewerSpeakingRef.current) {
+                  console.log('[Turn-Taking] Candidate voice barge-in detected. Canceling interviewer speech.');
+                  stopSpeechSynthesis();
+                } else if (sessionPhase === 'active') {
+                  setCharacterState('listening');
+                }
               } else {
                 setIsCandidateSpeaking(false);
+                if (!isInterviewerSpeakingRef.current && sessionPhase === 'active') {
+                  setCharacterState(prev => (prev === 'thinking' ? 'thinking' : 'idle'));
+                }
               }
 
               animFrameRef.current = requestAnimationFrame(trackVolume);
@@ -251,14 +275,24 @@ export default function ImmersiveInterviewRoom({
     stopSpeechRecognition();
   }, []);
 
+  // ─── 3. Stop Speech Synthesis & Audio Envelope ──────────────────────────────
   const stopSpeechSynthesis = () => {
+    if (audioCadenceTimerRef.current) {
+      clearInterval(audioCadenceTimerRef.current);
+      audioCadenceTimerRef.current = null;
+    }
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
     setIsInterviewerSpeaking(false);
+    isInterviewerSpeakingRef.current = false;
+    setInterviewerAudioLevel(0);
+    if (sessionPhase === 'active') {
+      setCharacterState('idle');
+    }
   };
 
-  // ─── 3. Speech Recognition (Candidate Voice-to-Text) ─────────────────────────
+  // ─── 4. Speech Recognition (Candidate Voice-to-Text with Turn-Taking) ─────────
   const startSpeechRecognition = useCallback(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -281,7 +315,16 @@ export default function ImmersiveInterviewRoom({
         for (let i = 0; i < event.results.length; i++) {
           transcript += event.results[i][0].transcript + ' ';
         }
-        setCandidateAnswer(transcript.trim());
+        const trimmed = transcript.trim();
+        if (trimmed) {
+          setCandidateAnswer(trimmed);
+
+          // TURN-TAKING BARGE-IN: If interviewer is currently speaking and candidate speaks words, immediately halt interviewer
+          if (isInterviewerSpeakingRef.current) {
+            console.log('[Turn-Taking] Recognized candidate speech during interviewer speech. Halting interviewer.');
+            stopSpeechSynthesis();
+          }
+        }
       };
 
       recognition.onerror = (err) => {
@@ -323,15 +366,15 @@ export default function ImmersiveInterviewRoom({
     startSpeechRecognition();
   }, [startSpeechRecognition]);
 
-  // ─── 4. Speech Synthesis (Interviewer Voice Out Loud) ────────────────────────
+  // ─── 5. Speech Synthesis (Interviewer Voice Out Loud with Lip-Sync Cadence) ───
   const speakText = (text) => {
     if (!('speechSynthesis' in window)) {
       activateMic();
       return;
     }
-    window.speechSynthesis.cancel();
+    stopSpeechSynthesis();
 
-    // Clean text of intro metadata for speech
+    // Clean text of intro metadata for natural spoken flow
     const cleanSpeech = text
       .replace(/Hello!.*?To begin: /s, "Hello! Welcome to your interview. Let's begin. ")
       .replace(/[*#_]/g, '');
@@ -359,16 +402,39 @@ export default function ImmersiveInterviewRoom({
 
     utterance.onstart = () => {
       setIsInterviewerSpeaking(true);
-      // Fallback timer: ensure mic is activated even if browser speech ends unexpectedly
+      isInterviewerSpeakingRef.current = true;
+      setCharacterState('speaking');
+
+      // Synthesize dynamic audio energy envelope for phonetic mouth movement
+      if (audioCadenceTimerRef.current) clearInterval(audioCadenceTimerRef.current);
+      let step = 0;
+      audioCadenceTimerRef.current = setInterval(() => {
+        step++;
+        const wave =
+          Math.sin(step * 0.45) * 0.42 +
+          Math.sin(step * 0.72) * 0.35 +
+          Math.sin(step * 0.22) * 0.23;
+        const amp = Math.max(0.06, Math.min(0.95, (wave + 1) * 0.42));
+        setInterviewerAudioLevel(amp);
+      }, 50);
+
+      // Fallback safety timer: ensure mic is activated even if browser speech ends unexpectedly
       safetyTimer = setTimeout(() => {
-        setIsInterviewerSpeaking(false);
+        stopSpeechSynthesis();
         activateMic();
-      }, 10000);
+      }, 14000);
+    };
+
+    utterance.onboundary = (e) => {
+      // Word boundary event: trigger instantaneous syllable mouth pulse
+      if (e.name === 'word') {
+        setInterviewerAudioLevel(prev => Math.min(1.0, prev + 0.32));
+      }
     };
 
     utterance.onend = () => {
       if (safetyTimer) clearTimeout(safetyTimer);
-      setIsInterviewerSpeaking(false);
+      stopSpeechSynthesis();
       interviewerFinishedSpeakingAtRef.current = Date.now();
       // Auto-turn mic ON when model finishes asking the question
       activateMic();
@@ -376,14 +442,13 @@ export default function ImmersiveInterviewRoom({
 
     utterance.onerror = () => {
       if (safetyTimer) clearTimeout(safetyTimer);
-      setIsInterviewerSpeaking(false);
+      stopSpeechSynthesis();
       interviewerFinishedSpeakingAtRef.current = Date.now();
       activateMic();
     };
 
     window.speechSynthesis.speak(utterance);
   };
-
   // ─── 5. Start Session Lifecycle ─────────────────────────────────────────────
   useEffect(() => {
     trackerRef.current = new MultimodalTracker({
@@ -495,6 +560,8 @@ export default function ImmersiveInterviewRoom({
         duration: config?.duration ? parseInt(config.duration) : 30,
         focusTopic: config?.topic || config?.language || null,
         interviewerName,
+        candidateName: user?.name || null,
+        resumeData: config?.resume || user?.bio || null,
       });
 
       setSessionId(response.sessionId);
@@ -608,6 +675,7 @@ export default function ImmersiveInterviewRoom({
 
     const answerText = candidateAnswer.trim();
     setIsSubmittingAnswer(true);
+    setCharacterState('thinking');
     stopSpeechSynthesis();
 
     // Feed speech chunk to MultimodalTracker
@@ -684,6 +752,7 @@ export default function ImmersiveInterviewRoom({
   const handleEndInterview = async () => {
     setConfirmEndModalOpen(false);
     setSessionPhase('ending');
+    setCharacterState('ending');
     stopAllMedia();
 
     const finalTelemetry = trackerRef.current?.getFinalTelemetry({ isCameraOff, isMicMuted }) || {};
@@ -848,10 +917,13 @@ export default function ImmersiveInterviewRoom({
       <ThreeInterviewScene
         isInterviewerSpeaking={isInterviewerSpeaking}
         isCandidateSpeaking={isCandidateSpeaking}
+        characterState={characterState}
+        interviewerAudioLevel={interviewerAudioLevel}
         interviewerName={interviewerName}
         interviewerTitle={interviewerTitle}
         candidateRole={targetRole}
         targetCompany={targetCompany}
+        micVolume={micVolume}
       />
 
       {/* =========================================================================

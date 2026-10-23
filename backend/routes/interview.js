@@ -57,6 +57,8 @@ router.post('/start', optionalAuth, async (req, res) => {
       focusTopic = null,
       interviewerName = 'Mr. J. Chen',
       interviewerPersona = 'chen',
+      candidateName = null,
+      resumeData = null,
     } = req.body;
 
     const sessionId = generateSessionId();
@@ -109,6 +111,8 @@ router.post('/start', optionalAuth, async (req, res) => {
       focusTopic,
       interviewerPersona,
       interviewerName,
+      candidateName,
+      resumeData,
       status: 'active',
       questions: initialQuestions,
       transcript: initialTranscript,
@@ -199,6 +203,11 @@ router.post('/:id/message', optionalAuth, async (req, res) => {
     const followUpResult = await generateFollowUp({
       role: session.role,
       company: session.company,
+      interviewType: session.interviewType || 'Technical Interview',
+      experience: session.experienceLevel || 'Mid Level',
+      interviewerName: session.interviewerName || 'Mr. J. Chen',
+      candidateName: session.candidateName || null,
+      resumeData: session.resumeData || null,
       currentQuestion: {
         id: latestQuestion.id,
         questionText: latestQuestion.questionText,

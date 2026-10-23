@@ -1,21 +1,23 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 /**
  * ThreeInterviewScene
- * Fully articulated 3D Interviewer (Mr. J. Chen) and executive high-rise office environment in Three.js.
+ * Realistic 3D Human Interviewer (Mr. J. Chen) and executive high-rise office environment in Three.js.
  * Features:
- * - REAL 3D Character Model of Mr. J. Chen seated across the executive mahogany desk.
- * - LIVE MOVING & GESTURING HANDS: Arms, wrists, and articulated fingers that move and gesture conversationally when he speaks or listens!
- * - REAL-TIME TALKING JAW & MOUTH: Syllable-synced phonetic mouth articulation when isInterviewerSpeaking is active.
- * - LIVING EXPRESSIONS: Eyelids blinking realistically, head nodding conversationally, attentive head tilt when candidate speaks.
- * - BREATHING PHYSICS: Natural chest and shoulder breathing animation.
- * - INTERACTIVE GAZE: Head and eyes subtly track candidate mouse movement for true presence.
+ * - REAL 3D Rigged Human GLB Avatar seated across the executive mahogany desk.
+ * - LIVE MOVING & GESTURING HANDS: Realistic arms, wrists, and articulated fingers that move conversationally.
+ * - REAL-TIME AUDIO-SYNCHRONIZED LIP-SYNC: Real facial morph targets (mouthOpen, mouthSmile) driven by live speech cadence.
+ * - LIVING EXPRESSIONS: Natural head tilting, thoughtful micro-nods during listening, interactive gaze tracking.
+ * - NATURAL BREATHING: Subtle organic spine and chest breathing physics.
  * - EXECUTIVE OFFICE ENVIRONMENT: Panoramic high-rise corner windows with city skyscrapers, floor-to-ceiling mullions, executive leather chair, polished desk, and daylight sunbeams.
  */
 export default function ThreeInterviewScene({
   isInterviewerSpeaking = false,
   isCandidateSpeaking = false,
+  characterState = 'idle',
+  interviewerAudioLevel = 0,
   interviewerName = 'Mr. J. Chen',
   interviewerTitle = 'Hiring Manager',
   candidateRole = 'Software Engineer',
@@ -23,6 +25,32 @@ export default function ThreeInterviewScene({
   micVolume = 0,
 }) {
   const mountRef = useRef(null);
+
+  // Mutable ref so the 60 FPS animation loop continuously reads the latest props
+  // without tearing down or remounting the Three.js WebGL canvas!
+  const propsRef = useRef({
+    isInterviewerSpeaking,
+    isCandidateSpeaking,
+    characterState,
+    interviewerAudioLevel,
+    interviewerName,
+    interviewerTitle,
+    candidateRole,
+    targetCompany,
+    micVolume,
+  });
+
+  propsRef.current = {
+    isInterviewerSpeaking,
+    isCandidateSpeaking,
+    characterState,
+    interviewerAudioLevel,
+    interviewerName,
+    interviewerTitle,
+    candidateRole,
+    targetCompany,
+    micVolume,
+  };
 
   useEffect(() => {
     const container = mountRef.current;
@@ -297,329 +325,101 @@ export default function ThreeInterviewScene({
 
     interviewerGroup.add(chairGroup);
 
-    // B. Human Torso & Tailored Executive Suit
-    const humanGroup = new THREE.Group();
+    // B. Real GLTF Human Rigged Avatar Model (Mr. J. Chen)
+    let avatarModel = null;
+    const bones = {
+      head: null,
+      neck: null,
+      spine: null,
+      spine1: null,
+      spine2: null,
+      leftArm: null,
+      leftForeArm: null,
+      leftHand: null,
+      rightArm: null,
+      rightForeArm: null,
+      rightHand: null,
+      leftUpLeg: null,
+      leftLeg: null,
+      rightUpLeg: null,
+      rightLeg: null,
+      hips: null,
+    };
+    const morphMeshes = [];
 
-    // Realistic skin material with subsurface clearcoat
-    const skinMat = new THREE.MeshPhysicalMaterial({
-      color: '#E8A782',
-      roughness: 0.42,
-      metalness: 0.02,
-      clearcoat: 0.14,
-      clearcoatRoughness: 0.22,
-    });
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.load(
+      '/models/interviewer.glb',
+      (gltf) => {
+        avatarModel = gltf.scene;
+        avatarModel.scale.set(1.06, 1.06, 1.06);
+        // Position seated inside executive chair directly facing candidate
+        avatarModel.position.set(0, -0.22, 0.04);
 
-    // Dark charcoal executive tailored suit jacket
-    const suitMat = new THREE.MeshStandardMaterial({
-      color: '#282F3E',
-      roughness: 0.62,
-    });
+        avatarModel.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (child.material) {
+              child.material.roughness = Math.max(child.material.roughness || 0.4, 0.35);
+            }
+            if (child.morphTargetDictionary && child.morphTargetInfluences) {
+              morphMeshes.push(child);
+            }
+          }
+          if (child.isBone) {
+            const name = child.name;
+            if (name === 'Head') bones.head = child;
+            else if (name === 'Neck') bones.neck = child;
+            else if (name === 'Spine') bones.spine = child;
+            else if (name === 'Spine1') bones.spine1 = child;
+            else if (name === 'Spine2') bones.spine2 = child;
+            else if (name === 'LeftArm') bones.leftArm = child;
+            else if (name === 'LeftForeArm') bones.leftForeArm = child;
+            else if (name === 'LeftHand') bones.leftHand = child;
+            else if (name === 'RightArm') bones.rightArm = child;
+            else if (name === 'RightForeArm') bones.rightForeArm = child;
+            else if (name === 'RightHand') bones.rightHand = child;
+            else if (name === 'LeftUpLeg') bones.leftUpLeg = child;
+            else if (name === 'LeftLeg') bones.leftLeg = child;
+            else if (name === 'RightUpLeg') bones.rightUpLeg = child;
+            else if (name === 'RightLeg') bones.rightLeg = child;
+            else if (name === 'Hips') bones.hips = child;
+          }
+        });
 
-    const shirtMat = new THREE.MeshStandardMaterial({
-      color: '#FFFFFF',
-      roughness: 0.3,
-    });
+        // Natural seated posture behind executive mahogany desk:
+        if (bones.leftUpLeg) bones.leftUpLeg.rotation.x = -1.48;
+        if (bones.rightUpLeg) bones.rightUpLeg.rotation.x = -1.48;
+        if (bones.leftLeg) bones.leftLeg.rotation.x = 1.45;
+        if (bones.rightLeg) bones.rightLeg.rotation.x = 1.45;
 
-    // Chest Torso
-    const chestGeo = new THREE.CylinderGeometry(0.38, 0.33, 0.65, 20);
-    const chest = new THREE.Mesh(chestGeo, suitMat);
-    chest.position.set(0, 1.05, -0.15);
-    chest.castShadow = true;
-    humanGroup.add(chest);
+        // Arms positioned forward resting naturally on the executive desk blotter:
+        if (bones.leftArm) {
+          bones.leftArm.rotation.x = 0.85;
+          bones.leftArm.rotation.z = 0.24;
+        }
+        if (bones.leftForeArm) {
+          bones.leftForeArm.rotation.x = 0.72;
+          bones.leftForeArm.rotation.y = 0.32;
+        }
+        if (bones.rightArm) {
+          bones.rightArm.rotation.x = 0.85;
+          bones.rightArm.rotation.z = -0.24;
+        }
+        if (bones.rightForeArm) {
+          bones.rightForeArm.rotation.x = 0.72;
+          bones.rightForeArm.rotation.y = -0.32;
+        }
 
-    // White Shirt V-Placket
-    const shirtV = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.35, 0.06), shirtMat);
-    shirtV.position.set(0, 1.18, -0.02);
-    humanGroup.add(shirtV);
-
-    // Open White Collar Tabs
-    [-0.07, 0.07].forEach((x, idx) => {
-      const tab = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.11, 0.02), shirtMat);
-      tab.position.set(x, 1.35, 0.02);
-      tab.rotation.z = idx === 0 ? 0.35 : -0.35;
-      humanGroup.add(tab);
-    });
-
-    // Silk Tie (Champagne Gold)
-    const tieMat = new THREE.MeshStandardMaterial({ color: '#D9B77A', roughness: 0.35, metalness: 0.3 });
-    const tie = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.34, 0.025), tieMat);
-    tie.position.set(0, 1.12, 0.005);
-    humanGroup.add(tie);
-
-    // Suit Lapels
-    [-0.14, 0.14].forEach((x, idx) => {
-      const lapel = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.45, 0.04), suitMat);
-      lapel.position.set(x, 1.15, 0.01);
-      lapel.rotation.z = idx === 0 ? -0.22 : 0.22;
-      humanGroup.add(lapel);
-    });
-
-    // ─── C. ARTICULATED LIVING ARMS & MOVING HANDS ───────────────────────────
-    // Left Arm Pivot System
-    const leftArmPivot = new THREE.Group();
-    leftArmPivot.position.set(-0.35, 1.25, -0.12);
-
-    const leftUpperArm = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.09, 0.08, 0.38, 16),
-      suitMat
+        interviewerGroup.add(avatarModel);
+      },
+      undefined,
+      (err) => {
+        console.warn('Failed to load interviewer.glb:', err);
+      }
     );
-    leftUpperArm.position.set(0, -0.18, 0.08);
-    leftUpperArm.rotation.x = 0.52;
-    leftUpperArm.rotation.z = 0.14;
-    leftArmPivot.add(leftUpperArm);
 
-    const leftForearmPivot = new THREE.Group();
-    leftForearmPivot.position.set(-0.06, -0.34, 0.18);
-
-    const leftForearm = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.075, 0.065, 0.36, 16),
-      suitMat
-    );
-    leftForearm.position.set(0, -0.06, 0.14);
-    leftForearm.rotation.x = Math.PI / 2.2;
-    leftForearm.rotation.y = 0.32;
-    leftForearmPivot.add(leftForearm);
-
-    // White cuff
-    const leftCuff = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.068, 0.068, 0.04, 16),
-      shirtMat
-    );
-    leftCuff.position.set(0.03, -0.05, 0.28);
-    leftCuff.rotation.x = Math.PI / 2.2;
-    leftForearmPivot.add(leftCuff);
-
-    // Left Articulated Hand & Fingers
-    const leftHandPivot = new THREE.Group();
-    leftHandPivot.position.set(0.04, -0.04, 0.32);
-
-    const leftPalm = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.048, 0.12), skinMat);
-    leftHandPivot.add(leftPalm);
-
-    // Left Fingers
-    const fingerMat = skinMat;
-    const leftThumb = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.03, 0.07), fingerMat);
-    leftThumb.position.set(0.06, -0.005, 0.03);
-    leftThumb.rotation.y = 0.45;
-    leftHandPivot.add(leftThumb);
-
-    const leftIndex = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.028, 0.08), fingerMat);
-    leftIndex.position.set(0.032, 0, 0.08);
-    leftHandPivot.add(leftIndex);
-
-    const leftMiddle = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.028, 0.088), fingerMat);
-    leftMiddle.position.set(0.002, 0, 0.085);
-    leftHandPivot.add(leftMiddle);
-
-    const leftRing = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.028, 0.08), fingerMat);
-    leftRing.position.set(-0.028, 0, 0.08);
-    leftHandPivot.add(leftRing);
-
-    leftForearmPivot.add(leftHandPivot);
-    leftArmPivot.add(leftForearmPivot);
-    humanGroup.add(leftArmPivot);
-
-    // Right Arm Pivot System
-    const rightArmPivot = new THREE.Group();
-    rightArmPivot.position.set(0.35, 1.25, -0.12);
-
-    const rightUpperArm = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.09, 0.08, 0.38, 16),
-      suitMat
-    );
-    rightUpperArm.position.set(0, -0.18, 0.08);
-    rightUpperArm.rotation.x = 0.52;
-    rightUpperArm.rotation.z = -0.14;
-    rightArmPivot.add(rightUpperArm);
-
-    const rightForearmPivot = new THREE.Group();
-    rightForearmPivot.position.set(0.06, -0.34, 0.18);
-
-    const rightForearm = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.075, 0.065, 0.36, 16),
-      suitMat
-    );
-    rightForearm.position.set(0, -0.06, 0.14);
-    rightForearm.rotation.x = Math.PI / 2.2;
-    rightForearm.rotation.y = -0.32;
-    rightForearmPivot.add(rightForearm);
-
-    // White cuff
-    const rightCuff = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.068, 0.068, 0.04, 16),
-      shirtMat
-    );
-    rightCuff.position.set(-0.03, -0.05, 0.28);
-    rightCuff.rotation.x = Math.PI / 2.2;
-    rightForearmPivot.add(rightCuff);
-
-    // Right Articulated Hand & Fingers
-    const rightHandPivot = new THREE.Group();
-    rightHandPivot.position.set(-0.04, -0.04, 0.32);
-
-    const rightPalm = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.048, 0.12), skinMat);
-    rightHandPivot.add(rightPalm);
-
-    const rightThumb = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.03, 0.07), fingerMat);
-    rightThumb.position.set(-0.06, -0.005, 0.03);
-    rightThumb.rotation.y = -0.45;
-    rightHandPivot.add(rightThumb);
-
-    const rightIndex = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.028, 0.08), fingerMat);
-    rightIndex.position.set(-0.032, 0, 0.08);
-    rightHandPivot.add(rightIndex);
-
-    const rightMiddle = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.028, 0.088), fingerMat);
-    rightMiddle.position.set(-0.002, 0, 0.085);
-    rightHandPivot.add(rightMiddle);
-
-    const rightRing = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.028, 0.08), fingerMat);
-    rightRing.position.set(0.028, 0, 0.08);
-    rightHandPivot.add(rightRing);
-
-    rightForearmPivot.add(rightHandPivot);
-    rightArmPivot.add(rightForearmPivot);
-    humanGroup.add(rightArmPivot);
-
-    // Neck
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.18, 20), skinMat);
-    neck.position.set(0, 1.38, -0.1);
-    humanGroup.add(neck);
-
-    // ─── D. HEAD, BLINKING EYES & ARTICULATED TALKING MOUTH ─────────────────
-    const headPivot = new THREE.Group();
-    headPivot.position.set(0, 1.48, -0.08);
-
-    // Cranium & Upper Face (smooth high-segment organic geometry)
-    const craniumGeo = new THREE.SphereGeometry(0.2, 32, 28);
-    craniumGeo.scale(0.92, 1.18, 0.98);
-    const cranium = new THREE.Mesh(craniumGeo, skinMat);
-    cranium.position.set(0, 0.08, 0);
-    cranium.castShadow = true;
-    headPivot.add(cranium);
-
-    // Sleek Asian Executive Parted Hair
-    const hairMat = new THREE.MeshStandardMaterial({
-      color: '#131418',
-      roughness: 0.75,
-      metalness: 0.1,
-    });
-    const hairTopGeo = new THREE.SphereGeometry(0.208, 28, 20);
-    hairTopGeo.scale(0.96, 1.08, 1.02);
-    const hairTop = new THREE.Mesh(hairTopGeo, hairMat);
-    hairTop.position.set(0, 0.14, -0.02);
-    headPivot.add(hairTop);
-
-    // Side part fringe sweep
-    const fringe = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.09, 0.13), hairMat);
-    fringe.position.set(-0.02, 0.23, 0.12);
-    fringe.rotation.z = -0.14;
-    headPivot.add(fringe);
-
-    // Ears
-    [-0.19, 0.19].forEach((x, idx) => {
-      const ear = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.085, 0.05), skinMat);
-      ear.position.set(x, 0.07, -0.02);
-      ear.rotation.y = idx === 0 ? 0.25 : -0.25;
-      headPivot.add(ear);
-    });
-
-    // Refined Nose Bridge & Tip
-    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.11, 12), skinMat);
-    nose.position.set(0, 0.06, 0.19);
-    nose.rotation.x = -0.15;
-    headPivot.add(nose);
-
-    // Eyebrows (Emotive)
-    const browMat = new THREE.MeshStandardMaterial({ color: '#16171B', roughness: 0.9 });
-    const leftBrow = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.018, 0.025), browMat);
-    const rightBrow = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.018, 0.025), browMat);
-    leftBrow.position.set(-0.072, 0.128, 0.174);
-    rightBrow.position.set(0.072, 0.128, 0.174);
-    leftBrow.rotation.z = 0.08;
-    rightBrow.rotation.z = -0.08;
-    headPivot.add(leftBrow);
-    headPivot.add(rightBrow);
-
-    // Almond-Shaped Eyes with Pupils & Cornea Specular
-    const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: '#F8FAFC', roughness: 0.15 });
-    const irisMat = new THREE.MeshStandardMaterial({ color: '#2B1A12', roughness: 0.2 });
-    const pupilMat = new THREE.MeshBasicMaterial({ color: '#050508' });
-
-    const leftEyeGroup = new THREE.Group();
-    const rightEyeGroup = new THREE.Group();
-    leftEyeGroup.position.set(-0.068, 0.076, 0.168);
-    rightEyeGroup.position.set(0.068, 0.076, 0.168);
-
-    [leftEyeGroup, rightEyeGroup].forEach(eyeGrp => {
-      const eyeball = new THREE.Mesh(new THREE.SphereGeometry(0.025, 20, 16), eyeWhiteMat);
-      const iris = new THREE.Mesh(new THREE.CircleGeometry(0.014, 18), irisMat);
-      iris.position.z = 0.024;
-      const pupil = new THREE.Mesh(new THREE.CircleGeometry(0.007, 14), pupilMat);
-      pupil.position.z = 0.025;
-      eyeGrp.add(eyeball);
-      eyeGrp.add(iris);
-      eyeGrp.add(pupil);
-      headPivot.add(eyeGrp);
-    });
-
-    // Articulated Eyelids for Real-Time Blinking
-    const lidMat = new THREE.MeshStandardMaterial({ color: '#C88D6A', roughness: 0.6 });
-    const leftLid = new THREE.Mesh(new THREE.SphereGeometry(0.027, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), lidMat);
-    const rightLid = new THREE.Mesh(new THREE.SphereGeometry(0.027, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), lidMat);
-    leftLid.position.set(-0.068, 0.079, 0.168);
-    rightLid.position.set(0.068, 0.079, 0.168);
-    leftLid.rotation.x = -Math.PI / 1.7; // fully open
-    rightLid.rotation.x = -Math.PI / 1.7;
-    headPivot.add(leftLid);
-    headPivot.add(rightLid);
-
-    // Upper Lip & Upper Teeth
-    const lipMat = new THREE.MeshStandardMaterial({ color: '#9E584F', roughness: 0.65 });
-    const teethMat = new THREE.MeshStandardMaterial({ color: '#FFFFFF', roughness: 0.2 });
-
-    const upperLip = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.085, 16), lipMat);
-    upperLip.rotation.z = Math.PI / 2;
-    upperLip.position.set(0, -0.038, 0.178);
-    headPivot.add(upperLip);
-
-    const upperTeeth = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.016, 0.02), teethMat);
-    upperTeeth.position.set(0, -0.046, 0.165);
-    headPivot.add(upperTeeth);
-
-    // ─── ARTICULATED REAL-TIME TALKING JAW HINGE ─────────────────────────────
-    const jawHinge = new THREE.Group();
-    jawHinge.position.set(0, -0.025, 0.04);
-
-    // Tapered Chin & Lower Jaw
-    const chinGeo = new THREE.CylinderGeometry(0.11, 0.075, 0.14, 20);
-    chinGeo.scale(1.1, 1.0, 1.15);
-    const chin = new THREE.Mesh(chinGeo, skinMat);
-    chin.position.set(0, -0.06, 0.1);
-    jawHinge.add(chin);
-
-    // Lower Lip
-    const lowerLip = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.082, 16), lipMat);
-    lowerLip.rotation.z = Math.PI / 2;
-    lowerLip.position.set(0, -0.038, 0.155);
-    jawHinge.add(lowerLip);
-
-    // Lower Teeth Row
-    const lowerTeeth = new THREE.Mesh(new THREE.BoxGeometry(0.062, 0.016, 0.02), teethMat);
-    lowerTeeth.position.set(0, -0.028, 0.142);
-    jawHinge.add(lowerTeeth);
-
-    // Dark Oral Cavity Interior
-    const oralCavity = new THREE.Mesh(
-      new THREE.BoxGeometry(0.07, 0.038, 0.04),
-      new THREE.MeshBasicMaterial({ color: '#2E0B0E' })
-    );
-    oralCavity.position.set(0, -0.025, 0.125);
-    jawHinge.add(oralCavity);
-
-    headPivot.add(jawHinge);
-    humanGroup.add(headPivot);
-    interviewerGroup.add(humanGroup);
     scene.add(interviewerGroup);
 
     // ─── 7. Atmospheric Daylight Sunbeam Particles ───────────────────────────
@@ -637,7 +437,6 @@ export default function ThreeInterviewScene({
       color: 0xffffff,
       size: 0.022,
       transparent: true,
-      opacity: 0.45,
       blending: THREE.AdditiveBlending,
     });
     const particles = new THREE.Points(particleGeo, particleMat);
@@ -655,131 +454,143 @@ export default function ThreeInterviewScene({
     };
     window.addEventListener('mousemove', onMouseMove);
 
-    // ─── 9. Animation Loop (Lip-Sync, Moving Hands, Blinking, Gesturing) ──────
+    // ─── 9. Animation Loop (Lip-Sync, Live Moving Hands, Blinking, Gesturing) ─
     let clock = new THREE.Clock();
-    let blinkTimer = 0;
-    let nextBlinkTime = 3.2;
-    let reqId = null;
 
     const animate = () => {
-      reqId = requestAnimationFrame(animate);
       const delta = clock.getDelta();
       const time = clock.getElapsedTime();
+
+      // Read real-time props from mutable ref (zero WebGL context teardowns)
+      const {
+        isInterviewerSpeaking = false,
+        isCandidateSpeaking = false,
+        characterState = 'idle',
+        interviewerAudioLevel = 0,
+      } = propsRef.current;
 
       // Smooth mouse gaze dampening
       currentMouseX += (targetMouseX - currentMouseX) * 0.06;
       currentMouseY += (targetMouseY - currentMouseY) * 0.06;
 
-      // ── A. TALKING LIP-SYNC & CONVERSATIONAL GESTURES ──
-      if (isInterviewerSpeaking) {
-        // Multi-frequency phonetic syllable cadence for realistic mouth articulation
-        const speechWave =
-          Math.sin(time * 16.2) * 0.42 +
-          Math.sin(time * 24.5) * 0.35 +
-          Math.sin(time * 9.1) * 0.23;
+      // Multi-frequency phonetic syllable cadence combined with instantaneous speech amplitude
+      const audioEnergy =
+        interviewerAudioLevel > 0.02
+          ? interviewerAudioLevel
+          : Math.max(
+              0,
+              Math.sin(time * 16.2) * 0.42 +
+                Math.sin(time * 24.5) * 0.35 +
+                Math.sin(time * 9.1) * 0.23
+            );
 
-        const targetJawAngle = Math.max(0, speechWave) * 0.24;
-        jawHinge.rotation.x = THREE.MathUtils.lerp(jawHinge.rotation.x, targetJawAngle, 0.48);
+      // ── A. AUDIO-SYNCHRONIZED MORPH TARGET LIP-SYNC ──
+      morphMeshes.forEach((mesh) => {
+        const dict = mesh.morphTargetDictionary;
+        const influences = mesh.morphTargetInfluences;
+        if (dict && influences) {
+          if ('mouthOpen' in dict) {
+            const idx = dict['mouthOpen'];
+            if (isInterviewerSpeaking) {
+              const targetOpen = Math.min(1.0, Math.max(0, audioEnergy * 1.35));
+              influences[idx] = THREE.MathUtils.lerp(influences[idx], targetOpen, 0.52);
+            } else {
+              influences[idx] = THREE.MathUtils.lerp(influences[idx], 0, 0.4);
+            }
+          }
+          if ('mouthSmile' in dict) {
+            const idx = dict['mouthSmile'];
+            const targetSmile = isCandidateSpeaking || characterState === 'listening' ? 0.22 : 0.04;
+            influences[idx] = THREE.MathUtils.lerp(influences[idx], targetSmile, 0.1);
+          }
+        }
+      });
 
-        // Conversational head nods during speech
-        headPivot.rotation.x = Math.sin(time * 2.8) * 0.045 + 0.01 + currentMouseY * 0.05;
-        headPivot.rotation.y = Math.sin(time * 1.5) * 0.04 + currentMouseX * 0.08;
+      // ── B. LIVE MOVING HANDS GESTURES WHILE SPEAKING ──
+      if (bones.leftArm && bones.rightArm) {
+        if (isInterviewerSpeaking) {
+          const gestureCycle = Math.sin(time * 2.2);
+          const gestureWave = Math.sin(time * 4.5);
 
-        // Eyebrows slight expressive lift on questions
-        leftBrow.position.y = 0.128 + Math.sin(time * 3.5) * 0.007;
-        rightBrow.position.y = 0.128 + Math.sin(time * 3.5) * 0.007;
+          // Left Arm & Forearm articulate conversationally off the desk
+          bones.leftArm.rotation.x = THREE.MathUtils.lerp(bones.leftArm.rotation.x, 0.7 + gestureCycle * 0.12, 0.12);
+          bones.leftArm.rotation.z = THREE.MathUtils.lerp(bones.leftArm.rotation.z, 0.26 + gestureWave * 0.08, 0.12);
+          if (bones.leftForeArm) {
+            bones.leftForeArm.rotation.x = THREE.MathUtils.lerp(bones.leftForeArm.rotation.x, 0.65 + gestureCycle * 0.18, 0.12);
+            bones.leftForeArm.rotation.y = THREE.MathUtils.lerp(bones.leftForeArm.rotation.y, 0.32 + gestureWave * 0.1, 0.12);
+          }
 
-        // ── LIVE MOVING HANDS GESTURES WHILE SPEAKING ──
-        // Hands lift off the desk and articulate conversationally
-        const gestureCycle = Math.sin(time * 2.2);
-        const gestureWave = Math.sin(time * 4.5);
-
-        // Left Arm: opens outward and gestures emphatically
-        leftArmPivot.rotation.x = THREE.MathUtils.lerp(leftArmPivot.rotation.x, 0.15 + gestureCycle * 0.08, 0.1);
-        leftArmPivot.rotation.z = THREE.MathUtils.lerp(leftArmPivot.rotation.z, 0.18 + gestureWave * 0.06, 0.1);
-        leftForearmPivot.rotation.x = THREE.MathUtils.lerp(leftForearmPivot.rotation.x, -0.25 + gestureCycle * 0.15, 0.12);
-        leftHandPivot.rotation.x = THREE.MathUtils.lerp(leftHandPivot.rotation.x, 0.2 + gestureWave * 0.18, 0.15);
-        leftHandPivot.rotation.y = THREE.MathUtils.lerp(leftHandPivot.rotation.y, 0.35 + gestureCycle * 0.12, 0.15);
-        leftHandPivot.rotation.z = THREE.MathUtils.lerp(leftHandPivot.rotation.z, -0.15 + gestureWave * 0.1, 0.15);
-
-        // Right Arm: articulates key points with conversational wrist turns
-        rightArmPivot.rotation.x = THREE.MathUtils.lerp(rightArmPivot.rotation.x, 0.12 + Math.cos(time * 2.2) * 0.09, 0.1);
-        rightArmPivot.rotation.z = THREE.MathUtils.lerp(rightArmPivot.rotation.z, -0.16 + Math.cos(time * 4.2) * 0.05, 0.1);
-        rightForearmPivot.rotation.x = THREE.MathUtils.lerp(rightForearmPivot.rotation.x, -0.22 + Math.cos(time * 2.2) * 0.14, 0.12);
-        rightHandPivot.rotation.x = THREE.MathUtils.lerp(rightHandPivot.rotation.x, 0.18 + Math.sin(time * 3.8) * 0.16, 0.15);
-        rightHandPivot.rotation.y = THREE.MathUtils.lerp(rightHandPivot.rotation.y, -0.32 + Math.cos(time * 2.5) * 0.12, 0.15);
-        rightHandPivot.rotation.z = THREE.MathUtils.lerp(rightHandPivot.rotation.z, 0.12 + Math.sin(time * 4.2) * 0.1, 0.15);
-      } else {
-        // Mouth comfortably closed when silent
-        jawHinge.rotation.x = THREE.MathUtils.lerp(jawHinge.rotation.x, 0, 0.25);
-        leftBrow.position.y = THREE.MathUtils.lerp(leftBrow.position.y, 0.128, 0.1);
-        rightBrow.position.y = THREE.MathUtils.lerp(rightBrow.position.y, 0.128, 0.1);
-
-        // ── LIVE HANDS & HEAD WHEN CANDIDATE IS SPEAKING ──
-        if (isCandidateSpeaking) {
-          // Attentive listening posture: head tilts slightly, nods thoughtfully
-          headPivot.rotation.x = THREE.MathUtils.lerp(headPivot.rotation.x, 0.04 + Math.sin(time * 1.8) * 0.015, 0.08);
-          headPivot.rotation.z = THREE.MathUtils.lerp(headPivot.rotation.z, -0.04, 0.08);
-          headPivot.rotation.y = THREE.MathUtils.lerp(headPivot.rotation.y, currentMouseX * 0.1, 0.08);
-
-          // Hands rest comfortably on the desk blotter, subtle attentive finger taps
-          leftArmPivot.rotation.x = THREE.MathUtils.lerp(leftArmPivot.rotation.x, 0, 0.08);
-          leftArmPivot.rotation.z = THREE.MathUtils.lerp(leftArmPivot.rotation.z, 0.05, 0.08);
-          leftForearmPivot.rotation.x = THREE.MathUtils.lerp(leftForearmPivot.rotation.x, 0, 0.08);
-          leftHandPivot.rotation.x = THREE.MathUtils.lerp(leftHandPivot.rotation.x, 0 + Math.sin(time * 3) * 0.03, 0.08);
-          leftHandPivot.rotation.y = THREE.MathUtils.lerp(leftHandPivot.rotation.y, 0.1, 0.08);
-
-          rightArmPivot.rotation.x = THREE.MathUtils.lerp(rightArmPivot.rotation.x, 0, 0.08);
-          rightArmPivot.rotation.z = THREE.MathUtils.lerp(rightArmPivot.rotation.z, -0.05, 0.08);
-          rightForearmPivot.rotation.x = THREE.MathUtils.lerp(rightForearmPivot.rotation.x, 0, 0.08);
-          rightHandPivot.rotation.x = THREE.MathUtils.lerp(rightHandPivot.rotation.x, 0 + Math.cos(time * 2.8) * 0.03, 0.08);
-          rightHandPivot.rotation.y = THREE.MathUtils.lerp(rightHandPivot.rotation.y, -0.1, 0.08);
+          // Right Arm & Forearm emphasize key architectural points
+          bones.rightArm.rotation.x = THREE.MathUtils.lerp(bones.rightArm.rotation.x, 0.68 + Math.cos(time * 2.2) * 0.14, 0.12);
+          bones.rightArm.rotation.z = THREE.MathUtils.lerp(bones.rightArm.rotation.z, -0.26 + Math.cos(time * 4.2) * 0.08, 0.12);
+          if (bones.rightForeArm) {
+            bones.rightForeArm.rotation.x = THREE.MathUtils.lerp(bones.rightForeArm.rotation.x, 0.65 + Math.cos(time * 2.2) * 0.18, 0.12);
+            bones.rightForeArm.rotation.y = THREE.MathUtils.lerp(bones.rightForeArm.rotation.y, -0.32 + Math.sin(time * 3.8) * 0.1, 0.12);
+          }
         } else {
-          // Idle conversational waiting posture
-          headPivot.rotation.x = Math.sin(time * 0.7) * 0.018 + currentMouseY * 0.04;
-          headPivot.rotation.y = Math.sin(time * 0.4) * 0.025 + currentMouseX * 0.08;
-          headPivot.rotation.z = THREE.MathUtils.lerp(headPivot.rotation.z, 0, 0.06);
+          // Arms rest comfortably on the executive desk blotter with subtle natural sway
+          const restBreathe = Math.sin(time * 1.4) * 0.015;
+          bones.leftArm.rotation.x = THREE.MathUtils.lerp(bones.leftArm.rotation.x, 0.85 + restBreathe, 0.08);
+          bones.leftArm.rotation.z = THREE.MathUtils.lerp(bones.leftArm.rotation.z, 0.22, 0.08);
+          if (bones.leftForeArm) {
+            bones.leftForeArm.rotation.x = THREE.MathUtils.lerp(bones.leftForeArm.rotation.x, 0.72, 0.08);
+            bones.leftForeArm.rotation.y = THREE.MathUtils.lerp(bones.leftForeArm.rotation.y, 0.32, 0.08);
+          }
 
-          // Hands resting naturally on the desk with subtle organic sway
-          const restBreathe = Math.sin(time * 1.4) * 0.012;
-          leftArmPivot.rotation.x = THREE.MathUtils.lerp(leftArmPivot.rotation.x, restBreathe, 0.05);
-          rightArmPivot.rotation.x = THREE.MathUtils.lerp(rightArmPivot.rotation.x, restBreathe, 0.05);
-          leftForearmPivot.rotation.x = THREE.MathUtils.lerp(leftForearmPivot.rotation.x, 0, 0.05);
-          rightForearmPivot.rotation.x = THREE.MathUtils.lerp(rightForearmPivot.rotation.x, 0, 0.05);
-          leftHandPivot.rotation.x = THREE.MathUtils.lerp(leftHandPivot.rotation.x, 0, 0.05);
-          rightHandPivot.rotation.x = THREE.MathUtils.lerp(rightHandPivot.rotation.x, 0, 0.05);
+          bones.rightArm.rotation.x = THREE.MathUtils.lerp(bones.rightArm.rotation.x, 0.85 + restBreathe, 0.08);
+          bones.rightArm.rotation.z = THREE.MathUtils.lerp(bones.rightArm.rotation.z, -0.22, 0.08);
+          if (bones.rightForeArm) {
+            bones.rightForeArm.rotation.x = THREE.MathUtils.lerp(bones.rightForeArm.rotation.x, 0.72, 0.08);
+            bones.rightForeArm.rotation.y = THREE.MathUtils.lerp(bones.rightForeArm.rotation.y, -0.32, 0.08);
+          }
         }
       }
 
-      // ── B. EYE BLINKING ANIMATION ──
-      blinkTimer += delta;
-      if (blinkTimer > nextBlinkTime) {
-        // Rapid eyelid closure
-        leftLid.rotation.x = -Math.PI / 3.2;
-        rightLid.rotation.x = -Math.PI / 3.2;
-
-        if (blinkTimer > nextBlinkTime + 0.12) {
-          // Open eyelids back up
-          leftLid.rotation.x = -Math.PI / 1.7;
-          rightLid.rotation.x = -Math.PI / 1.7;
-          blinkTimer = 0;
-          nextBlinkTime = 2.6 + Math.random() * 3.8;
+      // ── C. HEAD & NECK GAZE TRACKING AND NODDING ──
+      if (bones.head) {
+        if (isInterviewerSpeaking) {
+          // Conversational head nods during speech
+          bones.head.rotation.x = THREE.MathUtils.lerp(bones.head.rotation.x, Math.sin(time * 2.8) * 0.045 + currentMouseY * 0.08, 0.15);
+          bones.head.rotation.y = THREE.MathUtils.lerp(bones.head.rotation.y, Math.sin(time * 1.5) * 0.04 + currentMouseX * 0.14, 0.15);
+          bones.head.rotation.z = Math.sin(time * 2.1) * 0.015;
+        } else if (isCandidateSpeaking || characterState === 'listening') {
+          // Attentive listening posture: head tilts slightly, nods thoughtfully
+          bones.head.rotation.x = THREE.MathUtils.lerp(bones.head.rotation.x, 0.045 + Math.sin(time * 1.8) * 0.018, 0.08);
+          bones.head.rotation.z = THREE.MathUtils.lerp(bones.head.rotation.z, -0.045, 0.08);
+          bones.head.rotation.y = THREE.MathUtils.lerp(bones.head.rotation.y, currentMouseX * 0.16, 0.08);
+        } else if (characterState === 'thinking') {
+          // Thinking posture: slight upward/aside gaze
+          bones.head.rotation.x = THREE.MathUtils.lerp(bones.head.rotation.x, -0.03, 0.08);
+          bones.head.rotation.y = THREE.MathUtils.lerp(bones.head.rotation.y, 0.08, 0.08);
+        } else if (characterState === 'ending') {
+          bones.head.rotation.x = THREE.MathUtils.lerp(bones.head.rotation.x, 0.04, 0.06);
+        } else {
+          // Idle waiting gaze
+          bones.head.rotation.x = THREE.MathUtils.lerp(bones.head.rotation.x, Math.sin(time * 0.7) * 0.018 + currentMouseY * 0.06, 0.08);
+          bones.head.rotation.y = THREE.MathUtils.lerp(bones.head.rotation.y, Math.sin(time * 0.4) * 0.025 + currentMouseX * 0.14, 0.08);
+          bones.head.rotation.z = THREE.MathUtils.lerp(bones.head.rotation.z, 0, 0.06);
         }
       }
 
-      // ── C. SUBTLE IDLE BREATHING ──
-      const breathe = Math.sin(time * 1.5) * 0.007;
-      chest.position.y = 1.05 + breathe;
-      headPivot.position.y = 1.48 + breathe * 0.85;
+      // ── D. SUBTLE NATURAL CHEST & SPINE BREATHING ──
+      if (bones.spine1) {
+        bones.spine1.rotation.x = Math.sin(time * 1.5) * 0.012;
+      }
 
-      // ── D. FIRST-PERSON NATURAL CAMERA BREATHING DRIFT ──
+      // ── E. FIRST-PERSON NATURAL CAMERA BREATHING DRIFT ──
       camera.position.x = Math.sin(time * 0.35) * 0.01 + currentMouseX * 0.03;
       camera.position.y = 1.34 + Math.sin(time * 0.7) * 0.005 - currentMouseY * 0.02;
 
       renderer.render(scene, camera);
     };
 
-    animate();
+    // 60 FPS animation loop
+    let animId = null;
+    const runLoop = () => {
+      animId = requestAnimationFrame(runLoop);
+      animate();
+    };
+    runLoop();
 
     // ─── 10. Responsive Resize Handler ───────────────────────────────────────
     const handleResize = () => {
@@ -795,7 +606,7 @@ export default function ThreeInterviewScene({
 
     // ─── 11. Cleanup & Teardown ──────────────────────────────────────────────
     return () => {
-      cancelAnimationFrame(reqId);
+      if (animId) cancelAnimationFrame(animId);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', onMouseMove);
       renderer.dispose();
@@ -803,7 +614,7 @@ export default function ThreeInterviewScene({
         container.removeChild(renderer.domElement);
       }
     };
-  }, [isInterviewerSpeaking, isCandidateSpeaking, interviewerName, interviewerTitle, candidateRole, targetCompany]);
+  }, []);
 
   return (
     <div

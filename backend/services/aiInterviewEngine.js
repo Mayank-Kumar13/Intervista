@@ -67,9 +67,17 @@ async function startSession({
 /**
  * Generates an adaptive response or follow-up question based on candidate reply.
  */
+/**
+ * Generates an adaptive response or follow-up question based on candidate reply.
+ */
 async function generateFollowUp({
   role = 'Software Engineer',
   company = 'Google',
+  interviewType = 'Technical Interview',
+  experience = 'Mid Level',
+  interviewerName = 'Mr. J. Chen',
+  candidateName = null,
+  resumeData = null,
   currentQuestion,
   candidateAnswer,
   questionIndex = 1,
@@ -86,6 +94,11 @@ async function generateFollowUp({
       const liveReply = await callGeminiDialogue({
         role,
         company,
+        interviewType,
+        experience,
+        interviewerName,
+        candidateName,
+        resumeData,
         currentQuestionText: currentQuestion?.questionText || '',
         candidateAnswer: answer,
         questionIndex,
@@ -175,19 +188,32 @@ async function generateFollowUp({
 /**
  * Calls Gemini 1.5 Flash securely via server-side HTTP request.
  */
-async function callGeminiDialogue({ role, company, currentQuestionText, candidateAnswer, questionIndex }) {
+async function callGeminiDialogue({
+  role,
+  company,
+  interviewType = 'Technical Interview',
+  experience = 'Mid Level',
+  interviewerName = 'Mr. J. Chen',
+  candidateName = null,
+  resumeData = null,
+  currentQuestionText,
+  candidateAnswer,
+  questionIndex,
+}) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
   
-  const prompt = `You are a professional hiring manager conducting a technical interview for a ${role} position at ${company}.
+  const prompt = `You are a real senior interviewer (${interviewerName}) conducting a live face-to-face ${interviewType} for a ${experience} ${role} role at ${company}.
+${candidateName ? `Candidate's name: ${candidateName}.` : ''}
+${resumeData ? `Candidate's resume/skills context: ${typeof resumeData === 'string' ? resumeData : JSON.stringify(resumeData)}` : ''}
 The candidate was asked: "${currentQuestionText}".
 The candidate answered: "${candidateAnswer}".
 
 Your instructions:
-1. Act as a real human interviewer.
-2. Provide a 1-sentence brief acknowledgment of their points.
-3. Immediately ask ONE natural, targeted technical follow-up question or advance to the next technical probe.
-4. Keep your total response under 3 sentences so the conversation flows naturally.
-5. Do NOT output markdown bullet points or greetings like "Hello". Just speak your natural response directly.`;
+1. Act like a real human interviewer speaking aloud across the desk.
+2. In 1 sentence, acknowledge or validate a specific technical or conceptual point they just made.
+3. Immediately ask ONE natural, targeted follow-up question or advance to the next technical probe. If their answer asked for clarification, answer it directly and ask them to proceed. If their answer was brief, ask for a concrete real-world example.
+4. Keep the entire response under 3 sentences so it can be spoken naturally out loud.
+5. Do NOT include greetings like "Hello", markdown asterisks, or bullet points. Output only the spoken words directly.`;
 
   const body = {
     contents: [
@@ -197,7 +223,7 @@ Your instructions:
     ],
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 150,
+      maxOutputTokens: 160,
     }
   };
 
@@ -214,7 +240,7 @@ Your instructions:
 
   const data = await response.json();
   const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  return candidateText ? candidateText.trim() : null;
+  return candidateText ? candidateText.replace(/[*#_]/g, '').trim() : null;
 }
 
 /**
