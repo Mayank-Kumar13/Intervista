@@ -24,11 +24,35 @@ import AuthModal from './components/AuthModal';
 import LegalModal from './components/LegalModal';
 import ContactModal from './components/ContactModal';
 import { getCurrentUser, logoutUser } from './utils/auth';
-import { apiLogout } from './utils/api';
+import { apiLogout, apiGetMe } from './utils/api';
 
 export default function App() {
   // Current authenticated user session
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
+
+  // Verify active session with backend on initial load
+  useEffect(() => {
+    let isMounted = true;
+    async function verifyActiveSession() {
+      try {
+        const user = await apiGetMe();
+        if (isMounted && user) {
+          setCurrentUser(user);
+        }
+      } catch (err) {
+        if (err.message && (err.message.includes('401') || err.message.includes('Unauthorized'))) {
+          if (isMounted) {
+            logoutUser();
+            setCurrentUser(null);
+          }
+        }
+      }
+    }
+    verifyActiveSession();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Page / View State ('home' | 'dashboard' | 'companies' | 'plans' | 'profile' | 'interview')
   const [currentView, setCurrentView] = useState(() => {
@@ -246,11 +270,14 @@ export default function App() {
     handleNavigate('dashboard');
   };
 
-  const handleLogout = () => {
-    logoutUser();
-    apiLogout();
-    setCurrentUser(null);
-    handleNavigate('home');
+  const handleLogout = async () => {
+    try {
+      await apiLogout();
+    } finally {
+      logoutUser();
+      setCurrentUser(null);
+      handleNavigate('home');
+    }
   };
 
   return (

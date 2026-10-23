@@ -1,32 +1,69 @@
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs = require('fs');
+const mongoose = require('mongoose');
 
-const DB_DIR = path.join(__dirname, 'data');
-if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR);
+let isConnected = false;
 
-const db = new Database(path.join(DB_DIR, 'intervista.db'));
+/**
+ * Connect to MongoDB Atlas with connection pooling and graceful lifecycle management.
+ */
+async function connectDB() {
+  const uri = process.env.MONGODB_URI;
+  const dbName = process.env.MONGODB_DB_NAME || 'intervista';
 
-// Enable WAL mode for better performance
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+  if (!uri) {
+    console.warn('⚠️  MONGODB_URI is not defined in environment variables. Database connection skipped.');
+    return;
+  }
 
-// ─── Schema ──────────────────────────────────────────────────────────────────
+  // If already connected, reuse connection
+  if (mongoose.connection.readyState === 1) {
+    isConnected = true;
+    return;
+  }
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id            TEXT PRIMARY KEY,
-    name          TEXT NOT NULL,
-    email         TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-`);
+  try {
+    const conn = await mongoose.connect(uri, {
+      dbName,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
 
-// Ensure guest user exists for unauthenticated demo/guest interviews
-db.prepare(`
-  INSERT OR IGNORE INTO users (id, name, email, password_hash)
-  VALUES ('guest_user', 'Guest Candidate', 'guest@intervista.ai', 'none')
-`).run();
+    isConnected = true;
+    console.log(`✦ MongoDB Atlas Connected: host ${conn.connection.host} | db: ${conn.connection.name}`);
+  } catch (err) {
+    isConnected = false;
+    console.error('⚠️  MongoDB Atlas Connection Notice:', err.message);
+    console.info('   Note: If IP whitelist is active on MongoDB Atlas, ensure your current IP or 0.0.0.0/0 is permitted in Atlas Network Access.');
+  }
+}
 
-module.exports = db;
+// Connection event listeners
+mongoose.connection.on('connected', () => {
+  isConnected = true;
+});
+
+mongoose.connection.on('error', (err) => {
+  isConnected = false;
+  console.error('⚠️  MongoDB Atlas connection error:', err.message);
+});
+
+mongoose.connection.on('disconnected', () => {
+  isConnected = false;
+  console.warn('⚠️  MongoDB Atlas disconnected.');
+});
+
+// Graceful process termination
+process.on('SIGINT', async () => {
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.connection.close();
+    console.log('MongoDB connection closed due to app termination.');
+  }
+  process.exit(0);
+});
+
+module.exports = {
+  connectDB,
+  isDBConnected: () => mongoose.connection.readyState === 1,
+  mongoose,
+};
