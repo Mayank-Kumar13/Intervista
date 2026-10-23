@@ -231,6 +231,7 @@ async function evaluateSession({
   questions,
   candidateMessages,
   rawVisualTelemetry,
+  rawAudioTelemetry,
 }) {
   const isDemo = !isModelConfigured();
 
@@ -245,6 +246,7 @@ async function evaluateSession({
     questions,
     candidateMessages,
     rawVisualTelemetry,
+    rawAudioTelemetry,
     isDemoMode: isDemo,
   });
 

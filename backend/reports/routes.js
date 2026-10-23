@@ -8,6 +8,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../sqlite');
 const { optionalAuth, requireAuth } = require('../middleware/auth');
 const { generateReportPDF } = require('./pdfGenerator');
+const { evaluateMultimodalSession } = require('../analysis');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'intervista_secret';
@@ -124,19 +125,27 @@ router.post('/', optionalAuth, async (req, res) => {
           }
         ];
 
+    const multimodalResult = body.multimodalAnalysis || evaluateMultimodalSession({
+      visualTelemetry: visualObservations,
+      audioTelemetry: verbalDelivery,
+      candidateMessages: (questionFeedback || []).map(q => ({ content: q.candidateAnswer || '' })),
+      role,
+      company,
+    });
+
     db.prepare(`
       INSERT INTO reports (
         id, session_id, user_id, role, company, overall_score,
         communication, technical_depth, problem_solving, confidence,
         criterion_scores, criterion_weights, strengths, improvements,
         question_feedback, verbal_delivery, visual_observations,
-        knowledge_gaps, study_roadmap, summary, status
+        knowledge_gaps, study_roadmap, multimodal_analysis, summary, status
       ) VALUES (
         ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?,
         ?, ?, ?, ?,
         ?, ?, ?,
-        ?, ?, ?, 'ready'
+        ?, ?, ?, ?, 'ready'
       )
     `).run(
       reportId,
@@ -158,6 +167,7 @@ router.post('/', optionalAuth, async (req, res) => {
       JSON.stringify(visualObservations),
       JSON.stringify(knowledgeGaps),
       JSON.stringify(finalRoadmap),
+      JSON.stringify(multimodalResult),
       summary || `Candidate completed a ${role} interview for ${company}.`
     );
 
@@ -180,6 +190,7 @@ router.post('/', optionalAuth, async (req, res) => {
         questionFeedback,
         verbalDelivery,
         visualObservations,
+        multimodalAnalysis: multimodalResult,
         knowledgeGaps,
         studyRoadmap: finalRoadmap,
         summary: summary || `Candidate completed a ${role} interview for ${company}.`
@@ -282,6 +293,7 @@ router.get('/:id', optionalAuth, (req, res) => {
         questionFeedback: report.question_feedback ? JSON.parse(report.question_feedback) : [],
         verbalDelivery: report.verbal_delivery ? JSON.parse(report.verbal_delivery) : null,
         visualObservations: report.visual_observations ? JSON.parse(report.visual_observations) : null,
+        multimodalAnalysis: report.multimodal_analysis ? JSON.parse(report.multimodal_analysis) : null,
         knowledgeGaps: report.knowledge_gaps ? JSON.parse(report.knowledge_gaps) : [],
         studyRoadmap: report.study_roadmap ? JSON.parse(report.study_roadmap) : [],
         summary: report.summary,

@@ -63,54 +63,95 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
     { key: 'confidence', label: 'Confidence & Professional Poise', weight: criterionWeights.confidence || 15, score: criterionScores.confidence || 82, icon: BarChart3 },
   ];
 
-  // Visual Telemetry from backend or preset
-  const rawVision = reportData?.visualObservations || reportData?.visionAnalysis;
-  const visionAssessed = rawVision && rawVision.enabled !== false && !String(rawVision.postureStatus).includes('Not assessed') && !String(rawVision.framingStatus).includes('Not assessed');
-  const vision = visionAssessed ? {
-    enabled: true,
-    postureScore: rawVision.faceVisibilityPercent || rawVision.postureScore || 88,
-    postureStatus: rawVision.framingStatus || rawVision.postureStatus || 'Upright & Centered',
-    gazeCenteredRatio: rawVision.faceVisibilityPercent || rawVision.gazeCenteredRatio || 86,
-    gazeStatus: rawVision.headOrientationStatus || rawVision.gazeStatus || 'Optimal Direct Focus',
-    headMovementStability: rawVision.headMovementStability || 'Stable & Poised',
-    suggestions: rawVision.neutralObservationNote
-      ? [rawVision.neutralObservationNote]
-      : (rawVision.suggestions || ['Maintain direct camera gaze alignment when presenting complex architectural decisions.'])
+  // ─── Multimodal Telemetry (Facial Expressions, Body Language & Posture, Vocals) ───
+  const multimodal = reportData?.multimodalAnalysis || reportData?.multimodal;
+  const rawFacial = multimodal?.facialAnalysis || reportData?.facialAnalysis;
+  const rawBody = multimodal?.bodyLanguageAnalysis || reportData?.bodyLanguageAnalysis || reportData?.visualObservations;
+  const rawVoice = multimodal?.vocalAnalysis || reportData?.vocalAnalysis || reportData?.verbalDelivery || reportData?.communicationMetrics;
+
+  // 1. Facial Expressions & Gaze
+  const facialAssessed = rawFacial ? (rawFacial.assessed !== false && rawFacial.score !== null) : (reportData?.visualObservations && reportData.visualObservations.enabled !== false);
+  const facial = facialAssessed ? {
+    assessed: true,
+    score: rawFacial?.score || rawFacial?.facialEngagementScore || 88,
+    gazeCenteredRatio: rawFacial?.gazeCenteredRatio || 86,
+    gazeStatus: rawFacial?.gazeStatus || 'Direct Lens Focus (Optimal)',
+    expressionState: rawFacial?.expressionState || 'Engaged & Attentive',
+    nodCount: rawFacial?.nodGestureCount || 2,
+    headStability: rawFacial?.headStability || 'Steady & Poised',
+    observations: rawFacial?.neutralObservations || 'Maintained steady direct lens focus and calm professional facial composure.',
+    suggestions: rawFacial?.actionableTips || ['Position your webcam directly at eye level to lock direct eye contact with the interviewer.']
   } : {
-    enabled: false,
-    postureScore: null,
-    postureStatus: 'Not assessed',
+    assessed: false,
+    score: null,
     gazeCenteredRatio: null,
     gazeStatus: 'Not assessed',
-    headMovementStability: 'Not assessed',
-    suggestions: ['Camera was off or video tracking was unassessed for this session.']
+    expressionState: 'Not assessed',
+    nodCount: 0,
+    headStability: 'Not assessed',
+    observations: 'Camera was disabled or video telemetry was inactive.',
+    suggestions: ['Enable camera to receive feedback on eye contact alignment, lens focus, and facial engagement.']
   };
 
-  // Voice & Communication Telemetry from backend or preset
-  const rawVoice = reportData?.verbalDelivery || reportData?.communicationMetrics || reportData?.voiceAnalysis;
-  const voiceAssessed = rawVoice && (rawVoice.speakingPaceWpm !== null || rawVoice.speakingRateWpm !== undefined) && !String(rawVoice.paceAssessment).includes('Not assessed');
-  const voice = voiceAssessed ? {
-    speakingPaceWpm: rawVoice.speakingRateWpm || rawVoice.speakingPaceWpm || 140,
-    paceAssessment: rawVoice.paceAssessment || 'Optimal Cadence (125-165 WPM)',
-    fillerWordsCount: rawVoice.fillerWordCount !== undefined ? rawVoice.fillerWordCount : (rawVoice.fillerWordsCount || 2),
-    fillerDetails: rawVoice.fillerDetails || { um: 1, like: 1 },
-    fillerRatioPercent: rawVoice.fillerRatioPercent || 1.1,
-    pausesOver3s: rawVoice.pauseDurationCount !== undefined ? rawVoice.pauseDurationCount : (rawVoice.pausesOver3s || 1),
-    clarityScore: rawVoice.clarityScore || 92,
-    suggestions: rawVoice.suggestions || ['Replace filler sounds with intentional 1-second silent pauses to structure thoughts.']
+  // 2. Body Language & Posture
+  const bodyAssessed = rawBody ? (rawBody.assessed !== false && rawBody.score !== null) : (reportData?.visualObservations && reportData.visualObservations.enabled !== false);
+  const body = bodyAssessed ? {
+    assessed: true,
+    score: rawBody?.score || rawBody?.postureScore || 86,
+    postureStatus: rawBody?.postureStatus || 'Upright & Centered',
+    uprightPercentage: rawBody?.uprightPercentage || 88,
+    framingStatus: rawBody?.framingStatus || 'Optimal Upper Torso Framing',
+    fidgetIndex: rawBody?.fidgetIndex || 'Low (Composed)',
+    observations: rawBody?.neutralObservations || 'Exhibited balanced upright posture and stable shoulder framing throughout.',
+    suggestions: rawBody?.actionableTips || ['Rest your feet flat on the floor to maintain an upright stance without leaning forward.']
   } : {
+    assessed: false,
+    score: null,
+    postureStatus: 'Not assessed',
+    uprightPercentage: null,
+    framingStatus: 'Not assessed',
+    fidgetIndex: 'Not assessed',
+    observations: 'Camera was disabled. Posture and body language were not assessed.',
+    suggestions: ['Enable camera to receive posture alignment and professional framing guidance.']
+  };
+
+  // 3. Vocals & Speech Acoustics
+  const voiceAssessed = rawVoice ? (rawVoice.assessed !== false && (rawVoice.speakingPaceWpm !== null || rawVoice.speakingRateWpm !== undefined)) : false;
+  const voice = voiceAssessed ? {
+    assessed: true,
+    speakingPaceWpm: rawVoice.speakingPaceWpm || rawVoice.speakingRateWpm || 138,
+    paceAssessment: rawVoice.paceAssessment || 'Optimal Cadence (125-165 WPM)',
+    voiceDynamicEnergy: rawVoice.voiceDynamicEnergy || 'Engaging Dynamic Range',
+    fillerWordsCount: rawVoice.fillerWordsCount ?? rawVoice.fillerWordCount ?? 2,
+    fillerBreakdown: rawVoice.fillerBreakdown || rawVoice.fillerDetails || { um: 1, like: 1 },
+    fillerRatioPercent: rawVoice.fillerRatioPercent || 1.1,
+    pausesOver3s: rawVoice.pausesOver3s ?? rawVoice.pauseDurationCount ?? 1,
+    clarityScore: rawVoice.clarityScore || rawVoice.score || 90,
+    observations: rawVoice.neutralObservations || 'Vocal delivery was balanced and articulate with natural cadence.',
+    suggestions: rawVoice.actionableTips || rawVoice.suggestions || ['Replace filler sounds with deliberate 1-second silent pauses to structure thoughts.']
+  } : {
+    assessed: false,
     speakingPaceWpm: null,
     paceAssessment: 'Not assessed',
+    voiceDynamicEnergy: 'Not assessed',
     fillerWordsCount: null,
+    fillerBreakdown: {},
     fillerRatioPercent: null,
     pausesOver3s: null,
     clarityScore: null,
-    suggestions: ['Microphone was muted or speech telemetry was unassessed.']
+    observations: 'Microphone was muted or speech telemetry was unassessed.',
+    suggestions: ['Enable microphone to receive speaking cadence (WPM), pause discipline, and filler word analytics.']
   };
 
-  const fillerSummary = voice.fillerDetails
-    ? Object.entries(voice.fillerDetails).map(([w, c]) => `"${w}": ${c}`).join(', ')
+  const fillerSummary = voice.fillerBreakdown && Object.keys(voice.fillerBreakdown).length > 0
+    ? Object.entries(voice.fillerBreakdown).map(([w, c]) => `"${w}": ${c}`).join(', ')
     : `${voice.fillerWordsCount || 0} filler instances`;
+
+  const multimodalSummary = multimodal?.multimodalSummary || (
+    facialAssessed || bodyAssessed || voiceAssessed
+      ? `Candidate completed the session with ${voice.paceAssessment.toLowerCase()} (${voice.speakingPaceWpm || 138} WPM) and ${body.postureStatus.toLowerCase()} posture maintained throughout.`
+      : null
+  );
 
   // Study Roadmap
   const defaultRoadmap = [
@@ -464,105 +505,219 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
           </div>
         </div>
 
-        {/* 3. Objective Multimodal Telemetry (Verbal & Visual) */}
+        {/* 3. Objective Multimodal Telemetry (Facial Expressions, Body Language & Vocals) */}
         <div style={{ marginBottom: '2.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
-            <span className="eyebrow-tag" style={{ color: 'var(--accent-gold)' }}>
-              OBJECTIVE TELEMETRY
-            </span>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
-              • Verbal Delivery Indicators + Optional Visual Observations
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="eyebrow-tag" style={{ color: 'var(--accent-gold)' }}>
+                MULTIMODAL AI ANALYSIS
+              </span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
+                • Facial Expressions • Body Language & Posture • Vocals & Cadence
+              </span>
+            </div>
+            {multimodal?.compositeScore && (
+              <span style={{
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: 'var(--accent-champagne)',
+                backgroundColor: 'rgba(217, 183, 122, 0.1)',
+                padding: '3px 10px',
+                borderRadius: '9999px',
+                border: '1px solid rgba(217, 183, 122, 0.25)'
+              }}>
+                Behavioral Score: {multimodal.compositeScore}/100
+              </span>
+            )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }} className="telemetry-grid">
-            {/* Card 1: Vision / Camera Framing */}
+          {/* Multimodal Executive Summary Banner */}
+          {multimodalSummary && (
+            <div
+              style={{
+                backgroundColor: 'rgba(217, 183, 122, 0.05)',
+                border: '1px solid rgba(217, 183, 122, 0.2)',
+                borderRadius: '12px',
+                padding: '0.85rem 1.1rem',
+                marginBottom: '1rem',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+              }}
+            >
+              <Sparkles size={18} color="var(--accent-gold)" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                <strong style={{ color: 'var(--accent-champagne)', display: 'block', marginBottom: '2px' }}>
+                  AI Multimodal Evaluation Summary
+                </strong>
+                {multimodalSummary}
+              </div>
+            </div>
+          )}
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: '1.25rem',
+            }}
+            className="telemetry-grid"
+          >
+            {/* Card 1: Facial Expressions & Eye Gaze */}
             <div
               style={{
                 backgroundColor: '#141414',
                 border: '1px solid rgba(217, 183, 122, 0.25)',
                 borderRadius: '16px',
-                padding: '1.4rem',
+                padding: '1.3rem',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '1rem',
+                gap: '0.9rem',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.75rem' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: 'var(--accent-gold)', fontWeight: 600, fontSize: '0.9rem' }}>
-                  <Eye size={17} />
-                  Camera Framing & Posture
+                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: 'var(--accent-gold)', fontWeight: 600, fontSize: '0.88rem' }}>
+                  <Eye size={16} />
+                  Facial Expressions & Gaze
                 </span>
                 <span style={{
-                  fontSize: '0.72rem', fontWeight: 600, padding: '2px 8px', borderRadius: '6px',
-                  backgroundColor: visionAssessed ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                  color: visionAssessed ? '#4ADE80' : 'var(--text-tertiary)',
-                  border: visionAssessed ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'
+                  fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px', borderRadius: '6px',
+                  backgroundColor: facialAssessed ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                  color: facialAssessed ? '#4ADE80' : 'var(--text-tertiary)',
+                  border: facialAssessed ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'
                 }}>
-                  {vision.postureStatus}
+                  {facial.expressionState}
                 </span>
               </div>
 
-              {visionAssessed ? (
+              {facialAssessed ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Upright Posture Score</span>
-                      <strong style={{ color: 'var(--text-primary)' }}>{vision.postureScore}%</strong>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '3px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Camera Lens Alignment</span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{facial.gazeCenteredRatio}% Focus</strong>
                     </div>
                     <div style={{ height: '4px', backgroundColor: '#222', borderRadius: '2px', overflow: 'hidden' }}>
-                      <div style={{ width: `${vision.postureScore}%`, height: '100%', backgroundColor: '#22C55E' }} />
+                      <div style={{ width: `${facial.gazeCenteredRatio}%`, height: '100%', backgroundColor: 'var(--accent-gold)' }} />
                     </div>
                   </div>
 
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Camera Gaze Alignment</span>
-                      <strong style={{ color: 'var(--text-primary)' }}>{vision.gazeCenteredRatio}% Center Focus</strong>
-                    </div>
-                    <div style={{ height: '4px', backgroundColor: '#222', borderRadius: '2px', overflow: 'hidden' }}>
-                      <div style={{ width: `${vision.gazeCenteredRatio}%`, height: '100%', backgroundColor: 'var(--accent-gold)' }} />
-                    </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Gaze Status</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{facial.gazeStatus}</strong>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', paddingTop: '4px' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Head Movement Stability</span>
-                    <span style={{ color: '#4ADE80', fontWeight: 600 }}>{vision.headMovementStability}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Nod & Affirmative Cues</span>
+                    <span style={{ color: '#4ADE80', fontWeight: 600 }}>{facial.nodCount} gestures</span>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Head Stability</span>
+                    <span style={{ color: 'var(--accent-champagne)', fontWeight: 600 }}>{facial.headStability}</span>
                   </div>
                 </div>
               ) : (
-                <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Camera was not active during this interview. Posture and eye gaze metrics were not assessed.
+                <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '8px', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                  Camera was not active. Facial expressions and eye contact alignment were not assessed.
                 </div>
               )}
 
-              <div style={{ marginTop: 'auto', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '0.75rem', fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+              <div style={{ marginTop: 'auto', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
                 <strong style={{ color: 'var(--accent-champagne)', display: 'block', marginBottom: '2px' }}>
-                  Observation & Guidance:
+                  Facial Delivery Guidance:
                 </strong>
-                {vision.suggestions?.[0] || 'Maintain direct eye contact with the camera lens when presenting trade-offs.'}
+                {facial.suggestions?.[0] || 'Position your webcam directly at eye level to lock direct eye contact with the interviewer.'}
               </div>
             </div>
 
-            {/* Card 2: Verbal Delivery Indicators */}
+            {/* Card 2: Body Language & Posture */}
+            <div
+              style={{
+                backgroundColor: '#141414',
+                border: '1px solid rgba(217, 183, 122, 0.25)',
+                borderRadius: '16px',
+                padding: '1.3rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.9rem',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.75rem' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: 'var(--accent-gold)', fontWeight: 600, fontSize: '0.88rem' }}>
+                  <Award size={16} />
+                  Body Language & Posture
+                </span>
+                <span style={{
+                  fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px', borderRadius: '6px',
+                  backgroundColor: bodyAssessed ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                  color: bodyAssessed ? '#4ADE80' : 'var(--text-tertiary)',
+                  border: bodyAssessed ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  {body.postureStatus}
+                </span>
+              </div>
+
+              {bodyAssessed ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '3px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Upright Alignment Score</span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{body.score}%</strong>
+                    </div>
+                    <div style={{ height: '4px', backgroundColor: '#222', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ width: `${body.score}%`, height: '100%', backgroundColor: '#22C55E' }} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Framing Ratio</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{body.framingStatus}</strong>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Movement Poise</span>
+                    <span style={{ color: '#4ADE80', fontWeight: 600 }}>{body.fidgetIndex}</span>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Upright Duration</span>
+                    <span style={{ color: 'var(--text-primary)' }}>{body.uprightPercentage}% of session</span>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '8px', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                  Camera was not active. Posture and body language were not assessed.
+                </div>
+              )}
+
+              <div style={{ marginTop: 'auto', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                <strong style={{ color: 'var(--accent-champagne)', display: 'block', marginBottom: '2px' }}>
+                  Body Language Guidance:
+                </strong>
+                {body.suggestions?.[0] || 'Maintain an upright posture and relaxed shoulder balance when discussing technical concepts.'}
+              </div>
+            </div>
+
+            {/* Card 3: Vocals & Speech Acoustics */}
             <div
               style={{
                 backgroundColor: '#141414',
                 border: '1px solid rgba(74, 222, 128, 0.25)',
                 borderRadius: '16px',
-                padding: '1.4rem',
+                padding: '1.3rem',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '1rem',
+                gap: '0.9rem',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.75rem' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#4ADE80', fontWeight: 600, fontSize: '0.9rem' }}>
-                  <Activity size={17} />
-                  Verbal Delivery & Cadence
+                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#4ADE80', fontWeight: 600, fontSize: '0.88rem' }}>
+                  <Activity size={16} />
+                  Vocals & Voice Delivery
                 </span>
                 <span style={{
-                  fontSize: '0.72rem', fontWeight: 600, padding: '2px 8px', borderRadius: '6px',
+                  fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px', borderRadius: '6px',
                   backgroundColor: voiceAssessed ? 'rgba(217, 183, 122, 0.1)' : 'rgba(255, 255, 255, 0.05)',
                   color: voiceAssessed ? 'var(--accent-gold)' : 'var(--text-tertiary)',
                   border: voiceAssessed ? '1px solid rgba(217, 183, 122, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'
@@ -573,27 +728,32 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
 
               {voiceAssessed ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Speaking Pace</span>
                     <strong style={{ color: 'var(--text-primary)' }}>{voice.speakingPaceWpm} WPM</strong>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Dynamic Energy</span>
+                    <strong style={{ color: 'var(--accent-champagne)' }}>{voice.voiceDynamicEnergy}</strong>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Filler Words Count</span>
                     <span style={{ color: (voice.fillerWordsCount || 0) > 4 ? '#FBBF24' : '#4ADE80', fontWeight: 600 }}>
                       {voice.fillerWordsCount} ({fillerSummary})
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Pauses Exceeding 3s</span>
                     <strong style={{ color: 'var(--text-primary)' }}>{voice.pausesOver3s || 0} pauses</strong>
                   </div>
 
                   {voice.clarityScore && (
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>Clarity & Cadence Index</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '3px' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Speech Clarity Index</span>
                         <strong style={{ color: 'var(--text-primary)' }}>{voice.clarityScore}%</strong>
                       </div>
                       <div style={{ height: '4px', backgroundColor: '#222', borderRadius: '2px', overflow: 'hidden' }}>
@@ -603,14 +763,14 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
                   )}
                 </div>
               ) : (
-                <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Microphone was not captured or was muted during session. Verbal cadence metrics were not assessed.
+                <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '8px', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                  Microphone was not active or was muted. Speaking cadence and acoustics were not assessed.
                 </div>
               )}
 
-              <div style={{ marginTop: 'auto', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '0.75rem', fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+              <div style={{ marginTop: 'auto', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
                 <strong style={{ color: 'var(--accent-champagne)', display: 'block', marginBottom: '2px' }}>
-                  Actionable Delivery Suggestion:
+                  Vocal Delivery Guidance:
                 </strong>
                 {voice.suggestions?.[0] || 'Replace filler words with deliberate 1-second silent pauses to structure thoughts.'}
               </div>

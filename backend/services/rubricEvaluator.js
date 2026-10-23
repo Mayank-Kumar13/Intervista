@@ -10,6 +10,7 @@
 const { RUBRIC_CRITERIA, validateEvaluationReport } = require('../shared/interviewContract');
 const { analyzeCommunication } = require('./behavioralAnalytics');
 const { analyzeKnowledgeGaps } = require('./knowledgeGapAnalyzer');
+const { evaluateMultimodalSession } = require('../analysis');
 
 /**
  * Extracts relevant evidence quotes from candidate text.
@@ -178,8 +179,17 @@ function evaluateInterviewSession({
   questions = [],
   candidateMessages = [],
   rawVisualTelemetry = null,
+  rawAudioTelemetry = null,
   isDemoMode = false,
 }) {
+  const multimodalAnalysis = evaluateMultimodalSession({
+    visualTelemetry: rawVisualTelemetry,
+    audioTelemetry: rawAudioTelemetry,
+    candidateMessages,
+    role,
+    company,
+  });
+
   // Handle empty or incomplete transcripts
   if (!candidateMessages || candidateMessages.length === 0) {
     const incompleteReport = {
@@ -208,6 +218,7 @@ function evaluateInterviewSession({
       questionFeedback: [],
       communicationMetrics: analyzeCommunication([], rawVisualTelemetry),
       visualObservations: rawVisualTelemetry || { enabled: false },
+      multimodalAnalysis,
       knowledgeGaps: [],
       studyPlan: [],
       strengths: ['Session initiated.'],
@@ -354,6 +365,7 @@ function evaluateInterviewSession({
     questionFeedback: validEvaluations,
     communicationMetrics,
     visualObservations: communicationMetrics.visualObservations,
+    multimodalAnalysis,
     knowledgeGaps,
     studyPlan,
     strengths,

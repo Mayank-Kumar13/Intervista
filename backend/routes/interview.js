@@ -275,7 +275,13 @@ router.post('/:id/message', optionalAuth, async (req, res) => {
 router.post('/:id/end', optionalAuth, async (req, res) => {
   try {
     const sessionId = req.params.id;
-    const { durationSeconds = 0, visualObservations = null } = req.body || {};
+    const {
+      durationSeconds = 0,
+      visualObservations = null,
+      audioTelemetry = null,
+      verbalDelivery = null,
+      multimodalTelemetry = null,
+    } = req.body || {};
 
     let session = memoryStore.get(sessionId);
     if (!session && isDBConnected()) {
@@ -289,6 +295,9 @@ router.post('/:id/end', optionalAuth, async (req, res) => {
     const questions = session.questions || [];
     const candidateMessages = (session.transcript || []).filter(m => m.sender === 'candidate');
 
+    const effectiveVisual = visualObservations || multimodalTelemetry?.visual;
+    const effectiveAudio = audioTelemetry || verbalDelivery || multimodalTelemetry?.audio;
+
     // Generate comprehensive rubric evaluation and analytics
     const report = await evaluateSession({
       sessionId,
@@ -300,7 +309,8 @@ router.post('/:id/end', optionalAuth, async (req, res) => {
       durationSeconds: durationSeconds || Math.round(candidateMessages.length * 80),
       questions,
       candidateMessages,
-      rawVisualTelemetry: visualObservations,
+      rawVisualTelemetry: effectiveVisual,
+      rawAudioTelemetry: effectiveAudio,
     });
 
     // Validate structured model output before saving

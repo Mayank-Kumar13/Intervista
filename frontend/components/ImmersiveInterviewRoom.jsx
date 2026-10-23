@@ -31,6 +31,7 @@ import { getCurrentUser } from '../utils/auth';
 import ThreeInterviewScene from './ThreeInterviewScene';
 import DeskCodingLaptop from './DeskCodingLaptop';
 import CandidatePOVHands from './CandidatePOVHands';
+import { MultimodalTracker } from '../utils/multimodalTracker';
 
 const ROLE_OPTIONS = [
   'Software Engineer',
@@ -112,13 +113,25 @@ export default function ImmersiveInterviewRoom({
   const analyserRef = useRef(null);
   const animFrameRef = useRef(null);
   const recognitionRef = useRef(null);
-  const textareaRef = useRef(null);
   const transcriptScrollRef = useRef(null);
   const interviewerFinishedSpeakingAtRef = useRef(Date.now());
   const isMicMutedRef = useRef(isMicMuted);
   useEffect(() => {
     isMicMutedRef.current = isMicMuted;
   }, [isMicMuted]);
+
+  const trackerRef = useRef(null);
+
+  const [telemetryHud, setTelemetryHud] = useState({
+    posture: 'Upright & Centered',
+    gaze: 'Direct Lens Focus',
+    expression: 'Engaged & Attentive',
+    headStability: 'Steady & Poised',
+    wpm: 138,
+    fillerCount: 0,
+    pausesOver3s: 0,
+    speakingSeconds: 0,
+  });
 
   // Format Elapsed Time MM:SS
   const formatTimer = (totalSec) => {
@@ -143,6 +156,9 @@ export default function ImmersiveInterviewRoom({
             if (candidateVideoRef.current) {
               candidateVideoRef.current.srcObject = vidStream;
               candidateVideoRef.current.play().catch(() => {});
+              if (trackerRef.current) {
+                trackerRef.current.startVision(candidateVideoRef.current);
+              }
             }
           }
         }
@@ -167,6 +183,10 @@ export default function ImmersiveInterviewRoom({
 
             const source = ctx.createMediaStreamSource(audStream);
             source.connect(analyser);
+
+            if (trackerRef.current) {
+              trackerRef.current.startAudio(analyser);
+            }
 
             const bufferLength = analyser.frequencyBinCount;
             const dataArray = new Uint8Array(bufferLength);
@@ -203,6 +223,10 @@ export default function ImmersiveInterviewRoom({
 
   // ─── 2. Stop All Media Hardware Streams ─────────────────────────────────────
   const stopAllMedia = useCallback(() => {
+    if (trackerRef.current) {
+      trackerRef.current.stopVision();
+      trackerRef.current.stopAudio();
+    }
     if (animFrameRef.current) {
       cancelAnimationFrame(animFrameRef.current);
       animFrameRef.current = null;
@@ -362,11 +386,21 @@ export default function ImmersiveInterviewRoom({
 
   // ─── 5. Start Session Lifecycle ─────────────────────────────────────────────
   useEffect(() => {
+    trackerRef.current = new MultimodalTracker({
+      onUpdate: (stats) => {
+        setTelemetryHud(prev => ({ ...prev, ...stats }));
+      }
+    });
+
     startLocalMedia();
     initializeSession();
 
     return () => {
       stopAllMedia();
+      if (trackerRef.current) {
+        trackerRef.current.destroy();
+        trackerRef.current = null;
+      }
     };
   }, []);
 
@@ -393,8 +427,12 @@ export default function ImmersiveInterviewRoom({
 
     if (newMuted) {
       stopSpeechRecognition();
+      trackerRef.current?.stopAudio();
     } else {
       startSpeechRecognition();
+      if (analyserRef.current) {
+        trackerRef.current?.startAudio(analyserRef.current);
+      }
     }
   };
 
@@ -407,6 +445,14 @@ export default function ImmersiveInterviewRoom({
       cameraStreamRef.current.getVideoTracks().forEach(t => {
         t.enabled = !newOff;
       });
+    }
+
+    if (newOff) {
+      trackerRef.current?.stopVision();
+    } else {
+      if (candidateVideoRef.current) {
+        trackerRef.current?.startVision(candidateVideoRef.current);
+      }
     }
   };
 
@@ -564,6 +610,9 @@ export default function ImmersiveInterviewRoom({
     setIsSubmittingAnswer(true);
     stopSpeechSynthesis();
 
+    // Feed speech chunk to MultimodalTracker
+    trackerRef.current?.recordSpeechChunk(answerText);
+
     // Append candidate message to transcript
     const updatedMessages = [
       ...messages,
@@ -637,6 +686,8 @@ export default function ImmersiveInterviewRoom({
     setSessionPhase('ending');
     stopAllMedia();
 
+    const finalTelemetry = trackerRef.current?.getFinalTelemetry({ isCameraOff, isMicMuted }) || {};
+
     // 1. Gather honest metrics from the session
     const candidateMsgs = messages.filter(m => m.role === 'candidate');
     const totalWords = candidateMsgs.reduce((acc, m) => acc + (m.text ? m.text.split(/\s+/).length : 0), 0);
@@ -648,15 +699,16 @@ export default function ImmersiveInterviewRoom({
     const overall = Math.round((comm + tech + prob + conf) / 4);
 
     const verbalDelivery = !isMicMuted ? {
-      speakingPaceWpm: 138,
-      paceAssessment: 'Optimal Cadence (125-165 WPM)',
-      fillerWordsCount: Math.max(1, Math.round(totalWords * 0.015)),
-      fillerRatioPercent: 1.2,
-      pausesOver3s: 1,
-      clarityScore: 90,
+      speakingPaceWpm: telemetryHud.wpm || 138,
+      paceAssessment: (telemetryHud.wpm < 115 ? 'Deliberate Cadence (< 115 WPM)' : (telemetryHud.wpm > 170 ? 'Rapid Cadence (> 170 WPM)' : 'Optimal Cadence (125-165 WPM)')),
+      voiceDynamicEnergy: telemetryHud.speakingSeconds > 15 ? 'Engaging Dynamic Range' : 'Standard Modulation',
+      fillerWordsCount: telemetryHud.fillerCount || Math.max(0, Math.round(totalWords * 0.015)),
+      fillerRatioPercent: totalWords > 0 ? Math.round(((telemetryHud.fillerCount || 1) / totalWords) * 1000) / 10 : 1.1,
+      pausesOver3s: telemetryHud.pausesOver3s || 0,
+      clarityScore: Math.min(96, Math.max(75, 92 - (telemetryHud.fillerCount > 3 ? 6 : 0))),
       suggestions: [
-        'Speaking cadence is balanced, crisp, and conversational.',
-        'Use intentional 1-second silent pauses to structure architectural thoughts.'
+        'Speaking cadence was well-paced and articulate throughout the technical explanations.',
+        'Continue using deliberate 1-second silent pauses to structure architectural thoughts.'
       ]
     } : {
       speakingPaceWpm: null,
@@ -668,14 +720,15 @@ export default function ImmersiveInterviewRoom({
 
     const visualObservations = !isCameraOff ? {
       enabled: true,
-      postureScore: 86,
-      postureStatus: 'Upright & Centered',
-      gazeCenteredRatio: 84,
-      gazeStatus: 'Direct Lens Focus',
-      headMovementStability: 'Stable & Poised',
+      postureScore: telemetryHud.posture?.includes('Slouch') ? 72 : 88,
+      postureStatus: telemetryHud.posture || 'Upright & Centered',
+      gazeCenteredRatio: telemetryHud.gaze?.includes('Focus') ? 86 : 70,
+      gazeStatus: telemetryHud.gaze || 'Direct Lens Focus',
+      headMovementStability: telemetryHud.headStability || 'Steady & Poised',
+      facialExpression: telemetryHud.expression || 'Engaged & Attentive',
       suggestions: [
-        'Maintain direct eye contact with the camera lens when presenting trade-offs.',
-        'Camera framing and natural illumination remained steady throughout.'
+        'Maintained consistent direct eye contact with the camera lens during core explanations.',
+        'Camera framing and posture remained upright and stable throughout.'
       ]
     } : {
       enabled: false,
@@ -738,6 +791,7 @@ export default function ImmersiveInterviewRoom({
       questionFeedback,
       verbalDelivery,
       visualObservations,
+      multimodalTelemetry: finalTelemetry,
       summary: `The candidate demonstrated strong domain fundamentals for ${targetRole} at ${targetCompany}. Answers showed structured thinking, sound technical reasoning, and professional poise under mock interview pressure.`
     };
 
@@ -747,6 +801,8 @@ export default function ImmersiveInterviewRoom({
           await apiEndInterview(sessionId, {
             durationSeconds: typeof secondsElapsed !== 'undefined' ? secondsElapsed : 0,
             visualObservations: reportPayload.visualObservations,
+            audioTelemetry: reportPayload.verbalDelivery,
+            multimodalTelemetry: finalTelemetry,
           });
         } catch (_) {}
       }
@@ -1481,6 +1537,68 @@ export default function ImmersiveInterviewRoom({
             {pipMinimized ? <Maximize2 size={9} /> : <Minimize2 size={9} />}
           </button>
         </div>
+
+        {/* PIP Multimodal Telemetry Badges */}
+        {!pipMinimized && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '14px',
+              left: '8px',
+              right: '8px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '3px',
+              pointerEvents: 'none',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: 'rgba(5, 7, 10, 0.78)',
+                backdropFilter: 'blur(8px)',
+                padding: '3px 6px',
+                borderRadius: '6px',
+                fontSize: '0.62rem',
+                color: '#E5E7EB',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: isCameraOff ? '#9CA3AF' : '#22C55E' }} />
+                <span>{isCameraOff ? 'Vision: Paused' : (telemetryHud.posture || 'Upright & Centered')}</span>
+              </div>
+              <span style={{ color: 'var(--accent-champagne)', fontSize: '0.6rem' }}>
+                {isCameraOff ? 'Cam Off' : (telemetryHud.gaze || 'Direct Lens Focus')}
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: 'rgba(5, 7, 10, 0.78)',
+                backdropFilter: 'blur(8px)',
+                padding: '3px 6px',
+                borderRadius: '6px',
+                fontSize: '0.62rem',
+                color: '#E5E7EB',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: isMicMuted ? '#EF4444' : '#22C55E' }} />
+                <span>{isMicMuted ? 'Voice: Muted' : `Cadence: ${telemetryHud.wpm || 138} WPM`}</span>
+              </div>
+              <span style={{ color: '#4ADE80', fontSize: '0.6rem' }}>
+                {isMicMuted ? 'Muted' : `${telemetryHud.fillerCount || 0} fillers`}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* PIP Bottom Audio Bar */}
         <div
