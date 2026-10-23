@@ -1216,149 +1216,6 @@ export default function ImmersiveInterviewRoom({
         </div>
       </div>
 
-      {/* 4B. Desk Nameplate in front of Mr. Chen */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 'clamp(9rem, 18vh, 14rem)',
-          left: '50%',
-          transform: 'translateX(28%)',
-          zIndex: 15,
-          backgroundColor: '#111318',
-          border: '1.5px solid #D9B77A',
-          borderRadius: '3px',
-          padding: '0.3rem 0.85rem',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(217, 183, 122, 0.6)',
-          letterSpacing: '0.12em',
-          fontSize: 'clamp(0.6rem, 0.78vw, 0.72rem)',
-          fontWeight: 800,
-          color: '#F5E7C8',
-          textTransform: 'uppercase',
-          fontFamily: 'var(--font-sans)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.45rem',
-          pointerEvents: 'none',
-        }}
-      >
-        <span style={{ width: '4px', height: '4px', backgroundColor: '#D9B77A', borderRadius: '50%' }} />
-        <span>MR. J. CHEN — HIRING MANAGER</span>
-        <span style={{ width: '4px', height: '4px', backgroundColor: '#D9B77A', borderRadius: '50%' }} />
-      </div>
-
-      {/* 4C. Candidate Executive Desk Pad & Notes Tablet */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 14,
-          width: 'clamp(380px, 46vw, 620px)',
-          height: 'clamp(85px, 14vh, 130px)',
-          backgroundColor: '#10131A',
-          borderRadius: '16px 16px 0 0',
-          border: '1.5px solid #232733',
-          borderBottom: 'none',
-          boxShadow: '0 -6px 20px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'center',
-          gap: '1.25rem',
-          padding: '0.6rem 1.25rem 0 1.25rem',
-        }}
-      >
-        {/* Notes Digital Tablet on Mat */}
-        <div
-          onClick={() => setNotesDrawerOpen(true)}
-          title="Click to open candidate notes pad"
-          style={{
-            width: '125px',
-            height: '80px',
-            backgroundColor: '#F8FAFC',
-            borderRadius: '6px',
-            border: '2px solid #0F172A',
-            boxShadow: '0 8px 18px rgba(0, 0, 0, 0.5)',
-            padding: '0.4rem 0.5rem',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-            color: '#0F172A',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 10px 22px rgba(56, 189, 248, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 8px 18px rgba(0, 0, 0, 0.5)';
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              borderBottom: '1px solid #CBD5E1',
-              paddingBottom: '0.2rem',
-              marginBottom: '0.2rem',
-            }}
-          >
-            <span style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              Notes
-            </span>
-            <Edit3 size={10} color="#0284C7" />
-          </div>
-          <div style={{ fontSize: '0.48rem', color: '#475569', lineHeight: 1.3 }}>
-            • STAR framework ready{'\n'}
-            • Leadership & metrics{'\n'}
-            • High scalability
-          </div>
-          <div style={{ marginTop: 'auto', fontSize: '0.46rem', color: '#0284C7', fontWeight: 600 }}>
-            Tap to edit ✎
-          </div>
-        </div>
-
-        {/* Spiral Notepad & Pen */}
-        <div
-          style={{
-            width: '88px',
-            height: '80px',
-            backgroundColor: '#FEF3C7',
-            borderRadius: '4px',
-            boxShadow: '0 6px 14px rgba(0, 0, 0, 0.45)',
-            padding: '0.35rem 0.45rem',
-            borderLeft: '4px solid #D97706',
-            position: 'relative',
-          }}
-        >
-          <div style={{ fontSize: '0.5rem', fontWeight: 700, color: '#92400E', borderBottom: '1px dashed #D97706', paddingBottom: '2px', marginBottom: '3px' }}>
-            Two Sum Plan
-          </div>
-          <div style={{ fontSize: '0.46rem', color: '#78350F', lineHeight: 1.25 }}>
-            ✔ Hash map lookup{'\n'}
-            ✔ O(N) single pass{'\n'}
-            ✔ Return indices
-          </div>
-
-          {/* Silver Pen resting next to pad */}
-          <div
-            style={{
-              position: 'absolute',
-              right: '-14px',
-              top: '10px',
-              width: '5px',
-              height: '62px',
-              backgroundColor: '#CBD5E1',
-              borderRadius: '2px',
-              boxShadow: '1px 2px 4px rgba(0,0,0,0.5)',
-              transform: 'rotate(12deg)',
-            }}
-          />
-        </div>
-      </div>
-
       {/* 4D. Candidate POV Hands in Foreground */}
       <CandidatePOVHands isCandidateSpeaking={isCandidateSpeaking} />
 
@@ -1506,33 +1363,38 @@ export default function ImmersiveInterviewRoom({
       </div>
 
       {/* =========================================================================
-          LAYER 6: CANDIDATE ANSWERING FIELD & COMPACT CONTROL BAR (BOTTOM)
+          LAYER 6: CANDIDATE ANSWERING FIELD & COMPACT CONTROL BAR (BOTTOM ANCHORED)
           ========================================================================= */}
       <footer
         style={{
-          position: 'relative',
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
           zIndex: 30,
-          padding: '0 2rem 1.25rem 2rem',
+          padding: '0 2rem 1.15rem 2rem',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '0.75rem',
+          gap: '0.65rem',
+          pointerEvents: 'none',
         }}
       >
         {/* Candidate Live Speech & Text Response Input Bar */}
         <div
           style={{
-            maxWidth: '780px',
+            maxWidth: '740px',
             width: '100%',
-            backgroundColor: 'rgba(10, 12, 18, 0.92)',
-            border: '1px solid rgba(255, 255, 255, 0.14)',
+            backgroundColor: 'rgba(10, 12, 18, 0.94)',
+            border: '1px solid rgba(255, 255, 255, 0.16)',
             borderRadius: '16px',
-            padding: '0.75rem 1rem',
+            padding: '0.65rem 1rem',
             backdropFilter: 'blur(20px)',
-            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.6)',
+            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.7)',
             display: 'flex',
             alignItems: 'center',
             gap: '0.75rem',
+            pointerEvents: 'auto',
           }}
         >
           {/* Active Voice Input Mic indicator */}
@@ -1619,6 +1481,7 @@ export default function ImmersiveInterviewRoom({
             padding: '0.45rem 1.25rem',
             backdropFilter: 'blur(16px)',
             boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+            pointerEvents: 'auto',
           }}
         >
           {/* 1. Mic Mute / Unmute */}
