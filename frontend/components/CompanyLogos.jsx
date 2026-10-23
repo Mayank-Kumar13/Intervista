@@ -17,8 +17,8 @@ export default function CompanyLogos({ onSelectCompany }) {
     <section
       id="trusted-companies"
       style={{
-        paddingTop: '2rem',
-        paddingBottom: '4rem',
+        paddingTop: '5rem',
+        paddingBottom: '7.5rem',
         position: 'relative',
       }}
     >
@@ -28,7 +28,7 @@ export default function CompanyLogos({ onSelectCompany }) {
           style={{
             position: 'relative',
             textAlign: 'center',
-            marginBottom: '2.5rem',
+            marginBottom: '3.5rem',
           }}
         >
           <div

@@ -26,6 +26,7 @@
   --accent-gold-glow: rgba(217, 183, 122, 0.22);
   --accent-gold-soft: rgba(217, 183, 122, 0.12);
   --accent-ivory: #F6F0E7;
+  --accent-champagne: #F5E7C8;
 
   /* Borders & Hairlines */
   --border-subtle: rgba(255, 255, 255, 0.08);
@@ -231,41 +232,42 @@ body {
 
 /* Section Common */
 .section-wrapper {
-  padding: 6.5rem 0;
+  padding: 8.5rem 0;
   position: relative;
 }
 
 @media (max-width: 768px) {
   .section-wrapper {
-    padding: 4.5rem 0;
+    padding: 6rem 0;
   }
 }
 
 .section-header {
   text-align: center;
-  margin-bottom: 3.5rem;
+  margin-bottom: 5.5rem;
 }
 
 .section-title {
   font-family: var(--font-serif);
-  font-size: 2.75rem;
+  font-size: 2.85rem;
   font-weight: 400;
   letter-spacing: -0.025em;
   color: var(--text-primary);
-  margin-bottom: 0.75rem;
-  line-height: 1.15;
+  margin-bottom: 1rem;
+  line-height: 1.18;
 }
 
 @media (max-width: 768px) {
   .section-title {
-    font-size: 2.15rem;
+    font-size: 2.2rem;
   }
 }
 
 .section-subtitle {
   color: var(--text-secondary);
-  font-size: 1.05rem;
-  max-width: 600px;
+  font-size: 1.08rem;
+  line-height: 1.72;
+  max-width: 640px;
   margin: 0 auto;
 }
 
@@ -376,8 +378,23 @@ body {
   animation: slideUp 0.3s var(--ease-spring);
 }
 
+.modal-content.interview-room {
+  overflow-y: hidden;
+}
+
 /* Focus styles for accessibility */
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
   outline: 2px solid var(--accent-gold);
   outline-offset: 2px;
+}
+
+/* ─── Keyframe Animations ─────────────────────────────────────────────────── */
+@keyframes waveMotion {
+  0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

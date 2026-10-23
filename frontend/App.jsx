@@ -22,6 +22,8 @@ import AuthModal from './components/AuthModal';
 import LegalModal from './components/LegalModal';
 import ContactModal from './components/ContactModal';
 import { getCurrentUser, logoutUser } from './utils/auth';
+import { apiLogout } from './utils/api';
+
 
 export default function App() {
   // Current authenticated user session
@@ -204,9 +206,11 @@ export default function App() {
 
   const handleLogout = () => {
     logoutUser();
+    apiLogout();
     setCurrentUser(null);
     handleNavigate('home');
   };
+
 
   return (
     <div className="intervista-app">

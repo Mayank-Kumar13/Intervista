@@ -7,8 +7,8 @@ export default function Hero({ onStartInterview, onWatchDemo, onNavigate }) {
     <section
       id="hero"
       style={{
-        paddingTop: 'calc(var(--nav-height) + 3.5rem)',
-        paddingBottom: '5rem',
+        paddingTop: 'calc(var(--nav-height) + 5.5rem)',
+        paddingBottom: '8rem',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -18,7 +18,7 @@ export default function Hero({ onStartInterview, onWatchDemo, onNavigate }) {
           style={{
             display: 'grid',
             gridTemplateColumns: '1.05fr 1fr',
-            gap: '3.5rem',
+            gap: '5.5rem',
             alignItems: 'center',
           }}
           className="hero-grid"
@@ -31,7 +31,7 @@ export default function Hero({ onStartInterview, onWatchDemo, onNavigate }) {
               style={{
                 fontSize: 'clamp(2.75rem, 5.2vw, 4.25rem)',
                 lineHeight: 1.08,
-                marginBottom: '1.6rem',
+                marginBottom: '2rem',
                 letterSpacing: '-0.03em',
               }}
             >
@@ -45,8 +45,8 @@ export default function Hero({ onStartInterview, onWatchDemo, onNavigate }) {
               style={{
                 color: 'var(--text-secondary)',
                 fontSize: '1.08rem',
-                lineHeight: 1.68,
-                marginBottom: '2.4rem',
+                lineHeight: 1.75,
+                marginBottom: '3rem',
                 maxWidth: '520px',
               }}
             >
@@ -61,7 +61,7 @@ export default function Hero({ onStartInterview, onWatchDemo, onNavigate }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '1rem',
-                marginBottom: '3rem',
+                marginBottom: '3.5rem',
                 flexWrap: 'wrap',
               }}
             >
@@ -102,9 +102,9 @@ export default function Hero({ onStartInterview, onWatchDemo, onNavigate }) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '1.75rem',
+                gap: '2.25rem',
                 borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-                paddingTop: '1.8rem',
+                paddingTop: '2.25rem',
                 flexWrap: 'wrap',
               }}
             >

@@ -127,18 +127,18 @@ export default function ReviewsSection() {
   const marqueeReviews = [...reviews, ...reviews];
 
   return (
-    <section id="reviews" className="section-wrapper" style={{ paddingTop: '2rem', paddingBottom: '5rem' }}>
+    <section id="reviews" className="section-wrapper" style={{ padding: '8.5rem 0', position: 'relative' }}>
       <div className="container">
         {/* Main Review Section Container */}
         <div
           style={{
             backgroundColor: '#0F0F0F',
             border: '1px solid var(--border-card)',
-            borderRadius: '24px',
-            padding: '3rem 2.5rem',
+            borderRadius: '26px',
+            padding: '3.75rem 3.25rem',
             display: 'grid',
             gridTemplateColumns: '320px 1fr',
-            gap: '2.5rem',
+            gap: '3.5rem',
             alignItems: 'center',
             position: 'relative',
             overflow: 'hidden',

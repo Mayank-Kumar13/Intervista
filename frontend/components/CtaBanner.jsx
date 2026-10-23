@@ -3,16 +3,16 @@ import { ArrowRight } from 'lucide-react';
 
 export default function CtaBanner({ onStartInterview }) {
   return (
-    <section style={{ padding: '3rem 0 6rem 0', position: 'relative' }}>
+    <section style={{ padding: '7rem 0 9rem 0', position: 'relative' }}>
       <div className="container">
         {/* Wide Premium Banner Container */}
         <div
           style={{
             position: 'relative',
-            borderRadius: '24px',
+            borderRadius: '26px',
             backgroundColor: '#12100E',
             border: '1px solid rgba(217, 183, 122, 0.22)',
-            padding: '3.8rem 4.5rem',
+            padding: '4.5rem 4.5rem',
             overflow: 'hidden',
             boxShadow: '0 24px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(217, 183, 122, 0.08)',
           }}
