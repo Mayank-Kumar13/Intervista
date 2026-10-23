@@ -96,6 +96,7 @@ export default function ImmersiveInterviewRoom({
   const recognitionRef = useRef(null);
   const textareaRef = useRef(null);
   const transcriptScrollRef = useRef(null);
+  const interviewerFinishedSpeakingAtRef = useRef(Date.now());
 
   // Format Elapsed Time MM:SS
   const formatTimer = (totalSec) => {
@@ -234,8 +235,14 @@ export default function ImmersiveInterviewRoom({
     }
 
     utterance.onstart = () => setIsInterviewerSpeaking(true);
-    utterance.onend = () => setIsInterviewerSpeaking(false);
-    utterance.onerror = () => setIsInterviewerSpeaking(false);
+    utterance.onend = () => {
+      setIsInterviewerSpeaking(false);
+      interviewerFinishedSpeakingAtRef.current = Date.now();
+    };
+    utterance.onerror = () => {
+      setIsInterviewerSpeaking(false);
+      interviewerFinishedSpeakingAtRef.current = Date.now();
+    };
 
     window.speechSynthesis.speak(utterance);
   };
@@ -452,13 +459,18 @@ export default function ImmersiveInterviewRoom({
     setCandidateAnswer('');
 
     try {
+      const latencyMs = Math.max(300, Date.now() - (interviewerFinishedSpeakingAtRef.current || Date.now()));
+      const wordCount = answerText.split(/\s+/).filter(Boolean).length;
+      const audioDurationMs = Math.round((wordCount / 135) * 60000);
+
       const res = await apiSendMessage({
         sessionId,
         content: answerText,
-        geminiInteractionId,
+        latencyMs,
+        audioDurationMs,
+        questionIndex,
       });
 
-      setGeminiInteractionId(res.geminiInteractionId);
       const reply = res.message;
 
       setMessages([
@@ -616,6 +628,14 @@ export default function ImmersiveInterviewRoom({
     };
 
     try {
+      if (sessionId) {
+        try {
+          await apiEndInterview(sessionId, {
+            durationSeconds: typeof secondsElapsed !== 'undefined' ? secondsElapsed : 0,
+            visualObservations: reportPayload.visualObservations,
+          });
+        } catch (_) {}
+      }
       const savedReportResponse = await apiSaveReport(reportPayload);
       const savedReport = savedReportResponse?.report || { ...reportPayload, id: `rep_${Date.now()}` };
       if (onFinishInterview) {

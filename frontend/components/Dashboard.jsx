@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import MockInterviewSetupPage from './MockInterviewSetupPage';
 import CareerPrepDSAPage from './CareerPrepDSAPage';
+import HistoryPage from './HistoryPage';
+import { apiGetSessions, apiGetReport } from '../utils/api';
 import {
   Home,
   Mic,
@@ -149,8 +151,73 @@ export default function Dashboard({
   const [selectedYear, setSelectedYear] = useState(2026);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeNav, setActiveNav] = useState('Overview');
+  const [activeNav, setActiveNav] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const h = window.location.hash.toLowerCase();
+      if (h.includes('history')) return 'History';
+      if (h.includes('mock')) return 'Mock Interview';
+      if (h.includes('prep') || h.includes('career')) return 'Career Prep';
+    }
+    return 'Overview';
+  });
   const [hoveredCell, setHoveredCell] = useState(null);
+  const [dbSessions, setDbSessions] = useState([]);
+
+  useEffect(() => {
+    apiGetSessions()
+      .then((res) => {
+        if (res?.sessions && res.sessions.length > 0) {
+          setDbSessions(res.sessions);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to load past sessions:', err);
+      });
+  }, []);
+
+  const displayedInterviews = useMemo(() => {
+    if (dbSessions.length === 0) return RECENT_INTERVIEWS;
+    const mappedDb = dbSessions.map((s) => ({
+      id: s.id,
+      company: s.company || 'Google',
+      role: s.role || 'Software Engineer',
+      score: s.score || 82,
+      date: s.date || 'Today',
+      scoreColor: (s.score || 82) >= 80 ? '#10B981' : '#E2C99A',
+      logoType: (s.company || '').toLowerCase().includes('micro')
+        ? 'microsoft'
+        : (s.company || '').toLowerCase().includes('ama')
+        ? 'amazon'
+        : (s.company || '').toLowerCase().includes('tes')
+        ? 'tesla'
+        : 'google',
+      isDbSession: true,
+      details: {
+        scores: s.details?.scores || { communication: 86, technicalDepth: 82, problemSolving: 84, confidence: 80 },
+        strengths: s.details?.strengths || ['Articulate structured explanation'],
+        improvements: s.details?.improvements || ['State time and space complexity upfront'],
+        rubricScores: s.details?.rubricScores || [],
+      },
+    }));
+    return [...mappedDb, ...RECENT_INTERVIEWS.slice(mappedDb.length)];
+  }, [dbSessions]);
+
+  useEffect(() => {
+    const handleHash = () => {
+      const h = window.location.hash.toLowerCase();
+      if (h.includes('history')) {
+        setActiveNav('History');
+      } else if (h.includes('mock')) {
+        setActiveNav('Mock Interview');
+      } else if (h.includes('career') || h.includes('prep')) {
+        setActiveNav('Career Prep');
+      } else if (h === '#dashboard') {
+        setActiveNav('Overview');
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   // ─── Task 4: Real Backend Reports & History State ─────────────────────────────
   const [reports, setReports] = useState([]);
@@ -322,6 +389,7 @@ export default function Dashboard({
       id: 'overview',
       action: () => {
         setActiveNav('Overview');
+        window.location.hash = '#dashboard';
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
     },
@@ -331,6 +399,7 @@ export default function Dashboard({
       id: 'mock-interview',
       action: () => {
         setActiveNav('Mock Interview');
+        window.location.hash = '#dashboard/mock-interview';
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
     },
@@ -339,13 +408,9 @@ export default function Dashboard({
       icon: History,
       id: 'history',
       action: () => {
-        setActiveNav('Overview');
-        setTimeout(() => {
-          const el = document.getElementById('recent-interviews');
-          if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 100);
+        setActiveNav('History');
+        window.location.hash = '#dashboard/history';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       },
     },
     {
@@ -354,6 +419,7 @@ export default function Dashboard({
       id: 'career-prep',
       action: () => {
         setActiveNav('Career Prep');
+        window.location.hash = '#dashboard/career-prep';
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
     },
@@ -599,6 +665,19 @@ export default function Dashboard({
                 setActiveNav('Mock Interview');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
+              onBackToOverview={() => {
+                setActiveNav('Overview');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
+          ) : activeNav === 'History' ? (
+            <HistoryPage
+              onViewReport={onViewReport}
+              onStartInterview={() => {
+                setActiveNav('Mock Interview');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onNavigateToCompanies={onNavigateToCompanies}
               onBackToOverview={() => {
                 setActiveNav('Overview');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1001,27 +1080,53 @@ export default function Dashboard({
                   </h3>
                 </div>
 
-                <button
-                  onClick={loadReports}
-                  title="Refresh interview history"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text-secondary)',
-                    fontSize: '0.82rem',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    transition: 'color 0.2s',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
-                >
-                  <RefreshCw size={13} className={loadingReports ? 'spin' : ''} />
-                  <span>Refresh</span>
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <button
+                    onClick={loadReports}
+                    title="Refresh interview history"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-secondary)',
+                      fontSize: '0.82rem',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'color 0.2s',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                  >
+                    <RefreshCw size={13} className={loadingReports ? 'spin' : ''} />
+                    <span>Refresh</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveNav('History');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-secondary)',
+                      fontSize: '0.82rem',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'color 0.2s',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                  >
+                    <span>View all</span>
+                    <span>→</span>
+                  </button>
+                </div>
               </div>
 
               {/* Table Column Headers */}

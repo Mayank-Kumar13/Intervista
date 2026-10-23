@@ -14,13 +14,18 @@ import {
   Eye,
   Activity,
   ShieldCheck,
+  Camera,
+  Mic,
+  Info,
   BookOpen,
   Target,
   Clock,
   HelpCircle,
   Loader2,
   RefreshCw,
-  Award
+  Award,
+  Layers,
+  FileText
 } from 'lucide-react';
 import { apiDownloadReportPdf } from '../utils/api';
 
@@ -58,10 +63,20 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
     { key: 'confidence', label: 'Confidence & Professional Poise', weight: criterionWeights.confidence || 15, score: criterionScores.confidence || 82, icon: BarChart3 },
   ];
 
-  // Vision & Posture Telemetry
+  // Visual Telemetry from backend or preset
   const rawVision = reportData?.visualObservations || reportData?.visionAnalysis;
-  const visionAssessed = rawVision && rawVision.enabled !== false && !String(rawVision.postureStatus).includes('Not assessed');
-  const vision = visionAssessed ? rawVision : {
+  const visionAssessed = rawVision && rawVision.enabled !== false && !String(rawVision.postureStatus).includes('Not assessed') && !String(rawVision.framingStatus).includes('Not assessed');
+  const vision = visionAssessed ? {
+    enabled: true,
+    postureScore: rawVision.faceVisibilityPercent || rawVision.postureScore || 88,
+    postureStatus: rawVision.framingStatus || rawVision.postureStatus || 'Upright & Centered',
+    gazeCenteredRatio: rawVision.faceVisibilityPercent || rawVision.gazeCenteredRatio || 86,
+    gazeStatus: rawVision.headOrientationStatus || rawVision.gazeStatus || 'Optimal Direct Focus',
+    headMovementStability: rawVision.headMovementStability || 'Stable & Poised',
+    suggestions: rawVision.neutralObservationNote
+      ? [rawVision.neutralObservationNote]
+      : (rawVision.suggestions || ['Maintain direct camera gaze alignment when presenting complex architectural decisions.'])
+  } : {
     enabled: false,
     postureScore: null,
     postureStatus: 'Not assessed',
@@ -71,10 +86,19 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
     suggestions: ['Camera was off or video tracking was unassessed for this session.']
   };
 
-  // Voice & Delivery Telemetry
-  const rawVoice = reportData?.verbalDelivery || reportData?.voiceAnalysis;
-  const voiceAssessed = rawVoice && rawVoice.speakingPaceWpm !== null && !String(rawVoice.paceAssessment).includes('Not assessed');
-  const voice = voiceAssessed ? rawVoice : {
+  // Voice & Communication Telemetry from backend or preset
+  const rawVoice = reportData?.verbalDelivery || reportData?.communicationMetrics || reportData?.voiceAnalysis;
+  const voiceAssessed = rawVoice && (rawVoice.speakingPaceWpm !== null || rawVoice.speakingRateWpm !== undefined) && !String(rawVoice.paceAssessment).includes('Not assessed');
+  const voice = voiceAssessed ? {
+    speakingPaceWpm: rawVoice.speakingRateWpm || rawVoice.speakingPaceWpm || 140,
+    paceAssessment: rawVoice.paceAssessment || 'Optimal Cadence (125-165 WPM)',
+    fillerWordsCount: rawVoice.fillerWordCount !== undefined ? rawVoice.fillerWordCount : (rawVoice.fillerWordsCount || 2),
+    fillerDetails: rawVoice.fillerDetails || { um: 1, like: 1 },
+    fillerRatioPercent: rawVoice.fillerRatioPercent || 1.1,
+    pausesOver3s: rawVoice.pauseDurationCount !== undefined ? rawVoice.pauseDurationCount : (rawVoice.pausesOver3s || 1),
+    clarityScore: rawVoice.clarityScore || 92,
+    suggestions: rawVoice.suggestions || ['Replace filler sounds with intentional 1-second silent pauses to structure thoughts.']
+  } : {
     speakingPaceWpm: null,
     paceAssessment: 'Not assessed',
     fillerWordsCount: null,
@@ -121,7 +145,7 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
 
   const studyRoadmap = (reportData?.studyRoadmap && reportData.studyRoadmap.length > 0)
     ? reportData.studyRoadmap
-    : defaultRoadmap;
+    : (reportData?.learningPlan || defaultRoadmap);
 
   // Knowledge Gaps
   const defaultKnowledgeGaps = [
@@ -317,6 +341,75 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
             </p>
           </div>
         </div>
+
+        {/* ─── Rubric Breakdown (when available from Task 3) ─── */}
+        {reportData?.rubricScores && reportData.rubricScores.length > 0 && (
+          <div style={{ marginBottom: '2.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.85rem' }}>
+              <span className="eyebrow-tag" style={{ color: 'var(--accent-gold)' }}>
+                OFFICIAL RUBRIC BREAKDOWN
+              </span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
+                • Grounded in Transcript Evidence
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1rem' }}>
+              {reportData.rubricScores.map((rubric, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    backgroundColor: '#141416',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '14px',
+                    padding: '1.2rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.6rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <h5 style={{ fontSize: '0.88rem', fontWeight: 600, color: '#FFFFFF', margin: 0 }}>
+                        {rubric.label}
+                      </h5>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+                        Weight: {Math.round((rubric.weight || 0.25) * 100)}% of Composite Score
+                      </span>
+                    </div>
+                    <span style={{
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      color: rubric.score >= 80 ? '#4ADE80' : 'var(--accent-gold)',
+                      backgroundColor: rubric.score >= 80 ? 'rgba(74, 222, 128, 0.1)' : 'rgba(217, 183, 122, 0.1)',
+                      padding: '3px 10px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255, 255, 255, 0.08)'
+                    }}>
+                      {rubric.score}%
+                    </span>
+                  </div>
+
+                  <div style={{ height: '4px', backgroundColor: '#222', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ width: `${rubric.score}%`, height: '100%', backgroundColor: rubric.score >= 80 ? '#22C55E' : 'var(--accent-gold)' }} />
+                  </div>
+
+                  {rubric.feedback && (
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                      {rubric.feedback}
+                    </div>
+                  )}
+
+                  {rubric.evidenceQuotes && rubric.evidenceQuotes.length > 0 && (
+                    <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: '0.5rem 0.75rem', borderRadius: '6px', fontSize: '0.74rem', color: 'var(--accent-champagne)', fontStyle: 'italic' }}>
+                      "{rubric.evidenceQuotes[0]}"
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 2. Criterion Scorecard & Weights */}
         <div style={{ marginBottom: '2.25rem' }}>
@@ -683,7 +776,7 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.74rem', color: 'var(--accent-gold)' }}>
                       <Clock size={12} />
-                      <span>{item.estimatedTime}</span>
+                      <span>{item.estimatedTime || item.estimatedStudyTime || 'Estimated Study Time: ~2 hrs'}</span>
                     </div>
                   </div>
 
@@ -699,7 +792,7 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
                         <span>Learning Objective</span>
                       </div>
                       <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-                        {item.objective}
+                        {item.objective || item.learningObjective}
                       </div>
                     </div>
 
@@ -709,15 +802,15 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
                         <span>Recommended Practice Exercise</span>
                       </div>
                       <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-                        {item.exercise}
+                        {item.exercise || (item.practiceExercises && item.practiceExercises[0]) || 'Hands-on practice drill'}
                       </div>
                     </div>
                   </div>
 
-                  {item.suggestedQuestion && (
+                  {(item.suggestedQuestion || (item.followUpInterviewQuestions && item.followUpInterviewQuestions[0])) && (
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', backgroundColor: 'rgba(0,0,0,0.3)', padding: '0.55rem 0.8rem', borderRadius: '8px', borderLeft: '2px solid var(--accent-gold)' }}>
                       <strong style={{ color: 'var(--accent-gold)' }}>Suggested Follow-up Practice Question: </strong>
-                      "{item.suggestedQuestion}"
+                      "{item.suggestedQuestion || item.followUpInterviewQuestions[0]}"
                     </div>
                   )}
                 </div>

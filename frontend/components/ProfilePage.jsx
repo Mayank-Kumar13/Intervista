@@ -23,6 +23,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { getCurrentUser } from '../utils/auth';
+import { apiGetMe, apiUpdateProfile } from '../utils/api';
 
 export default function ProfilePage({
   currentUser,
@@ -31,7 +32,10 @@ export default function ProfilePage({
   onViewReport,
   onLogout,
 }) {
-  const user = currentUser || getCurrentUser() || {
+  const [profileUser, setProfileUser] = useState(currentUser || getCurrentUser() || null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  const user = profileUser || currentUser || getCurrentUser() || {
     name: 'Interview Candidate',
     email: 'candidate@example.com',
   };
@@ -42,8 +46,11 @@ export default function ProfilePage({
     ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
     : 'Oct 2026';
 
-  // Load custom skills from localStorage or defaults
+  // Load custom skills from user profile or defaults
   const [skills, setSkills] = useState(() => {
+    if (user?.skills && Array.isArray(user.skills) && user.skills.length > 0) {
+      return user.skills;
+    }
     try {
       const saved = localStorage.getItem('intervista_user_skills');
       return saved
@@ -61,6 +68,32 @@ export default function ProfilePage({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(name);
   const [nameSaveNotice, setNameSaveNotice] = useState('');
+
+  // Fetch real profile from MongoDB on mount
+  useEffect(() => {
+    let active = true;
+    async function loadLatestProfile() {
+      try {
+        setLoadingProfile(true);
+        const me = await apiGetMe();
+        if (active && me) {
+          setProfileUser(me);
+          setEditedName(me.name);
+          if (me.skills && me.skills.length > 0) {
+            setSkills(me.skills);
+          }
+        }
+      } catch (err) {
+        // Maintain local user data if offline
+      } finally {
+        if (active) setLoadingProfile(false);
+      }
+    }
+    loadLatestProfile();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Performance metrics (persisted in localStorage or default)
   const [stats, setStats] = useState(() => {
@@ -117,8 +150,8 @@ export default function ProfilePage({
     },
   ];
 
-  // Save skills to localStorage
-  const handleAddSkill = (e) => {
+  // Save skills to MongoDB & local state
+  const handleAddSkill = async (e) => {
     e.preventDefault();
     const clean = newSkillInput.trim();
     if (clean && !skills.includes(clean)) {
@@ -127,41 +160,54 @@ export default function ProfilePage({
       localStorage.setItem('intervista_user_skills', JSON.stringify(updated));
       setNewSkillInput('');
       setShowAddSkill(false);
+
+      try {
+        const res = await apiUpdateProfile({ skills: updated });
+        if (res) setProfileUser(res);
+      } catch (err) {
+        console.warn('Failed to sync skill to backend:', err.message);
+      }
     }
   };
 
-  const handleRemoveSkill = (skillToRemove) => {
+  const handleRemoveSkill = async (skillToRemove) => {
     const updated = skills.filter((s) => s !== skillToRemove);
     setSkills(updated);
     localStorage.setItem('intervista_user_skills', JSON.stringify(updated));
-  };
-
-  // Save profile name
-  const handleSaveName = (e) => {
-    e.preventDefault();
-    if (!editedName.trim()) return;
 
     try {
-      const current = getCurrentUser() || {};
-      const updatedUser = { ...current, name: editedName.trim() };
-      localStorage.setItem('intervista_current_user', JSON.stringify(updatedUser));
+      const res = await apiUpdateProfile({ skills: updated });
+      if (res) setProfileUser(res);
+    } catch (err) {
+      console.warn('Failed to sync skill deletion to backend:', err.message);
+    }
+  };
 
-      // Also update in registered users array
-      const allUsers = JSON.parse(localStorage.getItem('intervista_users') || '[]');
-      const userIndex = allUsers.findIndex((u) => u.email === updatedUser.email);
-      if (userIndex !== -1) {
-        allUsers[userIndex].name = editedName.trim();
-        localStorage.setItem('intervista_users', JSON.stringify(allUsers));
-      }
+  // Save profile name to MongoDB Atlas
+  const handleSaveName = async (e) => {
+    e.preventDefault();
+    const cleanName = editedName.trim();
+    if (!cleanName || cleanName.length < 2) return;
 
+    try {
+      const updatedUser = await apiUpdateProfile({ name: cleanName });
+      setProfileUser(updatedUser);
       setIsEditingName(false);
-      setNameSaveNotice('Profile name updated successfully!');
+      setNameSaveNotice('Profile name saved to MongoDB!');
       setTimeout(() => setNameSaveNotice(''), 3000);
 
       // Trigger re-render across navbar
       window.dispatchEvent(new Event('storage'));
     } catch (err) {
-      console.error(err);
+      console.error('[save name error]', err);
+      // Fallback local persistence if offline
+      const current = getCurrentUser() || {};
+      const fallbackUser = { ...current, name: cleanName };
+      localStorage.setItem('intervista_current_user', JSON.stringify(fallbackUser));
+      setIsEditingName(false);
+      setNameSaveNotice(err.message || 'Saved locally.');
+      setTimeout(() => setNameSaveNotice(''), 3000);
+      window.dispatchEvent(new Event('storage'));
     }
   };
 
@@ -290,9 +336,23 @@ export default function ProfilePage({
                 fontFamily: 'var(--font-serif)',
                 fontWeight: 600,
                 flexShrink: 0,
+                overflow: 'hidden',
               }}
             >
-              {name.charAt(0).toUpperCase()}
+              {user?.picture ? (
+                <img
+                  src={user.picture}
+                  alt={name}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                name.charAt(0).toUpperCase()
+              )}
             </div>
 
             {/* Title & Info */}

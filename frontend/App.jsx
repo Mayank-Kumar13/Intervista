@@ -24,11 +24,35 @@ import AuthModal from './components/AuthModal';
 import LegalModal from './components/LegalModal';
 import ContactModal from './components/ContactModal';
 import { getCurrentUser, logoutUser } from './utils/auth';
-import { apiLogout } from './utils/api';
+import { apiLogout, apiGetMe } from './utils/api';
 
 export default function App() {
   // Current authenticated user session
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
+
+  // Verify active session with backend on initial load
+  useEffect(() => {
+    let isMounted = true;
+    async function verifyActiveSession() {
+      try {
+        const user = await apiGetMe();
+        if (isMounted && user) {
+          setCurrentUser(user);
+        }
+      } catch (err) {
+        if (err.message && (err.message.includes('401') || err.message.includes('Unauthorized'))) {
+          if (isMounted) {
+            logoutUser();
+            setCurrentUser(null);
+          }
+        }
+      }
+    }
+    verifyActiveSession();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Page / View State ('home' | 'dashboard' | 'companies' | 'plans' | 'profile' | 'interview')
   const [currentView, setCurrentView] = useState(() => {
@@ -92,7 +116,7 @@ export default function App() {
         if (parts[1]) {
           setTargetCompany(parts[1]);
         }
-      } else if (hash === '#dashboard') {
+      } else if (hash.startsWith('#dashboard') || hash === '#history') {
         setCurrentView('dashboard');
       } else if (hash === '#plans' || hash === '#pricing') {
         setCurrentView('plans');
@@ -104,13 +128,7 @@ export default function App() {
     };
 
     // Check hash on initial mount
-    if (window.location.hash === '#login') {
-      setAuthModalMode('login');
-      setAuthModalOpen(true);
-    } else if (window.location.hash === '#signup') {
-      setAuthModalMode('signup');
-      setAuthModalOpen(true);
-    }
+    handleHashChange();
 
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
@@ -251,11 +269,14 @@ export default function App() {
     handleNavigate('dashboard');
   };
 
-  const handleLogout = () => {
-    logoutUser();
-    apiLogout();
-    setCurrentUser(null);
-    handleNavigate('home');
+  const handleLogout = async () => {
+    try {
+      await apiLogout();
+    } finally {
+      logoutUser();
+      setCurrentUser(null);
+      handleNavigate('home');
+    }
   };
 
   return (

@@ -5,7 +5,7 @@
 
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const db = require('../db');
+const db = require('../sqlite');
 const { optionalAuth, requireAuth } = require('../middleware/auth');
 const { generateReportPDF } = require('./pdfGenerator');
 

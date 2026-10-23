@@ -567,9 +567,21 @@ export default function Navbar({
                   justifyContent: 'center',
                   fontSize: '0.75rem',
                   fontWeight: 700,
+                  overflow: 'hidden',
                 }}
               >
-                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                {currentUser.picture ? (
+                  <img
+                    src={currentUser.picture}
+                    alt={currentUser.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    referrerPolicy="no-referrer"
+                  />
+                ) : currentUser.name ? (
+                  currentUser.name.charAt(0).toUpperCase()
+                ) : (
+                  'U'
+                )}
               </span>
               <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {currentUser.name || currentUser.email}
@@ -718,9 +730,21 @@ export default function Navbar({
                   justifyContent: 'center',
                   fontSize: '0.75rem',
                   fontWeight: 700,
+                  overflow: 'hidden',
                 }}
               >
-                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                {currentUser.picture ? (
+                  <img
+                    src={currentUser.picture}
+                    alt={currentUser.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    referrerPolicy="no-referrer"
+                  />
+                ) : currentUser.name ? (
+                  currentUser.name.charAt(0).toUpperCase()
+                ) : (
+                  'U'
+                )}
               </span>
               <span style={{ fontSize: '0.86rem', color: 'var(--accent-gold)', fontWeight: 600 }}>
                 {currentUser.name || currentUser.email} (My Profile)
