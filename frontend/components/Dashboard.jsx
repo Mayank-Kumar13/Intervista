@@ -13,7 +13,6 @@ import {
   Plus,
   ArrowRight,
   Sparkles,
-  Bell,
   FileText,
   Code2,
   Lightbulb,
@@ -617,117 +616,8 @@ export default function Dashboard({
                     <span>Start New Interview</span>
                     <ArrowRight size={15} />
                   </button>
-            </div>
-
-            {/* Right: Notification Icon, Avatar & Motivational Card */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-end',
-                gap: '1.25rem',
-              }}
-              className="welcome-header-right"
-            >
-              {/* Upper-right controls: Bell with red dot + Avatar 'M' */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                {/* Notification Bell */}
-                <div
-                  style={{
-                    position: 'relative',
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '50%',
-                    backgroundColor: '#141414',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
-                  }}
-                  title="Notifications"
-                >
-                  <Bell size={17} />
-                  {/* Red notification dot */}
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: '7px',
-                      right: '8px',
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      backgroundColor: '#EF4444',
-                      boxShadow: '0 0 6px rgba(239, 68, 68, 0.8)',
-                    }}
-                  />
-                </div>
-
-                {/* Avatar 'M' */}
-                <div
-                  style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '50%',
-                    backgroundColor: '#161616',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--text-primary)',
-                    fontWeight: 600,
-                    fontSize: '0.92rem',
-                    cursor: 'pointer',
-                  }}
-                  title="User Profile (Mayank)"
-                >
-                  M
                 </div>
               </div>
-
-              {/* Motivational Card */}
-              <div
-                style={{
-                  backgroundColor: '#131313',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '16px',
-                  padding: '1.1rem 1.4rem',
-                  maxWidth: '320px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  boxShadow: '0 10px 24px rgba(0, 0, 0, 0.4)',
-                }}
-              >
-                <div
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    backgroundColor: 'rgba(217, 183, 122, 0.12)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--accent-gold)',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Sparkles size={16} />
-                </div>
-                <p
-                  style={{
-                    color: 'var(--text-secondary)',
-                    fontSize: '0.82rem',
-                    lineHeight: 1.45,
-                    margin: 0,
-                  }}
-                >
-                  Consistent practice today, bigger opportunities tomorrow.
-                </p>
-              </div>
-            </div>
-          </div>
 
           {/* =========================================================================
               C. YEARLY PRACTICE ACTIVITY HEATMAP
