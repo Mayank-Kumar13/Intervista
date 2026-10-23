@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import MockInterviewSetupPage from './MockInterviewSetupPage';
 import CareerPrepDSAPage from './CareerPrepDSAPage';
+import { apiGetSessions, apiGetReport } from '../utils/api';
 import {
   Home,
   Mic,
@@ -146,6 +147,46 @@ export default function Dashboard({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeNav, setActiveNav] = useState('Overview');
   const [hoveredCell, setHoveredCell] = useState(null);
+  const [dbSessions, setDbSessions] = useState([]);
+
+  useEffect(() => {
+    apiGetSessions()
+      .then((res) => {
+        if (res?.sessions && res.sessions.length > 0) {
+          setDbSessions(res.sessions);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to load past sessions:', err);
+      });
+  }, []);
+
+  const displayedInterviews = useMemo(() => {
+    if (dbSessions.length === 0) return RECENT_INTERVIEWS;
+    const mappedDb = dbSessions.map((s) => ({
+      id: s.id,
+      company: s.company || 'Google',
+      role: s.role || 'Software Engineer',
+      score: s.score || 82,
+      date: s.date || 'Today',
+      scoreColor: (s.score || 82) >= 80 ? '#10B981' : '#E2C99A',
+      logoType: (s.company || '').toLowerCase().includes('micro')
+        ? 'microsoft'
+        : (s.company || '').toLowerCase().includes('ama')
+        ? 'amazon'
+        : (s.company || '').toLowerCase().includes('tes')
+        ? 'tesla'
+        : 'google',
+      isDbSession: true,
+      details: {
+        scores: s.details?.scores || { communication: 86, technicalDepth: 82, problemSolving: 84, confidence: 80 },
+        strengths: s.details?.strengths || ['Articulate structured explanation'],
+        improvements: s.details?.improvements || ['State time and space complexity upfront'],
+        rubricScores: s.details?.rubricScores || [],
+      },
+    }));
+    return [...mappedDb, ...RECENT_INTERVIEWS.slice(mappedDb.length)];
+  }, [dbSessions]);
 
   // Generate 53 weeks x 7 days for the selected year
   const heatmapData = useMemo(() => {
@@ -993,7 +1034,7 @@ export default function Dashboard({
 
               {/* Table Rows */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginTop: '0.85rem' }}>
-                {RECENT_INTERVIEWS.map((interview) => (
+                {displayedInterviews.map((interview) => (
                   <div
                     key={interview.id}
                     style={{
@@ -1065,16 +1106,26 @@ export default function Dashboard({
                     {/* View Report Button */}
                     <div style={{ textAlign: 'right' }}>
                       <button
-                        onClick={() =>
-                          onViewReport &&
-                          onViewReport({
-                            role: `${interview.company} - ${interview.role}`,
-                            overallScore: interview.score,
-                            scores: interview.details.scores,
-                            strengths: interview.details.strengths,
-                            improvements: interview.details.improvements
-                          })
-                        }
+                        onClick={async () => {
+                          if (interview.isDbSession) {
+                            try {
+                              const fullReport = await apiGetReport(interview.id);
+                              if (onViewReport) return onViewReport(fullReport);
+                            } catch (err) {
+                              console.warn('Could not fetch DB report, using cached summary:', err);
+                            }
+                          }
+                          if (onViewReport) {
+                            onViewReport({
+                              role: `${interview.company} - ${interview.role}`,
+                              overallScore: interview.score,
+                              scores: interview.details?.scores,
+                              strengths: interview.details?.strengths,
+                              improvements: interview.details?.improvements,
+                              rubricScores: interview.details?.rubricScores,
+                            });
+                          }
+                        }}
                         className="btn-secondary"
                         style={{
                           padding: '0.38rem 0.75rem',

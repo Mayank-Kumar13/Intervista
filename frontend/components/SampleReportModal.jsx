@@ -17,7 +17,11 @@ import {
   ShieldCheck,
   Camera,
   Mic,
-  Info
+  Info,
+  BookOpen,
+  Target,
+  Layers,
+  FileText
 } from 'lucide-react';
 
 export default function SampleReportModal({ isOpen, onClose, reportData, onRetake }) {
@@ -34,30 +38,34 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
     { label: 'Confidence', score: reportData?.scores?.confidence || 84, icon: BarChart3 },
   ];
 
-  // Vision Analysis Telemetry
-  const vision = reportData?.visionAnalysis || {
-    enabled: true,
-    postureScore: 88,
-    postureStatus: 'Upright & Centered',
-    gazeCenteredRatio: 86,
-    gazeStatus: 'Optimal Direct Focus',
+  // Visual Telemetry from backend or preset
+  const visMetrics = reportData?.visualObservations || reportData?.visionAnalysis;
+  const vision = {
+    enabled: visMetrics?.enabled !== false,
+    postureScore: visMetrics?.faceVisibilityPercent || visMetrics?.postureScore || 92,
+    postureStatus: visMetrics?.framingStatus || visMetrics?.postureStatus || 'Upright & Centered',
+    gazeCenteredRatio: visMetrics?.faceVisibilityPercent || visMetrics?.gazeCenteredRatio || 90,
+    gazeStatus: visMetrics?.headOrientationStatus || visMetrics?.gazeStatus || 'Optimal Direct Focus',
     headMovementStability: 'Stable & Poised',
-    suggestions: [
-      'Maintain direct eye contact with the camera lens when presenting complex architectural decisions.',
-      'Excellent upright posture maintained throughout the interview.'
-    ]
+    suggestions: visMetrics?.neutralObservationNote
+      ? [visMetrics.neutralObservationNote]
+      : (visMetrics?.suggestions || [
+          'Maintain direct camera framing when presenting complex architectural decisions.',
+          'Excellent upright presence maintained throughout conversational exchanges.'
+        ]),
   };
 
-  // Voice Analysis Telemetry
-  const voice = reportData?.voiceAnalysis || {
-    speakingPaceWpm: 142,
-    paceAssessment: 'Optimal Cadence (125-165 WPM)',
-    fillerWordsCount: 3,
-    fillerDetails: { um: 2, like: 1 },
-    fillerRatioPercent: 1.2,
-    pausesOver3s: 1,
-    clarityScore: 92,
-    suggestions: [
+  // Voice & Communication Telemetry from backend or preset
+  const commMetrics = reportData?.communicationMetrics || reportData?.voiceAnalysis;
+  const voice = {
+    speakingPaceWpm: commMetrics?.speakingRateWpm || commMetrics?.speakingPaceWpm || 142,
+    paceAssessment: commMetrics?.paceAssessment || 'Optimal Cadence (125-165 WPM)',
+    fillerWordsCount: commMetrics?.fillerWordCount !== undefined ? commMetrics.fillerWordCount : (commMetrics?.fillerWordsCount || 3),
+    fillerDetails: commMetrics?.fillerDetails || { um: 2, like: 1 },
+    fillerRatioPercent: commMetrics?.fillerRatioPercent || 1.2,
+    pausesOver3s: commMetrics?.pauseDurationCount !== undefined ? commMetrics.pauseDurationCount : (commMetrics?.pausesOver3s || 1),
+    clarityScore: commMetrics?.clarityScore || 92,
+    suggestions: commMetrics?.suggestions || [
       'Speaking cadence is optimal, natural, and conversational.',
       'Replace filler sounds with intentional 1-second silent pauses to structure thoughts.'
     ]
@@ -492,7 +500,249 @@ export default function SampleReportModal({ isOpen, onClose, reportData, onRetak
           </div>
         )}
 
-        {/* Action Buttons */}
+        {/* ─── 1. Rubric Evaluation with Transcript Evidence Quotes ─── */}
+        {reportData?.rubricScores && reportData.rubricScores.length > 0 && (
+          <div style={{ marginBottom: '2.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.85rem' }}>
+              <span className="eyebrow-tag" style={{ color: 'var(--accent-gold)' }}>
+                OFFICIAL RUBRIC BREAKDOWN
+              </span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
+                • Grounded in Transcript Evidence
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1rem' }}>
+              {reportData.rubricScores.map((rubric, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    backgroundColor: '#141416',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '14px',
+                    padding: '1.2rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.6rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <h5 style={{ fontSize: '0.88rem', fontWeight: 600, color: '#FFFFFF', margin: 0 }}>
+                        {rubric.label}
+                      </h5>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+                        Weight: {Math.round(rubric.weight * 100)}% of Composite Score
+                      </span>
+                    </div>
+                    <span style={{
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      color: rubric.score >= 80 ? '#4ADE80' : 'var(--accent-gold)',
+                      backgroundColor: rubric.score >= 80 ? 'rgba(74, 222, 128, 0.1)' : 'rgba(217, 183, 122, 0.1)',
+                      padding: '3px 10px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255, 255, 255, 0.08)'
+                    }}>
+                      {rubric.score}%
+                    </span>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div style={{ height: '4px', backgroundColor: '#222', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{
+                      width: `${rubric.score}%`,
+                      height: '100%',
+                      backgroundColor: rubric.score >= 80 ? '#22C55E' : 'var(--accent-gold)'
+                    }} />
+                  </div>
+
+                  {/* Evidence Quotes */}
+                  {rubric.evidenceQuotes && rubric.evidenceQuotes.length > 0 && (
+                    <div style={{ marginTop: '0.4rem', backgroundColor: 'rgba(255, 255, 255, 0.02)', padding: '0.6rem 0.8rem', borderRadius: '8px', borderLeft: '2px solid var(--accent-gold)' }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '2px' }}>
+                        Direct Transcript Evidence:
+                      </span>
+                      {rubric.evidenceQuotes.slice(0, 2).map((quote, qIdx) => (
+                        <p key={qIdx} style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontStyle: 'italic', margin: '2px 0' }}>
+                          "{quote}"
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ─── 2. Knowledge Gaps & Concept Analysis ─── */}
+        {reportData?.knowledgeGaps && reportData.knowledgeGaps.length > 0 && (
+          <div style={{ marginBottom: '2.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.85rem' }}>
+              <span className="eyebrow-tag" style={{ color: '#F87171' }}>
+                KNOWLEDGE GAP ANALYSIS
+              </span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
+                • Demonstrated vs Untested Topics
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {reportData.knowledgeGaps.map((gap, gIdx) => (
+                <div
+                  key={gIdx}
+                  style={{
+                    backgroundColor: '#141416',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '14px',
+                    padding: '1.25rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                    <div style={{ fontSize: '0.86rem', fontWeight: 600, color: '#FFFFFF' }}>
+                      {gap.questionText || `Question #${gIdx + 1}`}
+                    </div>
+                    <span style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      backgroundColor: gap.priority === 'High' ? 'rgba(239, 68, 68, 0.15)' : gap.priority === 'Medium' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                      color: gap.priority === 'High' ? '#F87171' : gap.priority === 'Medium' ? '#FBBF24' : '#4ADE80',
+                      border: `1px solid ${gap.priority === 'High' ? 'rgba(239, 68, 68, 0.3)' : gap.priority === 'Medium' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(34, 197, 94, 0.3)'}`
+                    }}>
+                      {gap.priority} Priority Gap
+                    </span>
+                  </div>
+
+                  {/* Tested Concepts Pills */}
+                  {gap.testedConcepts && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '0.75rem' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', alignSelf: 'center' }}>Tested:</span>
+                      {gap.testedConcepts.map((c, cIdx) => (
+                        <span key={cIdx} style={{ fontSize: '0.7rem', backgroundColor: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px', color: '#DDD' }}>
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Strengths vs Weaknesses Comparison */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.75rem' }}>
+                    <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                      <strong style={{ color: '#4ADE80', display: 'block', marginBottom: '3px' }}>✓ Concepts Demonstrated:</strong>
+                      {gap.demonstratedStrengths && gap.demonstratedStrengths.length > 0 ? (
+                        <ul style={{ paddingLeft: '1.2rem', margin: 0 }}>
+                          {gap.demonstratedStrengths.map((s, sIdx) => <li key={sIdx}>{s}</li>)}
+                        </ul>
+                      ) : <span style={{ fontStyle: 'italic', color: 'var(--text-tertiary)' }}>None explicitly articulated</span>}
+                    </div>
+
+                    <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                      <strong style={{ color: '#F87171', display: 'block', marginBottom: '3px' }}>! Missing / Weakness Areas:</strong>
+                      {gap.demonstratedWeaknesses && gap.demonstratedWeaknesses.length > 0 ? (
+                        <ul style={{ paddingLeft: '1.2rem', margin: 0 }}>
+                          {gap.demonstratedWeaknesses.map((w, wIdx) => <li key={wIdx}>{w}</li>)}
+                        </ul>
+                      ) : <span style={{ color: '#4ADE80' }}>All primary concepts covered</span>}
+                    </div>
+                  </div>
+
+                  {/* Untested Nuance distinction */}
+                  {gap.untestedTopics && gap.untestedTopics.length > 0 && (
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.4rem', marginBottom: '0.5rem' }}>
+                      <em>Note: Related advanced topics ({gap.untestedTopics.join(', ')}) were not reached during this prompt and are not penalized.</em>
+                    </div>
+                  )}
+
+                  {/* Recommendation Box */}
+                  <div style={{ backgroundColor: 'rgba(217, 183, 122, 0.05)', border: '1px solid rgba(217, 183, 122, 0.15)', borderRadius: '8px', padding: '0.6rem 0.8rem', fontSize: '0.76rem', color: '#E2C99A' }}>
+                    <strong>Actionable Study Recommendation:</strong> {gap.studyRecommendation}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ─── 3. Personalized Study Plan & Practice Exercises ─── */}
+        {reportData?.studyPlan && reportData.studyPlan.length > 0 && (
+          <div style={{ marginBottom: '2.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.85rem' }}>
+              <span className="eyebrow-tag" style={{ color: '#60A5FA' }}>
+                TARGETED STUDY PLAN
+              </span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
+                • Resources & Practice Drills
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1rem' }}>
+              {reportData.studyPlan.map((plan, pIdx) => (
+                <div
+                  key={pIdx}
+                  style={{
+                    backgroundColor: '#141416',
+                    border: '1px solid rgba(96, 165, 250, 0.2)',
+                    borderRadius: '14px',
+                    padding: '1.25rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h5 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#FFFFFF', margin: 0 }}>
+                      {plan.topic}
+                    </h5>
+                    <span style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      backgroundColor: 'rgba(96, 165, 250, 0.12)',
+                      color: '#60A5FA',
+                      border: '1px solid rgba(96, 165, 250, 0.3)'
+                    }}>
+                      {plan.priority} Priority
+                    </span>
+                  </div>
+
+                  {/* Resource */}
+                  {plan.recommendedResources && plan.recommendedResources.length > 0 && (
+                    <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                      <strong style={{ color: '#E2C99A', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px' }}>
+                        <BookOpen size={13} /> Recommended Literature:
+                      </strong>
+                      <span>{plan.recommendedResources.join('; ')}</span>
+                    </div>
+                  )}
+
+                  {/* Practice Exercise */}
+                  {plan.practiceExercises && plan.practiceExercises.length > 0 && (
+                    <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                      <strong style={{ color: '#4ADE80', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px' }}>
+                        <Code2 size={13} /> Hands-on Practice Drill:
+                      </strong>
+                      <span>{plan.practiceExercises[0]}</span>
+                    </div>
+                  )}
+
+                  {/* Drill Question */}
+                  {plan.followUpInterviewQuestions && plan.followUpInterviewQuestions.length > 0 && (
+                    <div style={{ marginTop: 'auto', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.6rem 0.8rem', fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                      <strong style={{ color: '#60A5FA', display: 'block', marginBottom: '2px' }}>
+                        Follow-up Mock Question:
+                      </strong>
+                      "{plan.followUpInterviewQuestions[0]}"
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <button
             onClick={() => window.print()}

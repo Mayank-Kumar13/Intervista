@@ -18,6 +18,7 @@ const { connectDB, isDBConnected } = require('./db');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const resumeAnalyzerRoutes = require('./resume_analyzer/routes');
+const interviewRoutes = require('./routes/interview');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -58,6 +59,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/resume-analyzer', resumeAnalyzerRoutes);
+app.use('/api/interview', interviewRoutes);
 
 // ─── Health Check Endpoint ────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
@@ -88,6 +90,8 @@ app.listen(PORT, () => {
   console.log(`\n✦ Intervista Backend running on http://localhost:${PORT}`);
   console.log(`  Auth:            POST /api/auth/register | POST /api/auth/login | POST /api/auth/google | POST /api/auth/logout | GET /api/auth/me`);
   console.log(`  Users:           GET /api/users/me | PATCH /api/users/me`);
+  console.log(`  Interview:       POST /api/interview/start | POST /api/interview/:id/message | POST /api/interview/:id/end`);
+  console.log(`  Reports:         GET /api/interview/sessions | GET /api/interview/report/:id | GET /api/interview/schema`);
   console.log(`  Resume Analyzer: POST /api/resume-analyzer/analyze | GET /api/resume-analyzer/sample`);
   console.log(`  Health:          GET /api/health\n`);
 });

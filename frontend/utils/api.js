@@ -96,12 +96,18 @@ export async function apiUpdateProfile({ name, skills, picture }) {
 }
 
 // ─── Interview Session ────────────────────────────────────────────────────────
-export async function apiStartInterview({ role, company, interviewType, experience, duration, focusTopic }) {
-  return request('POST', '/interview/start', { role, company, interviewType, experience, duration, focusTopic });
+export async function apiStartInterview(payload) {
+  return request('POST', '/interview/start', payload);
 }
 
-export async function apiSendMessage({ sessionId, content, geminiInteractionId }) {
-  return request('POST', `/interview/${sessionId}/message`, { content, geminiInteractionId });
+export async function apiSendMessage({ sessionId, content, latencyMs, audioDurationMs, questionId, questionIndex }) {
+  return request('POST', `/interview/${sessionId}/message`, {
+    content,
+    latencyMs,
+    audioDurationMs,
+    questionId,
+    questionIndex,
+  });
 }
 
 export async function apiEndInterview(sessionId, metrics = null) {
@@ -115,6 +121,10 @@ export async function apiGetSessions() {
 
 export async function apiGetReport(reportId) {
   return request('GET', `/interview/report/${reportId}`);
+}
+
+export async function apiGetInterviewSchema() {
+  return request('GET', '/interview/schema');
 }
 
 // ─── Resume Analyzer ──────────────────────────────────────────────────────────
