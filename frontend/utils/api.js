@@ -72,8 +72,8 @@ export async function apiSendMessage({ sessionId, content, geminiInteractionId }
   return request('POST', `/interview/${sessionId}/message`, { content, geminiInteractionId });
 }
 
-export async function apiEndInterview(sessionId) {
-  return request('POST', `/interview/${sessionId}/end`);
+export async function apiEndInterview(sessionId, metrics = null) {
+  return request('POST', `/interview/${sessionId}/end`, metrics || {});
 }
 
 // ─── History & Reports ────────────────────────────────────────────────────────

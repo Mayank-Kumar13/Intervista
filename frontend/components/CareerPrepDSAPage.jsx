@@ -25,9 +25,9 @@ import {
 
 const STORAGE_KEY = 'intervista_dsa_solved_v1';
 
-// Custom SVG Icons matching user's reference screenshot
+// Custom SVG Icons matching Intervista champagne gold theme
 function TopicIcon({ type }) {
-  const iconColor = '#38BDF8';
+  const iconColor = 'var(--accent-gold)';
 
   switch (type) {
     case 'arrays':
@@ -132,9 +132,9 @@ function TopicIcon({ type }) {
 }
 
 export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }) {
-  // Navigation / views: 'grid' (Topic Cards matching screenshot) | 'drill' (Specific Topic Questions) | 'list' (All Questions)
+  // Navigation / views: 'grid' (Topic Cards) | 'drill' (Specific Topic Questions) | 'list' (All Questions)
   const [viewMode, setViewMode] = useState('grid');
-  const [activeTopic, setActiveTopic] = useState(null); // when in drill down
+  const [activeTopic, setActiveTopic] = useState(null);
   const [globalSearch, setGlobalSearch] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All'); // 'All' | 'Solved' | 'Unsolved'
@@ -158,9 +158,7 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
       const updated = { ...prev, [id]: !prev[id] };
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch (e) {
-        // silent
-      }
+      } catch (e) {}
       return updated;
     });
   };
@@ -257,15 +255,15 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
     switch (difficulty) {
       case 'Easy':
         return {
-          backgroundColor: 'rgba(16, 185, 129, 0.12)',
-          color: '#10B981',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
+          backgroundColor: 'rgba(34, 197, 94, 0.12)',
+          color: '#22C55E',
+          border: '1px solid rgba(34, 197, 94, 0.3)',
         };
       case 'Medium':
         return {
-          backgroundColor: 'rgba(245, 158, 11, 0.12)',
-          color: '#F59E0B',
-          border: '1px solid rgba(245, 158, 11, 0.3)',
+          backgroundColor: 'rgba(217, 183, 122, 0.12)',
+          color: 'var(--accent-gold)',
+          border: '1px solid rgba(217, 183, 122, 0.35)',
         };
       case 'Hard':
         return {
@@ -275,7 +273,7 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
         };
       default:
         return {
-          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          backgroundColor: 'rgba(255, 255, 255, 0.06)',
           color: 'var(--text-secondary)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
         };
@@ -287,8 +285,8 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '2rem',
-        padding: '0.5rem 0.25rem 3rem',
+        gap: '2.25rem',
+        padding: '0.5rem 0.25rem 3.5rem',
         minHeight: '100%',
         color: 'var(--text-primary)',
       }}
@@ -298,7 +296,7 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
         style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.25rem',
+          gap: '1.5rem',
         }}
       >
         <div
@@ -307,28 +305,30 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
             flexWrap: 'wrap',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '1rem',
+            gap: '1.5rem',
+            paddingBottom: '1.5rem',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           }}
         >
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.35rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
               <span
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '5px',
-                  padding: '3px 10px',
-                  borderRadius: '20px',
-                  backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                  border: '1px solid rgba(56, 189, 248, 0.3)',
-                  color: '#38BDF8',
-                  fontSize: '0.72rem',
+                  gap: '6px',
+                  padding: '4px 12px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'rgba(217, 183, 122, 0.09)',
+                  border: '1px solid rgba(217, 183, 122, 0.25)',
+                  color: 'var(--accent-gold)',
+                  fontSize: '0.74rem',
                   fontWeight: 600,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
+                  letterSpacing: '0.08em',
                 }}
               >
-                <Sparkles size={12} />
+                <Sparkles size={13} />
                 LeetCode Curated Patterns
               </span>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
@@ -336,26 +336,28 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
               </span>
             </div>
             <h1
+              className="serif-heading"
               style={{
-                fontSize: '1.85rem',
-                fontWeight: 700,
+                fontSize: '2.5rem',
+                fontWeight: 400,
                 color: 'var(--text-primary)',
-                letterSpacing: '-0.02em',
+                letterSpacing: '-0.025em',
                 margin: 0,
+                lineHeight: 1.15,
               }}
             >
-              Career Prep
+              Career <span className="gold-italic">Preparation</span>
             </h1>
             <p
               style={{
-                fontSize: '0.92rem',
+                fontSize: '0.96rem',
                 color: 'var(--text-secondary)',
-                marginTop: '0.35rem',
+                marginTop: '0.5rem',
                 maxWidth: '680px',
-                lineHeight: 1.5,
+                lineHeight: 1.6,
               }}
             >
-              Master topic-wise Data Structures & Algorithms patterns asked in FAANG and top tech interviews.
+              Master topic-wise Data Structures & Algorithms patterns asked in FAANG and tier-1 tech interviews.
             </p>
           </div>
 
@@ -364,28 +366,28 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '1rem',
-              background: 'rgba(15, 23, 42, 0.65)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              padding: '0.75rem 1.25rem',
-              borderRadius: '14px',
-              backdropFilter: 'blur(8px)',
+              gap: '1.25rem',
+              backgroundColor: '#121212',
+              border: '1px solid var(--border-card)',
+              padding: '0.85rem 1.5rem',
+              borderRadius: '16px',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5), 0 0 20px rgba(217, 183, 122, 0.05)',
             }}
           >
             <div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
                 Solved
               </div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#38BDF8' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--accent-gold)' }}>
                 {totalSolvedCount} <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>/ {LEETCODE_DSA_QUESTIONS.length}</span>
               </div>
             </div>
-            <div style={{ width: '1px', height: '28px', backgroundColor: 'rgba(255, 255, 255, 0.08)' }} />
+            <div style={{ width: '1px', height: '32px', backgroundColor: 'rgba(255, 255, 255, 0.08)' }} />
             <div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
                 Topics
               </div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 {TOPIC_METADATA.length}
               </div>
             </div>
@@ -400,10 +402,11 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '1rem',
-            background: '#0a0f1d',
-            border: '1px solid rgba(255, 255, 255, 0.07)',
-            padding: '0.65rem 0.85rem',
-            borderRadius: '14px',
+            backgroundColor: '#111111',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            padding: '0.75rem 1rem',
+            borderRadius: '16px',
+            boxShadow: '0 6px 18px rgba(0, 0, 0, 0.4)',
           }}
         >
           {/* Search Box */}
@@ -412,13 +415,14 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
               display: 'flex',
               alignItems: 'center',
               gap: '0.65rem',
-              backgroundColor: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '10px',
-              padding: '0.5rem 0.9rem',
+              backgroundColor: '#171717',
+              border: '1px solid rgba(255, 255, 255, 0.09)',
+              borderRadius: '12px',
+              padding: '0.55rem 1rem',
               flex: '1',
               minWidth: '240px',
               maxWidth: '520px',
+              transition: 'border-color 0.2s',
             }}
           >
             <Search size={16} color="var(--text-tertiary)" />
@@ -436,7 +440,7 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                 border: 'none',
                 outline: 'none',
                 color: 'var(--text-primary)',
-                fontSize: '0.88rem',
+                fontSize: '0.9rem',
                 width: '100%',
               }}
             />
@@ -457,7 +461,7 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
           </div>
 
           {/* View Mode Toggle Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {viewMode === 'drill' && (
               <button
                 onClick={handleBackToGrid}
@@ -465,15 +469,23 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.45rem',
-                  padding: '0.5rem 0.95rem',
+                  padding: '0.55rem 1.15rem',
                   borderRadius: '10px',
-                  backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                  border: '1px solid rgba(56, 189, 248, 0.35)',
-                  color: '#38BDF8',
+                  backgroundColor: 'rgba(217, 183, 122, 0.12)',
+                  border: '1px solid rgba(217, 183, 122, 0.35)',
+                  color: 'var(--accent-gold)',
                   fontSize: '0.85rem',
                   fontWeight: 600,
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--accent-gold)';
+                  e.currentTarget.style.color = '#0A0A0A';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(217, 183, 122, 0.12)';
+                  e.currentTarget.style.color = 'var(--accent-gold)';
                 }}
               >
                 <ArrowLeft size={15} />
@@ -490,13 +502,13 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.45rem',
-                padding: '0.5rem 0.85rem',
-                borderRadius: '9px',
-                backgroundColor: viewMode === 'grid' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                border: viewMode === 'grid' ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid transparent',
-                color: viewMode === 'grid' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                padding: '0.52rem 0.95rem',
+                borderRadius: '10px',
+                backgroundColor: viewMode === 'grid' ? 'rgba(217, 183, 122, 0.15)' : 'transparent',
+                border: viewMode === 'grid' ? '1px solid rgba(217, 183, 122, 0.35)' : '1px solid transparent',
+                color: viewMode === 'grid' ? 'var(--accent-gold)' : 'var(--text-secondary)',
                 fontSize: '0.84rem',
-                fontWeight: 500,
+                fontWeight: viewMode === 'grid' ? 600 : 500,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}
@@ -514,13 +526,13 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.45rem',
-                padding: '0.5rem 0.85rem',
-                borderRadius: '9px',
-                backgroundColor: viewMode === 'list' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                border: viewMode === 'list' ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid transparent',
-                color: viewMode === 'list' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                padding: '0.52rem 0.95rem',
+                borderRadius: '10px',
+                backgroundColor: viewMode === 'list' ? 'rgba(217, 183, 122, 0.15)' : 'transparent',
+                border: viewMode === 'list' ? '1px solid rgba(217, 183, 122, 0.35)' : '1px solid transparent',
+                color: viewMode === 'list' ? 'var(--accent-gold)' : 'var(--text-secondary)',
                 fontSize: '0.84rem',
-                fontWeight: 500,
+                fontWeight: viewMode === 'list' ? 600 : 500,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}
@@ -532,13 +544,13 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
         </div>
       </div>
 
-      {/* ─── VIEW 1: TOPIC CARDS GRID (Exact match to reference screenshot) ───────── */}
+      {/* ─── VIEW 1: TOPIC CARDS GRID ───────────────────────────────────────── */}
       {viewMode === 'grid' && (
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: '1.25rem',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
+            gap: '1.5rem',
           }}
         >
           {filteredTopicCards.map((topic) => {
@@ -550,28 +562,29 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                 key={topic.id}
                 onClick={() => handleOpenTopic(topic)}
                 style={{
-                  backgroundColor: '#0c1220',
+                  backgroundColor: '#131313',
                   border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '16px',
-                  padding: '1.6rem 1.5rem',
+                  borderRadius: '20px',
+                  padding: '1.85rem 1.65rem',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   cursor: 'pointer',
                   position: 'relative',
                   overflow: 'hidden',
-                  transition: 'transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease',
+                  transition: 'all 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.45)';
+                  e.currentTarget.style.borderColor = 'rgba(217, 183, 122, 0.45)';
                   e.currentTarget.style.boxShadow =
-                    '0 12px 28px -8px rgba(0, 0, 0, 0.7), 0 0 16px rgba(56, 189, 248, 0.12)';
+                    '0 16px 36px rgba(0, 0, 0, 0.75), 0 0 24px rgba(217, 183, 122, 0.14)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.45)';
                 }}
               >
                 {/* Top Section: Icon & Content */}
@@ -579,15 +592,16 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                   {/* Rounded square icon badge */}
                   <div
                     style={{
-                      width: '44px',
-                      height: '44px',
-                      borderRadius: '11px',
-                      backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                      border: '1px solid rgba(56, 189, 248, 0.25)',
+                      width: '46px',
+                      height: '46px',
+                      borderRadius: '12px',
+                      backgroundColor: 'rgba(217, 183, 122, 0.1)',
+                      border: '1px solid rgba(217, 183, 122, 0.25)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      marginBottom: '1.25rem',
+                      marginBottom: '1.35rem',
+                      boxShadow: '0 0 16px rgba(217, 183, 122, 0.12)',
                     }}
                   >
                     <TopicIcon type={topic.iconType} />
@@ -596,11 +610,11 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                   {/* Title */}
                   <h3
                     style={{
-                      fontSize: '1.22rem',
-                      fontWeight: 700,
-                      color: '#F8FAFC',
-                      margin: '0 0 0.5rem 0',
-                      letterSpacing: '-0.01em',
+                      fontSize: '1.25rem',
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      margin: '0 0 0.55rem 0',
+                      letterSpacing: '-0.015em',
                     }}
                   >
                     {topic.title}
@@ -610,8 +624,8 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                   <p
                     style={{
                       fontSize: '0.88rem',
-                      color: '#94A3B8',
-                      lineHeight: 1.5,
+                      color: 'var(--text-secondary)',
+                      lineHeight: 1.55,
                       margin: '0 0 1.75rem 0',
                       minHeight: '44px',
                     }}
@@ -626,16 +640,15 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    paddingTop: '0.85rem',
-                    borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                    paddingTop: '0.95rem',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.06)',
                   }}
                 >
                   <span
                     style={{
-                      color: '#38BDF8',
+                      color: 'var(--accent-gold)',
                       fontWeight: 600,
                       fontSize: '0.92rem',
-                      letterSpacing: '-0.01em',
                     }}
                   >
                     {topic.problemCount}
@@ -643,19 +656,19 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
 
                   <span
                     style={{
-                      color: '#F1F5F9',
+                      color: 'var(--text-primary)',
                       fontWeight: 500,
-                      fontSize: '0.92rem',
+                      fontSize: '0.9rem',
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '4px',
-                      transition: 'color 0.18s ease, transform 0.18s ease',
+                      transition: 'color 0.18s ease',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.color = '#38BDF8';
+                      e.currentTarget.style.color = 'var(--accent-gold)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.color = '#F1F5F9';
+                      e.currentTarget.style.color = 'var(--text-primary)';
                     }}
                   >
                     Practice →
@@ -673,53 +686,58 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
           {/* Active Topic Banner */}
           <div
             style={{
-              backgroundColor: '#0c1220',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
-              borderRadius: '16px',
-              padding: '1.75rem',
+              backgroundColor: '#131313',
+              border: '1px solid rgba(217, 183, 122, 0.3)',
+              borderRadius: '20px',
+              padding: '2rem',
               display: 'flex',
               flexWrap: 'wrap',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '1.25rem',
-              background: 'linear-gradient(145deg, rgba(12, 18, 32, 0.95), rgba(15, 23, 42, 0.85))',
+              gap: '1.5rem',
+              background: 'linear-gradient(145deg, #161616 0%, #101010 100%)',
+              boxShadow: '0 12px 30px rgba(0, 0, 0, 0.6), 0 0 25px rgba(217, 183, 122, 0.08)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
               <div
                 style={{
-                  width: '54px',
-                  height: '54px',
-                  borderRadius: '13px',
-                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                  border: '1px solid rgba(56, 189, 248, 0.35)',
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '14px',
+                  backgroundColor: 'rgba(217, 183, 122, 0.12)',
+                  border: '1px solid rgba(217, 183, 122, 0.35)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  boxShadow: '0 0 20px rgba(217, 183, 122, 0.18)',
                 }}
               >
                 <TopicIcon type={activeTopic.iconType} />
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <h2 style={{ fontSize: '1.45rem', fontWeight: 700, color: '#F8FAFC', margin: 0 }}>
+                  <h2
+                    className="serif-heading"
+                    style={{ fontSize: '1.65rem', fontWeight: 400, color: 'var(--text-primary)', margin: 0 }}
+                  >
                     {activeTopic.title}
                   </h2>
                   <span
                     style={{
                       fontSize: '0.8rem',
-                      color: '#38BDF8',
+                      color: 'var(--accent-gold)',
                       fontWeight: 600,
-                      padding: '2px 8px',
-                      borderRadius: '6px',
-                      backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                      border: '1px solid rgba(56, 189, 248, 0.25)',
+                      padding: '3px 10px',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(217, 183, 122, 0.12)',
+                      border: '1px solid rgba(217, 183, 122, 0.28)',
                     }}
                   >
                     {activeTopic.problemCount}
                   </span>
                 </div>
-                <p style={{ fontSize: '0.9rem', color: '#94A3B8', margin: '0.35rem 0 0 0', maxWidth: '640px' }}>
+                <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', margin: '0.4rem 0 0 0', maxWidth: '640px', lineHeight: 1.5 }}>
                   {activeTopic.description}
                 </p>
               </div>
@@ -740,20 +758,28 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.65rem 1.15rem',
-                    borderRadius: '10px',
-                    background: 'linear-gradient(135deg, #D9B77A 0%, #B89758 100%)',
+                    gap: '0.55rem',
+                    padding: '0.75rem 1.4rem',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #EAD6AF 0%, #D9B77A 100%)',
                     border: 'none',
-                    color: '#080C14',
+                    color: '#080808',
                     fontWeight: 700,
-                    fontSize: '0.86rem',
+                    fontSize: '0.9rem',
                     cursor: 'pointer',
-                    boxShadow: '0 4px 14px rgba(217, 183, 122, 0.3)',
+                    boxShadow: '0 6px 20px rgba(217, 183, 122, 0.35)',
                     transition: 'all 0.2s ease',
                   }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 26px rgba(217, 183, 122, 0.45)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(217, 183, 122, 0.35)';
+                  }}
                 >
-                  <Sparkles size={15} />
+                  <Sparkles size={16} />
                   AI Interview on {activeTopic.title}
                 </button>
               )}
@@ -768,40 +794,62 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: '1rem',
-              backgroundColor: 'rgba(15, 23, 42, 0.45)',
-              border: '1px solid rgba(255, 255, 255, 0.06)',
-              padding: '0.65rem 1rem',
-              borderRadius: '12px',
+              backgroundColor: '#111111',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              padding: '0.75rem 1.15rem',
+              borderRadius: '14px',
             }}
           >
             {/* Difficulty Pills */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginRight: '4px' }}>
                 Difficulty:
               </span>
-              {['All', 'Easy', 'Medium', 'Hard'].map((diff) => (
-                <button
-                  key={diff}
-                  onClick={() => setSelectedDifficulty(diff)}
-                  style={{
-                    padding: '0.35rem 0.8rem',
-                    borderRadius: '7px',
-                    fontSize: '0.8rem',
-                    fontWeight: selectedDifficulty === diff ? 600 : 500,
-                    backgroundColor: selectedDifficulty === diff ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-                    border: selectedDifficulty === diff ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid transparent',
-                    color: selectedDifficulty === diff ? '#38BDF8' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  {diff}
-                </button>
-              ))}
+              {['All', 'Easy', 'Medium', 'Hard'].map((diff) => {
+                const isActive = selectedDifficulty === diff;
+                let activeStyle = {
+                  backgroundColor: 'rgba(217, 183, 122, 0.15)',
+                  borderColor: 'rgba(217, 183, 122, 0.4)',
+                  color: 'var(--accent-gold)',
+                };
+                if (diff === 'Easy' && isActive) {
+                  activeStyle = {
+                    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                    borderColor: 'rgba(34, 197, 94, 0.4)',
+                    color: '#22C55E',
+                  };
+                } else if (diff === 'Hard' && isActive) {
+                  activeStyle = {
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    borderColor: 'rgba(239, 68, 68, 0.4)',
+                    color: '#EF4444',
+                  };
+                }
+
+                return (
+                  <button
+                    key={diff}
+                    onClick={() => setSelectedDifficulty(diff)}
+                    style={{
+                      padding: '0.38rem 0.85rem',
+                      borderRadius: '8px',
+                      fontSize: '0.8rem',
+                      fontWeight: isActive ? 600 : 500,
+                      backgroundColor: isActive ? activeStyle.backgroundColor : 'transparent',
+                      border: isActive ? `1px solid ${activeStyle.borderColor}` : '1px solid transparent',
+                      color: isActive ? activeStyle.color : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {diff}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Status Filter */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginRight: '4px' }}>
                 Status:
               </span>
@@ -810,8 +858,8 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                   key={st}
                   onClick={() => setStatusFilter(st)}
                   style={{
-                    padding: '0.35rem 0.75rem',
-                    borderRadius: '7px',
+                    padding: '0.38rem 0.85rem',
+                    borderRadius: '8px',
                     fontSize: '0.8rem',
                     fontWeight: statusFilter === st ? 600 : 500,
                     backgroundColor: statusFilter === st ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
@@ -827,15 +875,15 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
           </div>
 
           {/* Question Rows List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {filteredDrillQuestions.length === 0 ? (
               <div
                 style={{
                   textAlign: 'center',
-                  padding: '3rem 1rem',
-                  backgroundColor: '#0c1220',
-                  border: '1px dashed rgba(255, 255, 255, 0.12)',
-                  borderRadius: '14px',
+                  padding: '3.5rem 1rem',
+                  backgroundColor: '#121212',
+                  border: '1px dashed rgba(255, 255, 255, 0.1)',
+                  borderRadius: '16px',
                   color: 'var(--text-secondary)',
                 }}
               >
@@ -850,27 +898,28 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                   <div
                     key={q.id}
                     style={{
-                      backgroundColor: '#0c1220',
+                      backgroundColor: '#131313',
                       border: isSolved
-                        ? '1px solid rgba(16, 185, 129, 0.25)'
+                        ? '1px solid rgba(34, 197, 94, 0.3)'
                         : '1px solid rgba(255, 255, 255, 0.07)',
-                      borderRadius: '12px',
-                      padding: '0.9rem 1.15rem',
+                      borderRadius: '14px',
+                      padding: '1rem 1.35rem',
                       display: 'flex',
                       flexWrap: 'wrap',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       gap: '0.85rem',
-                      transition: 'all 0.18s ease',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 4px 14px rgba(0, 0, 0, 0.3)',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#0f172a';
-                      e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.35)';
+                      e.currentTarget.style.backgroundColor = '#181818';
+                      e.currentTarget.style.borderColor = 'rgba(217, 183, 122, 0.35)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = '#0c1220';
+                      e.currentTarget.style.backgroundColor = '#131313';
                       e.currentTarget.style.borderColor = isSolved
-                        ? '1px solid rgba(16, 185, 129, 0.25)'
+                        ? '1px solid rgba(34, 197, 94, 0.3)'
                         : '1px solid rgba(255, 255, 255, 0.07)';
                     }}
                   >
@@ -880,8 +929,8 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                         onClick={() => toggleSolved(q.id)}
                         title={isSolved ? 'Mark as Unsolved' : 'Mark as Solved'}
                         style={{
-                          background: isSolved ? '#10B981' : 'transparent',
-                          border: isSolved ? '1px solid #10B981' : '1.5px solid rgba(255, 255, 255, 0.3)',
+                          background: isSolved ? '#22C55E' : 'transparent',
+                          border: isSolved ? '1px solid #22C55E' : '1.5px solid rgba(255, 255, 255, 0.3)',
                           borderRadius: '6px',
                           width: '20px',
                           height: '20px',
@@ -906,7 +955,7 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                             style={{
                               fontSize: '0.98rem',
                               fontWeight: 600,
-                              color: isSolved ? 'var(--text-secondary)' : '#F8FAFC',
+                              color: isSolved ? 'var(--text-secondary)' : 'var(--text-primary)',
                               textDecoration: isSolved ? 'line-through' : 'none',
                             }}
                           >
@@ -914,8 +963,8 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                           </span>
                         </div>
                         {q.pattern && (
-                          <div style={{ fontSize: '0.78rem', color: '#94A3B8', marginTop: '2px' }}>
-                            Pattern: <span style={{ color: 'var(--text-primary)' }}>{q.pattern}</span>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                            Pattern: <span style={{ color: 'var(--accent-champagne)' }}>{q.pattern}</span>
                           </div>
                         )}
                       </div>
@@ -923,7 +972,6 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
 
                     {/* Right: Difficulty Badge + Companies + LeetCode Link */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                      {/* Difficulty Badge */}
                       <span
                         style={{
                           fontSize: '0.75rem',
@@ -936,7 +984,6 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                         {q.difficulty}
                       </span>
 
-                      {/* Company Badges */}
                       {q.companies && q.companies.slice(0, 2).map((comp) => (
                         <span
                           key={comp}
@@ -953,7 +1000,6 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                         </span>
                       ))}
 
-                      {/* Direct LeetCode External Link */}
                       <a
                         href={q.url}
                         target="_blank"
@@ -961,26 +1007,26 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '4px',
-                          padding: '0.4rem 0.75rem',
-                          borderRadius: '7px',
-                          backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                          gap: '5px',
+                          padding: '0.42rem 0.82rem',
+                          borderRadius: '8px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
                           border: '1px solid rgba(255, 255, 255, 0.1)',
-                          color: '#F8FAFC',
+                          color: 'var(--text-primary)',
                           fontSize: '0.8rem',
                           fontWeight: 500,
                           textDecoration: 'none',
-                          transition: 'all 0.18s ease',
+                          transition: 'all 0.2s ease',
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)';
-                          e.currentTarget.style.borderColor = '#38BDF8';
-                          e.currentTarget.style.color = '#38BDF8';
+                          e.currentTarget.style.backgroundColor = 'rgba(217, 183, 122, 0.15)';
+                          e.currentTarget.style.borderColor = 'var(--accent-gold)';
+                          e.currentTarget.style.color = 'var(--accent-gold)';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+                          e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
                           e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                          e.currentTarget.style.color = '#F8FAFC';
+                          e.currentTarget.style.color = 'var(--text-primary)';
                         }}
                       >
                         <span>LeetCode</span>
@@ -997,7 +1043,7 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
 
       {/* ─── VIEW 3: ALL QUESTIONS LIST ──────────────────────────────── */}
       {viewMode === 'list' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Difficulty and Status Controls */}
           <div
             style={{
@@ -1006,37 +1052,60 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: '1rem',
-              backgroundColor: '#0c1220',
-              border: '1px solid rgba(255, 255, 255, 0.07)',
-              padding: '0.75rem 1rem',
-              borderRadius: '12px',
+              backgroundColor: '#111111',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              padding: '0.75rem 1.15rem',
+              borderRadius: '14px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginRight: '4px' }}>
                 Difficulty:
               </span>
-              {['All', 'Easy', 'Medium', 'Hard'].map((diff) => (
-                <button
-                  key={diff}
-                  onClick={() => setSelectedDifficulty(diff)}
-                  style={{
-                    padding: '0.35rem 0.8rem',
-                    borderRadius: '7px',
-                    fontSize: '0.8rem',
-                    fontWeight: selectedDifficulty === diff ? 600 : 500,
-                    backgroundColor: selectedDifficulty === diff ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-                    border: selectedDifficulty === diff ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid transparent',
-                    color: selectedDifficulty === diff ? '#38BDF8' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {diff}
-                </button>
-              ))}
+              {['All', 'Easy', 'Medium', 'Hard'].map((diff) => {
+                const isActive = selectedDifficulty === diff;
+                let activeStyle = {
+                  backgroundColor: 'rgba(217, 183, 122, 0.15)',
+                  borderColor: 'rgba(217, 183, 122, 0.4)',
+                  color: 'var(--accent-gold)',
+                };
+                if (diff === 'Easy' && isActive) {
+                  activeStyle = {
+                    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                    borderColor: 'rgba(34, 197, 94, 0.4)',
+                    color: '#22C55E',
+                  };
+                } else if (diff === 'Hard' && isActive) {
+                  activeStyle = {
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    borderColor: 'rgba(239, 68, 68, 0.4)',
+                    color: '#EF4444',
+                  };
+                }
+
+                return (
+                  <button
+                    key={diff}
+                    onClick={() => setSelectedDifficulty(diff)}
+                    style={{
+                      padding: '0.38rem 0.85rem',
+                      borderRadius: '8px',
+                      fontSize: '0.8rem',
+                      fontWeight: isActive ? 600 : 500,
+                      backgroundColor: isActive ? activeStyle.backgroundColor : 'transparent',
+                      border: isActive ? `1px solid ${activeStyle.borderColor}` : '1px solid transparent',
+                      color: isActive ? activeStyle.color : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {diff}
+                  </button>
+                );
+              })}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginRight: '4px' }}>
                 Status:
               </span>
@@ -1045,8 +1114,8 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                   key={st}
                   onClick={() => setStatusFilter(st)}
                   style={{
-                    padding: '0.35rem 0.75rem',
-                    borderRadius: '7px',
+                    padding: '0.38rem 0.85rem',
+                    borderRadius: '8px',
                     fontSize: '0.8rem',
                     fontWeight: statusFilter === st ? 600 : 500,
                     backgroundColor: statusFilter === st ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
@@ -1062,7 +1131,7 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
           </div>
 
           {/* Table / List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {allFilteredQuestions.map((q) => {
               const isSolved = !!solvedMap[q.id];
               const badgeStyle = getDifficultyBadgeStyle(q.difficulty);
@@ -1071,26 +1140,37 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                 <div
                   key={q.id}
                   style={{
-                    backgroundColor: '#0c1220',
+                    backgroundColor: '#131313',
                     border: isSolved
-                      ? '1px solid rgba(16, 185, 129, 0.25)'
+                      ? '1px solid rgba(34, 197, 94, 0.3)'
                       : '1px solid rgba(255, 255, 255, 0.07)',
-                    borderRadius: '12px',
-                    padding: '0.9rem 1.15rem',
+                    borderRadius: '14px',
+                    padding: '1rem 1.35rem',
                     display: 'flex',
                     flexWrap: 'wrap',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: '0.85rem',
-                    transition: 'all 0.18s ease',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 4px 14px rgba(0, 0, 0, 0.3)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#181818';
+                    e.currentTarget.style.borderColor = 'rgba(217, 183, 122, 0.35)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#131313';
+                    e.currentTarget.style.borderColor = isSolved
+                      ? '1px solid rgba(34, 197, 94, 0.3)'
+                      : '1px solid rgba(255, 255, 255, 0.07)';
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: '1', minWidth: '260px' }}>
                     <button
                       onClick={() => toggleSolved(q.id)}
                       style={{
-                        background: isSolved ? '#10B981' : 'transparent',
-                        border: isSolved ? '1px solid #10B981' : '1.5px solid rgba(255, 255, 255, 0.3)',
+                        background: isSolved ? '#22C55E' : 'transparent',
+                        border: isSolved ? '1px solid #22C55E' : '1.5px solid rgba(255, 255, 255, 0.3)',
                         borderRadius: '6px',
                         width: '20px',
                         height: '20px',
@@ -1100,6 +1180,7 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                         cursor: 'pointer',
                         color: '#fff',
                         flexShrink: 0,
+                        transition: 'all 0.15s ease',
                       }}
                     >
                       {isSolved && <Check size={13} strokeWidth={3} />}
@@ -1114,7 +1195,7 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                           style={{
                             fontSize: '0.98rem',
                             fontWeight: 600,
-                            color: isSolved ? 'var(--text-secondary)' : '#F8FAFC',
+                            color: isSolved ? 'var(--text-secondary)' : 'var(--text-primary)',
                             textDecoration: isSolved ? 'line-through' : 'none',
                           }}
                         >
@@ -1122,20 +1203,21 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                         </span>
                         <span
                           style={{
-                            fontSize: '0.72rem',
-                            color: '#38BDF8',
-                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                            border: '1px solid rgba(56, 189, 248, 0.25)',
-                            padding: '2px 7px',
-                            borderRadius: '4px',
+                            fontSize: '0.74rem',
+                            color: 'var(--accent-gold)',
+                            backgroundColor: 'rgba(217, 183, 122, 0.09)',
+                            border: '1px solid rgba(217, 183, 122, 0.22)',
+                            padding: '2px 8px',
+                            borderRadius: '5px',
+                            fontWeight: 500,
                           }}
                         >
                           {q.topic}
                         </span>
                       </div>
                       {q.pattern && (
-                        <div style={{ fontSize: '0.78rem', color: '#94A3B8', marginTop: '2px' }}>
-                          Pattern: <span style={{ color: 'var(--text-primary)' }}>{q.pattern}</span>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                          Pattern: <span style={{ color: 'var(--accent-champagne)' }}>{q.pattern}</span>
                         </div>
                       )}
                     </div>
@@ -1161,15 +1243,26 @@ export default function CareerPrepDSAPage({ onStartInterview, onBackToOverview }
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        padding: '0.4rem 0.75rem',
-                        borderRadius: '7px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                        gap: '5px',
+                        padding: '0.42rem 0.82rem',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
                         border: '1px solid rgba(255, 255, 255, 0.1)',
-                        color: '#F8FAFC',
+                        color: 'var(--text-primary)',
                         fontSize: '0.8rem',
                         fontWeight: 500,
                         textDecoration: 'none',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(217, 183, 122, 0.15)';
+                        e.currentTarget.style.borderColor = 'var(--accent-gold)';
+                        e.currentTarget.style.color = 'var(--accent-gold)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.color = 'var(--text-primary)';
                       }}
                     >
                       <span>LeetCode</span>

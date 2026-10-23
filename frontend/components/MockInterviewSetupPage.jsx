@@ -265,66 +265,36 @@ export default function MockInterviewSetupPage({ onLaunchSession, onBackToOvervi
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.55rem',
-                padding: '0.55rem 1.15rem',
-                borderRadius: '10px',
-                backgroundColor: 'rgba(217, 183, 122, 0.12)',
-                border: '1px solid var(--accent-gold)',
+                gap: '0.7rem',
+                padding: '0.78rem 1.65rem',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, rgba(217, 183, 122, 0.18) 0%, rgba(217, 183, 122, 0.08) 100%)',
+                border: '1.5px solid var(--accent-gold)',
                 color: 'var(--accent-gold)',
-                fontSize: '0.84rem',
+                fontSize: '0.96rem',
                 fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: '0 0 16px rgba(217, 183, 122, 0.25)',
-                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 20px rgba(217, 183, 122, 0.25)',
+                transition: 'all 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
+                letterSpacing: '-0.01em',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--accent-gold)';
+                e.currentTarget.style.transform = 'scale(1.06) translateY(-2px)';
+                e.currentTarget.style.background = 'linear-gradient(135deg, #EAD6AF 0%, #D9B77A 100%)';
                 e.currentTarget.style.color = '#080808';
+                e.currentTarget.style.boxShadow = '0 10px 32px rgba(217, 183, 122, 0.45), 0 0 22px rgba(217, 183, 122, 0.3)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(217, 183, 122, 0.12)';
+                e.currentTarget.style.transform = 'scale(1) translateY(0)';
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(217, 183, 122, 0.18) 0%, rgba(217, 183, 122, 0.08) 100%)';
                 e.currentTarget.style.color = 'var(--accent-gold)';
+                e.currentTarget.style.boxShadow = '0 4px 20px rgba(217, 183, 122, 0.25)';
               }}
             >
-              <FileText size={16} />
+              <FileText size={18} />
               <span>Resume Based Interview</span>
-              <Sparkles size={13} />
+              <Sparkles size={15} />
             </button>
-
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                padding: '0.4rem 0.85rem',
-                borderRadius: '9999px',
-                backgroundColor: 'rgba(217, 183, 122, 0.1)',
-                border: '1px solid rgba(217, 183, 122, 0.25)',
-                color: 'var(--accent-gold)',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-              }}
-            >
-              <Sparkles size={13} />
-              AI Voice Enabled
-            </span>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                padding: '0.4rem 0.85rem',
-                borderRadius: '9999px',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                border: '1px solid rgba(34, 197, 94, 0.25)',
-                color: '#22C55E',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-              }}
-            >
-              <ShieldCheck size={13} />
-              FAANG Standard
-            </span>
           </div>
         </div>
       </div>
