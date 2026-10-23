@@ -195,6 +195,8 @@ Intervista System Architecture
 | **2026-10-22** | **Remote Integration & Full Sync to Origin** | Pulled remote changes from `Mayank-Kumar13/Intervista.git`, cleanly resolved branch state retaining all local features (CardSwap showcase, 15-company interview engine, dashboard routing, and checkout), cleaned orphan directories, verified production build, and safely pushed to remote `main`. |
 | **2026-10-22** | **Minimalist Footer Refactoring** | Streamlined footer to remove excessive marketing copy, redundant guide lists, and technical status badges. Retained essential brand identity, primary navigation links (Home, Dashboard, Companies, Plans, Contact), and legal disclosures with a clean, luxury aesthetic. |
 | **2026-10-22** | **GSAP PillNav Animation Integration** | Integrated GSAP PillNav into main Navbar matching dark champagne luxury palette: 1) Rising circle expanding background on hover with dynamic geometric radius calculation, 2) Vertical flip label stack (.pill-label to .pill-label-hover with high contrast dark text), 3) Rotating logo elastic spin on hover, 4) Active page glow dot indicator, 5) Maintained all current tabs (HOME, DASHBOARD, COMPANIES, PLANS, CONTACT US) and actions (Log in, Start Interview). |
+| **2026-10-23** | **How It Works 3D Shiny Gold Plates** | Transformed the 3 simplified step cards into 3D shiny gold metallic plates with engraved bevels, mounting rivets, and high-contrast dark obsidian typography for crisp legibility on gold. |
+| **2026-10-23** | **How It Works Cards Center Alignment & Heading Typography** | Horizontally centered and justified the icons, titles, descriptions, and footer meta tags inside the three cards. Made the heading titles larger (`1.68rem`) and bolder (`font-weight: 900`). |
 
 ---
 
