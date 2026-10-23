@@ -34,7 +34,7 @@ export default function RoleCards({ onSelectRole }) {
   ];
 
   return (
-    <section id="roles" className="section-wrapper">
+    <section id="roles" className="section-wrapper" style={{ padding: '9.5rem 0', position: 'relative' }}>
       <div className="container">
         {/* Section Header with "View all roles" link */}
         <div
@@ -42,16 +42,16 @@ export default function RoleCards({ onSelectRole }) {
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'space-between',
-            marginBottom: '3.5rem',
+            marginBottom: '5.5rem',
             flexWrap: 'wrap',
             gap: '1.5rem',
           }}
         >
           <div>
-            <h2 className="section-title" style={{ textAlign: 'left', marginBottom: '0.5rem' }}>
+            <h2 className="section-title" style={{ textAlign: 'left', marginBottom: '0.75rem' }}>
               Practice for your next role
             </h2>
-            <p className="section-subtitle" style={{ textAlign: 'left', margin: 0 }}>
+            <p className="section-subtitle" style={{ textAlign: 'left', margin: 0, fontSize: '1.05rem', lineHeight: 1.6 }}>
               Choose from a wide range of roles and start practicing with role-specific questions.
             </p>
           </div>
@@ -84,7 +84,7 @@ export default function RoleCards({ onSelectRole }) {
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '1.5rem',
+            gap: '2rem',
           }}
           className="roles-grid"
         >
@@ -96,12 +96,12 @@ export default function RoleCards({ onSelectRole }) {
                 onClick={() => onSelectRole(role.title)}
                 className="glass-card role-card"
                 style={{
-                  padding: '2rem 1.65rem',
+                  padding: '2.5rem 2.15rem',
                   display: 'flex',
                   flexDirection: 'column',
                   cursor: 'pointer',
                   position: 'relative',
-                  minHeight: '260px',
+                  minHeight: '315px',
                 }}
               >
                 {/* Top: Distinctive icon & Upper-right Arrow */}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, ArrowRight, Check, AlertCircle, Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
-import { registerUser, loginUser } from '../utils/auth';
+import { apiRegister, apiLogin } from '../utils/api';
 
 export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAuthSuccess }) {
   const [mode, setMode] = useState(initialMode); // 'login' | 'signup'
@@ -46,10 +46,10 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     try {
       let user;
       if (mode === 'signup') {
-        user = await registerUser({ name, email, password });
+        user = await apiRegister({ name, email, password });
         setSuccessMsg(`Welcome aboard, ${user.name}! Redirecting to Dashboard...`);
       } else {
-        user = await loginUser({ email, password });
+        user = await apiLogin({ email, password });
         setSuccessMsg(`Welcome back, ${user.name}! Redirecting to Dashboard...`);
       }
 

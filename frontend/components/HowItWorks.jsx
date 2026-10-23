@@ -26,7 +26,7 @@ export default function HowItWorks() {
   }, [roles.length]);
 
   return (
-    <section id="how-it-works" className="section-wrapper" style={{ padding: '6.5rem 0', position: 'relative' }}>
+    <section id="how-it-works" className="section-wrapper" style={{ padding: '9.5rem 0 10rem 0', position: 'relative' }}>
       {/* Background ambient lighting */}
       <div
         style={{
@@ -43,10 +43,10 @@ export default function HowItWorks() {
         }}
       />
 
-      <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: '1200px' }}>
+      <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: '1240px' }}>
         {/* Section Header */}
-        <div className="section-header" style={{ marginBottom: '4rem', textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '0.85rem' }}>
+        <div className="section-header" style={{ marginBottom: '6rem', textAlign: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '1.25rem' }}>
             <span
               className="eyebrow-tag"
               style={{
@@ -71,7 +71,7 @@ export default function HowItWorks() {
             style={{
               fontSize: 'clamp(2.2rem, 4.5vw, 3.4rem)',
               lineHeight: 1.15,
-              marginBottom: '1rem',
+              marginBottom: '1.5rem',
               color: 'var(--text-primary)',
             }}
           >
@@ -83,8 +83,8 @@ export default function HowItWorks() {
               maxWidth: '560px',
               margin: '0 auto',
               color: 'var(--text-secondary)',
-              fontSize: '1rem',
-              lineHeight: 1.6,
+              fontSize: '1.05rem',
+              lineHeight: 1.7,
             }}
           >
             A high-fidelity simulation designed to replicate real tech and behavioural interview loops.
@@ -254,7 +254,7 @@ export default function HowItWorks() {
           display: flex;
           align-items: stretch;
           justify-content: space-between;
-          gap: 1.25rem;
+          gap: 1.85rem;
           position: relative;
         }
 
@@ -262,8 +262,8 @@ export default function HowItWorks() {
           flex: 1;
           background-color: #111111;
           border: 1px solid rgba(255, 255, 255, 0.09);
-          border-radius: 22px;
-          padding: 1.75rem 1.6rem;
+          border-radius: 24px;
+          padding: 2.25rem 2rem;
           display: flex;
           flex-direction: column;
           position: relative;
@@ -286,7 +286,7 @@ export default function HowItWorks() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          margin-bottom: 1.1rem;
+          margin-bottom: 1.5rem;
         }
 
         .step-badge {
@@ -333,8 +333,8 @@ export default function HowItWorks() {
         .card-header-row {
           display: flex;
           align-items: flex-start;
-          gap: 12px;
-          margin-bottom: 1.25rem;
+          gap: 14px;
+          margin-bottom: 1.5rem;
         }
 
         .card-icon-halo {
@@ -360,28 +360,28 @@ export default function HowItWorks() {
         }
 
         .card-title {
-          font-size: 1.15rem;
+          font-size: 1.25rem;
           font-weight: 600;
           color: var(--text-primary);
-          margin-bottom: 2px;
+          margin-bottom: 4px;
         }
 
         .card-desc {
-          font-size: 0.8rem;
+          font-size: 0.88rem;
           color: var(--text-secondary);
-          line-height: 1.4;
+          line-height: 1.5;
         }
 
         /* Micro UI Inside Cards */
         .micro-ui-box {
-          margin-top: auto;
+          margin-top: 1.5rem;
           background-color: #171717;
           border: 1px solid rgba(255, 255, 255, 0.06);
-          border-radius: 14px;
-          padding: 0.95rem;
+          border-radius: 16px;
+          padding: 1.15rem 1.1rem;
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 10px;
         }
 
         .micro-ui-label {

@@ -1,205 +1,288 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  X, 
-  Mic, 
-  MicOff, 
-  Volume2, 
-  SkipForward, 
-  CheckCircle2, 
-  Send,
-  MessageSquare,
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  X,
+  Mic,
+  MicOff,
+  Volume2,
+  SkipForward,
   Sparkles,
-  PhoneOff
+  PhoneOff,
+  Loader2,
+  Send,
+  AlertCircle,
 } from 'lucide-react';
-
-const SAMPLE_QUESTIONS = {
-  'Software Engineer': [
-    {
-      q: 'Can you explain how you would optimize a slow database query in a production environment?',
-      hint: 'Focus on indexing, EXPLAIN ANALYZE, query refactoring, and caching layers like Redis.',
-      idealAnswer: 'I would first inspect the execution plan with EXPLAIN ANALYZE to locate sequential scans or expensive joins, verify composite indexing, and introduce caching where applicable.',
-    },
-    {
-      q: 'How would you design a scalable rate limiter for an API handling 50,000 requests per second?',
-      hint: 'Consider sliding window logs vs. token bucket algorithm and distributed state in Redis.',
-      idealAnswer: 'I would use a distributed Redis cluster using the Token Bucket algorithm with atomic Lua scripts to prevent race conditions across server nodes.',
-    },
-  ],
-  'Product Manager': [
-    {
-      q: 'How would you prioritize features for a new product with limited engineering bandwidth?',
-      hint: 'Mention framework: RICE, MoSCoW, business alignment, and user feedback signals.',
-      idealAnswer: 'I utilize the RICE scoring model (Reach, Impact, Confidence, Effort) aligned with primary company North Star metrics.',
-    },
-    {
-      q: 'Tell me about a time when a product launch underperformed and how you handled it.',
-      hint: 'Focus on data diagnostics, stakeholder communication, and pivoting quickly.',
-      idealAnswer: 'I broke down the funnel telemetry to isolate churn at step 2 of onboarding, ran rapid user interviews, and shipped a 2-click redesign that improved activation by 35%.',
-    },
-  ],
-  'Data Analyst': [
-    {
-      q: 'How would you explain the difference between a LEFT JOIN and an INNER JOIN to a non-technical stakeholder?',
-      hint: 'Use a clear visual analogy like a student roster and club membership list.',
-      idealAnswer: 'Think of INNER JOIN as students who belong to both a class and a club, while LEFT JOIN lists all students in the class regardless of whether they joined the club.',
-    },
-  ],
-  'UX Designer': [
-    {
-      q: 'Walk me through your design thinking process when redesigning a complex mobile onboarding flow.',
-      hint: 'Cover user research, friction mapping, wireframing, usability testing, and accessibility.',
-      idealAnswer: 'I start by mapping user cognitive load, conducting moderated user testing to find drop-off causes, and applying progressive disclosure to simplify complex inputs.',
-    },
-  ],
-};
-
-const RESUME_QUESTIONS = [
-  {
-    q: 'Based on your uploaded resume, walk me through the most technically challenging project you led. What architectural decisions or trade-offs did you make?',
-    hint: 'Focus on system design choices, bottlenecks encountered, metrics improved, and how you evaluated alternative tech stacks.',
-    idealAnswer: 'I outline the architecture, explain why we chose specific databases and patterns over others, discuss performance bottlenecks, and quantify the resulting latency or cost reductions.',
-  },
-  {
-    q: 'Looking at your past work experience, describe a critical production incident or bug you encountered. How did you diagnose, resolve, and prevent it from recurring?',
-    hint: 'Use the STAR method: Situation, Task, Action (monitoring, root cause, postmortem), and Result (runbooks, tests).',
-    idealAnswer: 'I tracked error spikes using distributed tracing, pinpointed a connection pool leak under heavy load, deployed an emergency fix, and authored automated load tests with alerts.',
-  },
-  {
-    q: 'How does your background and the specific technical skill set highlighted in your resume align with this target role and company?',
-    hint: 'Highlight core technical competencies, fast learning curve, and direct value you will bring to their engineering team.',
-    idealAnswer: 'My hands-on experience with modern scalable architectures and rapid prototyping directly aligns with their team goals and technical stack.',
-  },
-];
+import { apiStartInterview, apiSendMessage, apiEndInterview } from '../utils/api';
+import { getCurrentUser } from '../utils/auth';
 
 export default function LiveDemoModal({ isOpen, onClose, config, onFinishInterview }) {
-  const currentRole = config?.role || 'Software Engineer';
-  const questions = config?.isResumeBased
-    ? RESUME_QUESTIONS
-    : (SAMPLE_QUESTIONS[currentRole] || SAMPLE_QUESTIONS['Software Engineer']);
+  // ─── Session State ─────────────────────────────────────────────────────────
+  const [sessionId, setSessionId] = useState(null);
+  const [geminiInteractionId, setGeminiInteractionId] = useState(null);
+  const [sessionPhase, setSessionPhase] = useState('idle'); // idle | starting | active | ending | done
 
-  const [questionIdx, setQuestionIdx] = useState(0);
-  const [seconds, setSeconds] = useState(0);
-  const [isMicActive, setIsMicActive] = useState(true);
+  // ─── Conversation State ────────────────────────────────────────────────────
+  const [messages, setMessages] = useState([]); // [{role:'interviewer'|'candidate', text, ts}]
   const [candidateAnswer, setCandidateAnswer] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState('');
+  const [questionCount, setQuestionCount] = useState(0);
+
+  // ─── Audio / TTS ───────────────────────────────────────────────────────────
   const [isSpeakingAI, setIsSpeakingAI] = useState(false);
-  const [transcript, setTranscript] = useState([]);
+  const [isMicActive, setIsMicActive] = useState(true);
   const [isRecognizing, setIsRecognizing] = useState(false);
 
-  const recognitionRef = useRef(null);
+  // ─── Timer ────────────────────────────────────────────────────────────────
+  const [seconds, setSeconds] = useState(0);
 
-  // Timer
+  // ─── Refs ──────────────────────────────────────────────────────────────────
+  const recognitionRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
+
+  const currentRole = config?.role || 'Software Engineer';
+  const isLoggedIn = !!getCurrentUser();
+
+  // ─── Auto-scroll messages ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!isOpen) return;
-    const interval = setInterval(() => {
-      setSeconds(s => s + 1);
-    }, 1000);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // ─── Timer ────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isOpen || sessionPhase !== 'active') return;
+    const interval = setInterval(() => setSeconds(s => s + 1), 1000);
     return () => clearInterval(interval);
+  }, [isOpen, sessionPhase]);
+
+  // ─── Start session on open ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset on close
+      setSessionId(null);
+      setGeminiInteractionId(null);
+      setMessages([]);
+      setCandidateAnswer('');
+      setSeconds(0);
+      setError('');
+      setQuestionCount(0);
+      setSessionPhase('idle');
+      stopSpeech();
+      stopRecognition();
+      return;
+    }
+
+    if (sessionPhase !== 'idle') return;
+
+    if (!isLoggedIn) {
+      // Fallback: guest mode with static questions
+      setSessionPhase('active');
+      const guestMsg = `Hello! Welcome to your ${currentRole} mock interview. I'm Sophia, your AI interviewer today. Let's get started.\n\nTell me about yourself and what drew you to the ${currentRole} role.`;
+      setMessages([{ role: 'interviewer', text: guestMsg, ts: Date.now() }]);
+      speakText(guestMsg);
+      startRecognition();
+      return;
+    }
+
+    // Real backend session
+    startSession();
   }, [isOpen]);
 
-  // Read question with speech synthesis
-  useEffect(() => {
-    if (!isOpen) return;
-    const currentQ = questions[questionIdx]?.q;
-    if (currentQ && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(currentQ);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      utterance.onstart = () => setIsSpeakingAI(true);
-      utterance.onend = () => setIsSpeakingAI(false);
-      utterance.onerror = () => setIsSpeakingAI(false);
-      window.speechSynthesis.speak(utterance);
-    }
-    return () => {
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    };
-  }, [isOpen, questionIdx, currentRole]);
+  async function startSession() {
+    setSessionPhase('starting');
+    setError('');
+    try {
+      const data = await apiStartInterview({
+        role: config?.role || 'Software Engineer',
+        company: config?.company || null,
+        interviewType: config?.interviewType || 'Technical Interview',
+        experience: config?.level || 'Mid Level',
+        duration: config?.duration || 30,
+        focusTopic: config?.focusTopic || null,
+      });
 
-  // Web Speech recognition for candidate voice
-  useEffect(() => {
-    if (!isOpen) return;
+      setSessionId(data.sessionId);
+      setGeminiInteractionId(data.geminiInteractionId);
+      setMessages([{ role: 'interviewer', text: data.message, ts: Date.now() }]);
+      setSessionPhase('active');
+      speakText(data.message);
+      startRecognition();
+    } catch (err) {
+      setError(err.message || 'Failed to start interview. Check if backend is running.');
+      setSessionPhase('idle');
+    }
+  }
+
+  // ─── Text-to-Speech ────────────────────────────────────────────────────────
+  function speakText(text) {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.05;
+    // Try to use a female voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v => v.name.includes('Female') || v.name.includes('Samantha') || v.name.includes('Google UK English Female'));
+    if (preferred) utterance.voice = preferred;
+    utterance.onstart = () => setIsSpeakingAI(true);
+    utterance.onend = () => setIsSpeakingAI(false);
+    utterance.onerror = () => setIsSpeakingAI(false);
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function stopSpeech() {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    setIsSpeakingAI(false);
+  }
+
+  // ─── Speech Recognition ────────────────────────────────────────────────────
+  function startRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
+    if (!SpeechRecognition) return;
+
+    try {
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
 
       recognition.onresult = (event) => {
-        let currentTranscript = '';
+        let current = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          currentTranscript += event.results[i][0].transcript;
+          current += event.results[i][0].transcript;
         }
-        setCandidateAnswer(currentTranscript);
+        setCandidateAnswer(current);
       };
-
-      recognition.onerror = (e) => {
-        console.warn('Speech recognition error:', e);
-        setIsRecognizing(false);
-      };
+      recognition.onerror = () => setIsRecognizing(false);
+      recognition.onend = () => setIsRecognizing(false);
 
       recognitionRef.current = recognition;
-      try {
-        recognition.start();
-        setIsRecognizing(true);
-      } catch (err) {
-        console.warn('Recognition start error:', err);
-      }
+      recognition.start();
+      setIsRecognizing(true);
+    } catch (err) {
+      console.warn('Recognition error:', err);
     }
+  }
 
-    return () => {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch (_) {}
-      }
-    };
-  }, [isOpen]);
-
-  const handleNextQuestion = () => {
-    if (candidateAnswer.trim()) {
-      setTranscript(prev => [
-        ...prev,
-        { role: 'AI', text: questions[questionIdx].q },
-        { role: 'Candidate', text: candidateAnswer },
-      ]);
-    }
-    setCandidateAnswer('');
-    if (questionIdx < questions.length - 1) {
-      setQuestionIdx(prev => prev + 1);
-    } else {
-      handleComplete();
-    }
-  };
-
-  const handleComplete = () => {
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  function stopRecognition() {
     if (recognitionRef.current) {
       try { recognitionRef.current.stop(); } catch (_) {}
     }
-    onFinishInterview({
-      role: currentRole,
-      level: config?.level || 'Mid Level',
-      durationMinutes: Math.max(1, Math.round(seconds / 60)),
-      overallScore: 88,
-      scores: {
-        communication: 92,
-        technicalDepth: 86,
-        problemSolving: 89,
-        confidence: 84,
-      },
-    });
-  };
+    setIsRecognizing(false);
+  }
 
-  const formatTimer = (totalSec) => {
-    const m = Math.floor(totalSec / 60);
-    const s = totalSec % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  };
+  function toggleMic() {
+    if (isMicActive) {
+      stopRecognition();
+      setIsMicActive(false);
+    } else {
+      startRecognition();
+      setIsMicActive(true);
+    }
+  }
+
+  // ─── Send Answer ───────────────────────────────────────────────────────────
+  async function handleSendAnswer() {
+    const answer = candidateAnswer.trim();
+    if (!answer || isSending) return;
+
+    stopSpeech();
+    setIsSending(true);
+    setError('');
+
+    // Add candidate message to UI immediately
+    setMessages(prev => [...prev, { role: 'candidate', text: answer, ts: Date.now() }]);
+    setCandidateAnswer('');
+    setQuestionCount(q => q + 1);
+
+    // Guest mode: generate a simple follow-up
+    if (!sessionId) {
+      setTimeout(() => {
+        const followUps = [
+          "That's interesting! Can you elaborate on the technical challenges you faced?",
+          "Good point. How would you handle a situation where the approach you described doesn't scale?",
+          "I see. Walk me through how you would approach a related problem in a distributed system.",
+          "Thank you. What trade-offs did you consider when making that decision?",
+          "Great. Can you give me a specific example from your past experience?",
+        ];
+        const reply = questionCount < 4
+          ? followUps[questionCount % followUps.length]
+          : "Thank you for that detailed response. That concludes our interview today. You've done well — we'll have your report ready shortly.";
+        setMessages(prev => [...prev, { role: 'interviewer', text: reply, ts: Date.now() }]);
+        speakText(reply);
+        setIsSending(false);
+        if (questionCount >= 4) setTimeout(() => handleComplete(null), 3000);
+      }, 1200);
+      return;
+    }
+
+    // Real backend
+    try {
+      const data = await apiSendMessage({
+        sessionId,
+        content: answer,
+        geminiInteractionId,
+      });
+
+      setGeminiInteractionId(data.geminiInteractionId);
+      setMessages(prev => [...prev, { role: 'interviewer', text: data.message, ts: Date.now() }]);
+      speakText(data.message);
+
+      // Auto-complete after ~5 exchanges
+      if (questionCount >= 5) {
+        setTimeout(() => handleComplete(sessionId), 2000);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to get response. Please try again.');
+      // Put their answer back so they don't lose it
+      setCandidateAnswer(answer);
+    } finally {
+      setIsSending(false);
+    }
+  }
+
+  // ─── End Interview + Generate Report ──────────────────────────────────────
+  async function handleComplete(sid = sessionId) {
+    stopSpeech();
+    stopRecognition();
+    setSessionPhase('ending');
+
+    if (!sid) {
+      // Guest mode: mock report
+      onFinishInterview({
+        role: currentRole,
+        level: config?.level || 'Mid Level',
+        overallScore: 78,
+        scores: { communication: 82, technicalDepth: 74, problemSolving: 76, confidence: 80 },
+        summary: 'Guest mode preview — sign in to get a real AI-generated report.',
+        strengths: ['Clear communication', 'Engaged with questions'],
+        improvements: ['Add more specific examples', 'Deeper technical detail'],
+        questionFeedback: [],
+      });
+      return;
+    }
+
+    try {
+      const report = await apiEndInterview(sid);
+      setSessionPhase('done');
+      onFinishInterview(report);
+    } catch (err) {
+      setError(err.message || 'Failed to generate report.');
+      setSessionPhase('active');
+    }
+  }
+
+  // ─── Keyboard shortcut: Ctrl+Enter to send ────────────────────────────────
+  function handleKeyDown(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleSendAnswer();
+    }
+  }
+
+  const formatTimer = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
 
   if (!isOpen) return null;
-
-  const currentQ = questions[questionIdx] || questions[0];
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -207,264 +290,288 @@ export default function LiveDemoModal({ isOpen, onClose, config, onFinishIntervi
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxWidth: '820px',
-          padding: '2.5rem',
-          backgroundColor: '#0F0F0F',
+          maxWidth: '860px',
+          width: '95vw',
+          padding: '0',
+          backgroundColor: '#0A0A0A',
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: '90vh',
+          overflow: 'hidden',
         }}
       >
-        {/* Top Bar: Title & Session Controls */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-            paddingBottom: '1.25rem',
-            marginBottom: '1.75rem',
-          }}
-        >
+        {/* ─── Top Bar ──────────────────────────────────────────────────────── */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '1.25rem 1.75rem',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          flexShrink: 0,
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-            <span className="pulse-dot" />
+            {sessionPhase === 'active' && <span className="pulse-dot" />}
+            {sessionPhase === 'ending' && <Loader2 size={14} color="var(--accent-gold)" style={{ animation: 'spin 1s linear infinite' }} />}
             <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                {config?.isResumeBased ? (
-                  <>
-                    <span>Resume-Based Interview</span>
-                    <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(217,183,122,0.15)', color: 'var(--accent-gold)', border: '1px solid rgba(217,183,122,0.3)', fontWeight: 500 }}>
-                      {config?.role || 'Resume Profile'}
-                    </span>
-                  </>
-                ) : (
-                  `${currentRole} Mock Interview`
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {currentRole} Mock Interview
+                {!isLoggedIn && (
+                  <span style={{ fontSize: '0.68rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(217,183,122,0.15)', color: 'var(--accent-gold)', border: '1px solid rgba(217,183,122,0.3)', fontWeight: 500, marginLeft: '8px' }}>
+                    Guest Mode
+                  </span>
                 )}
               </h3>
-              <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
-                <span style={{ fontSize: '0.68rem', color: 'var(--accent-gold)' }}>
-                  Interviewer: Sophia (AI Lead)
-                </span>
-                <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>•</span>
-                <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
-                  Question {questionIdx + 1} of {questions.length}
-                </span>
-              </div>
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
+                {sessionPhase === 'starting' ? 'Connecting to Sophia (AI Interviewer)...' :
+                 sessionPhase === 'ending' ? 'Generating your personalized report...' :
+                 sessionPhase === 'done' ? 'Interview complete!' :
+                 `Interviewer: Sophia (AI Lead) · ${config?.company || 'General'} · ${questionCount} question${questionCount !== 1 ? 's' : ''} answered`}
+              </p>
             </div>
           </div>
 
-          {/* Session Timer & End Button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div
-              style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.25)',
-                padding: '0.35rem 0.85rem',
-                borderRadius: '8px',
-                color: '#F87171',
-                fontFamily: 'monospace',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-              }}
-            >
-              {formatTimer(seconds)}
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {/* Timer */}
+            {sessionPhase === 'active' && (
+              <div style={{
+                backgroundColor: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.25)',
+                padding: '0.3rem 0.8rem', borderRadius: '8px',
+                color: '#F87171', fontFamily: 'monospace', fontSize: '0.82rem', fontWeight: 600,
+              }}>
+                {formatTimer(seconds)}
+              </div>
+            )}
 
-            <button
-              onClick={handleComplete}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                border: '1px solid rgba(239, 68, 68, 0.35)',
-                color: '#FCA5A5',
-                padding: '0.45rem 0.95rem',
-                borderRadius: '9999px',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              <PhoneOff size={14} />
-              <span>Finish & View Report</span>
+            {/* Finish button */}
+            {(sessionPhase === 'active') && (
+              <button
+                onClick={() => handleComplete(sessionId)}
+                disabled={isSending || sessionPhase === 'ending'}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                  backgroundColor: 'rgba(239,68,68,0.15)',
+                  border: '1px solid rgba(239,68,68,0.35)',
+                  color: '#FCA5A5', padding: '0.4rem 0.9rem',
+                  borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                <PhoneOff size={13} />
+                <span>Finish & Get Report</span>
+              </button>
+            )}
+
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <X size={20} />
             </button>
           </div>
         </div>
 
-        {/* Question Panel */}
-        <div
-          style={{
-            backgroundColor: '#161616',
-            border: '1px solid var(--border-card)',
-            borderRadius: '16px',
-            padding: '1.75rem',
-            marginBottom: '1.5rem',
-            position: 'relative',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-            <div
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(217, 183, 122, 0.15)',
-                border: '1px solid rgba(217, 183, 122, 0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--accent-gold)',
+        {/* ─── Loading / Starting ────────────────────────────────────────── */}
+        {sessionPhase === 'starting' && (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', padding: '3rem' }}>
+            <Loader2 size={36} color="var(--accent-gold)" style={{ animation: 'spin 1s linear infinite' }} />
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Sophia is preparing your interview...</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Using Gemini AI to generate role-specific questions</p>
+          </div>
+        )}
+
+        {/* ─── Ending / Generating Report ───────────────────────────────── */}
+        {sessionPhase === 'ending' && (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', padding: '3rem' }}>
+            <Loader2 size={36} color="var(--accent-gold)" style={{ animation: 'spin 1s linear infinite' }} />
+            <p style={{ color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 500 }}>Analyzing your performance...</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Gemini AI is reviewing your answers and generating a personalized report</p>
+          </div>
+        )}
+
+        {/* ─── Active Interview ──────────────────────────────────────────── */}
+        {sessionPhase === 'active' && (
+          <>
+            {/* Error Banner */}
+            {error && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                padding: '0.6rem 1.2rem', color: '#FCA5A5', fontSize: '0.82rem',
                 flexShrink: 0,
-              }}
-            >
-              <Volume2 size={18} />
+              }}>
+                <AlertCircle size={14} />
+                <span>{error}</span>
+                <button onClick={() => setError('')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', marginLeft: 'auto' }}>✕</button>
+              </div>
+            )}
+
+            {/* ─── Conversation Thread ──────────────────────────────────── */}
+            <div style={{
+              flex: 1, overflowY: 'auto', padding: '1.5rem 1.75rem',
+              display: 'flex', flexDirection: 'column', gap: '1rem',
+              scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent',
+            }}>
+              {messages.map((msg, i) => (
+                <div key={i} style={{
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: msg.role === 'candidate' ? 'flex-end' : 'flex-start',
+                }}>
+                  {/* Label */}
+                  <span style={{
+                    fontSize: '0.68rem', color: 'var(--text-muted)',
+                    marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.06em',
+                    display: 'flex', alignItems: 'center', gap: '5px',
+                  }}>
+                    {msg.role === 'interviewer' ? (
+                      <><Volume2 size={11} color="var(--accent-gold)" /> Sophia (AI Interviewer)</>
+                    ) : (
+                      <><Mic size={11} color="#4ADE80" /> You</>
+                    )}
+                  </span>
+
+                  {/* Bubble */}
+                  <div style={{
+                    maxWidth: '82%',
+                    backgroundColor: msg.role === 'interviewer' ? '#161616' : 'rgba(245,231,200,0.08)',
+                    border: `1px solid ${msg.role === 'interviewer' ? 'rgba(255,255,255,0.08)' : 'rgba(245,231,200,0.2)'}`,
+                    borderRadius: msg.role === 'interviewer' ? '4px 16px 16px 16px' : '16px 4px 16px 16px',
+                    padding: '0.85rem 1.1rem',
+                    color: msg.role === 'interviewer' ? 'var(--text-primary)' : 'var(--accent-champagne)',
+                    fontSize: '0.92rem', lineHeight: 1.55,
+                    whiteSpace: 'pre-wrap',
+                  }}>
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+
+              {/* Typing indicator */}
+              {isSending && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    <Volume2 size={11} color="var(--accent-gold)" style={{ display: 'inline' }} /> Sophia is thinking...
+                  </span>
+                  <div style={{
+                    backgroundColor: '#161616', border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '4px 16px 16px 16px', padding: '0.85rem 1.1rem',
+                    display: 'flex', gap: '4px', alignItems: 'center',
+                  }}>
+                    {[0, 0.2, 0.4].map((delay, i) => (
+                      <div key={i} style={{
+                        width: '6px', height: '6px', borderRadius: '50%',
+                        backgroundColor: 'var(--accent-gold)', opacity: 0.6,
+                        animation: 'waveMotion 1s ease-in-out infinite',
+                        animationDelay: `${delay}s`,
+                      }} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
             </div>
 
-            <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  fontSize: '0.72rem',
-                  color: isSpeakingAI ? 'var(--accent-gold)' : 'var(--text-tertiary)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  marginBottom: '0.35rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                }}
-              >
-                <span>AI Interviewer Speaking</span>
-                {isSpeakingAI && <span className="pulse-dot" style={{ width: '6px', height: '6px' }} />}
+            {/* ─── AI Speaking Indicator ────────────────────────────────── */}
+            {isSpeakingAI && (
+              <div style={{
+                padding: '0.5rem 1.75rem',
+                display: 'flex', alignItems: 'center', gap: '0.65rem',
+                borderTop: '1px solid rgba(255,255,255,0.05)',
+                backgroundColor: 'rgba(217,183,122,0.04)', flexShrink: 0,
+              }}>
+                <span className="pulse-dot" />
+                <span style={{ fontSize: '0.76rem', color: 'var(--accent-gold)' }}>Sophia is speaking...</span>
+                <div style={{ display: 'flex', gap: '3px', marginLeft: '4px' }}>
+                  {[12, 22, 16, 26, 18].map((h, i) => (
+                    <div key={i} style={{
+                      width: '3px', height: `${h}px`,
+                      backgroundColor: 'var(--accent-gold)', borderRadius: '2px',
+                      animation: 'waveMotion 0.8s ease-in-out infinite',
+                      animationDelay: `${i * 0.1}s`,
+                    }} />
+                  ))}
+                </div>
               </div>
-              <h4
-                style={{
-                  fontSize: '1.15rem',
-                  fontWeight: 500,
-                  color: 'var(--text-primary)',
-                  lineHeight: 1.5,
-                  marginBottom: '0.75rem',
-                }}
-              >
-                "{currentQ.q}"
-              </h4>
+            )}
 
-              {/* Hint */}
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.45rem',
-                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                  padding: '0.3rem 0.75rem',
-                  borderRadius: '6px',
-                  color: 'var(--text-secondary)',
-                  fontSize: '0.75rem',
-                }}
-              >
-                <Sparkles size={13} color="var(--accent-gold)" />
-                <span>Tip: {currentQ.hint}</span>
+            {/* ─── Input Area ───────────────────────────────────────────── */}
+            <div style={{
+              padding: '1.25rem 1.75rem',
+              borderTop: '1px solid rgba(255,255,255,0.08)',
+              flexShrink: 0, backgroundColor: '#0A0A0A',
+            }}>
+              {/* Mic status */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  {isRecognizing && isMicActive ? (
+                    <><span className="pulse-dot" style={{ width: '6px', height: '6px', backgroundColor: '#4ADE80' }} /> Microphone active — speak your answer</>
+                  ) : (
+                    <><MicOff size={11} /> Microphone off — type your answer</>
+                  )}
+                </span>
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Ctrl+Enter to send</span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end' }}>
+                <textarea
+                  ref={textareaRef}
+                  value={candidateAnswer}
+                  onChange={(e) => setCandidateAnswer(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Speak your answer or type here..."
+                  rows={3}
+                  disabled={isSending}
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#141414',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '12px',
+                    padding: '0.85rem 1rem',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.9rem',
+                    fontFamily: 'inherit',
+                    lineHeight: 1.5,
+                    resize: 'none',
+                    outline: 'none',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = 'rgba(245,231,200,0.3)'}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                />
+
+                {/* Action buttons column */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {/* Toggle mic */}
+                  <button
+                    onClick={toggleMic}
+                    title={isMicActive ? 'Mute mic' : 'Unmute mic'}
+                    style={{
+                      width: '40px', height: '40px', borderRadius: '10px',
+                      backgroundColor: isMicActive ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                      border: `1px solid ${isMicActive ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                      color: isMicActive ? '#4ADE80' : '#FCA5A5',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    {isMicActive ? <Mic size={16} /> : <MicOff size={16} />}
+                  </button>
+
+                  {/* Send button */}
+                  <button
+                    onClick={handleSendAnswer}
+                    disabled={!candidateAnswer.trim() || isSending}
+                    style={{
+                      width: '40px', height: '40px', borderRadius: '10px',
+                      backgroundColor: candidateAnswer.trim() && !isSending ? 'var(--accent-champagne)' : 'rgba(255,255,255,0.06)',
+                      border: 'none',
+                      color: candidateAnswer.trim() && !isSending ? '#0A0A0A' : 'var(--text-muted)',
+                      cursor: candidateAnswer.trim() && !isSending ? 'pointer' : 'not-allowed',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {isSending ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={16} />}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Real-time Voice Waveform */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '4px',
-              height: '42px',
-              marginTop: '1.5rem',
-              padding: '0.5rem 0',
-              borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-            }}
-          >
-            {[24, 45, 65, 85, 95, 75, 55, 88, 92, 60, 40, 70, 85, 95, 50, 30, 48, 68, 88, 72, 45, 25].map((h, i) => (
-              <div
-                key={i}
-                style={{
-                  width: '4px',
-                  height: `${h * 0.4}%`,
-                  backgroundColor: i % 2 === 0 ? 'var(--accent-gold)' : '#F6F0E7',
-                  borderRadius: '3px',
-                  animation: 'waveMotion 1.2s ease-in-out infinite',
-                  animationDelay: `${i * 0.05}s`,
-                }}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Candidate Response Section */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Your Spoken Answer {isRecognizing && <span style={{ color: 'var(--status-live)' }}>(Listening to Mic...)</span>}
-            </label>
-            <button
-              onClick={() => setCandidateAnswer(currentQ.idealAnswer)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--accent-gold)',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                textDecoration: 'underline',
-              }}
-            >
-              Use Sample Answer
-            </button>
-          </div>
-
-          <textarea
-            value={candidateAnswer}
-            onChange={(e) => setCandidateAnswer(e.target.value)}
-            placeholder="Speak into your microphone or type your response here..."
-            rows={4}
-            style={{
-              width: '100%',
-              backgroundColor: '#161616',
-              border: '1px solid var(--border-card)',
-              borderRadius: '12px',
-              padding: '1rem',
-              color: 'var(--text-primary)',
-              fontSize: '0.92rem',
-              fontFamily: 'inherit',
-              lineHeight: 1.5,
-              resize: 'vertical',
-            }}
-          />
-        </div>
-
-        {/* Bottom Actions */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <button
-              onClick={() => setIsMicActive(!isMicActive)}
-              className="btn-secondary"
-              style={{
-                padding: '0.6rem 1rem',
-                fontSize: '0.82rem',
-                backgroundColor: isMicActive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                borderColor: isMicActive ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)',
-                color: isMicActive ? '#4ADE80' : '#FCA5A5',
-              }}
-            >
-              {isMicActive ? <Mic size={15} /> : <MicOff size={15} />}
-              <span>{isMicActive ? 'Mic Active' : 'Mic Muted'}</span>
-            </button>
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button
-              onClick={handleNextQuestion}
-              className="btn-primary"
-              style={{ padding: '0.65rem 1.45rem', fontSize: '0.88rem' }}
-            >
-              <span>{questionIdx < questions.length - 1 ? 'Submit & Next Question' : 'Complete & Generate Report'}</span>
-              <SkipForward size={15} />
-            </button>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
