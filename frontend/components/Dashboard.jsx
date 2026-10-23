@@ -24,7 +24,12 @@ import {
   X,
   CheckCircle2,
   History,
+  Download,
+  AlertCircle,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
+import { apiGetReports, apiDownloadReportPdf } from '../utils/api';
 
 // Preset active practice days for 2026 (matching the ~18 practice days in screenshot)
 const PRACTICE_DAYS_2026 = {
@@ -214,6 +219,47 @@ export default function Dashboard({
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
+  // ─── Task 4: Real Backend Reports & History State ─────────────────────────────
+  const [reports, setReports] = useState([]);
+  const [loadingReports, setLoadingReports] = useState(true);
+  const [reportsError, setReportsError] = useState(null);
+  const [downloadingReportId, setDownloadingReportId] = useState(null);
+
+  const loadReports = async () => {
+    setLoadingReports(true);
+    setReportsError(null);
+    try {
+      const res = await apiGetReports();
+      if (res && res.reports) {
+        setReports(res.reports);
+      } else {
+        setReports([]);
+      }
+    } catch (err) {
+      console.error('Failed to load reports:', err);
+      setReportsError(err.message || 'Failed to connect to backend reports server.');
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
+  useEffect(() => {
+    loadReports();
+  }, []);
+
+  const handleDirectPdfDownload = async (e, report) => {
+    e.stopPropagation();
+    if (!report.id) return;
+    try {
+      setDownloadingReportId(report.id);
+      await apiDownloadReportPdf(report.id, `${report.company || 'Intervista'}_${report.role || 'Report'}.pdf`);
+    } catch (err) {
+      alert(`Could not download PDF: ${err.message}`);
+    } finally {
+      setDownloadingReportId(null);
+    }
+  };
+
   // Generate 53 weeks x 7 days for the selected year
   const heatmapData = useMemo(() => {
     const weeks = [];
@@ -284,49 +330,56 @@ export default function Dashboard({
   };
 
   // Helper for company logos in recent interviews
-  const renderCompanyLogo = (type) => {
-    switch (type) {
-      case 'google':
-        return (
-          <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#1A1A1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5.1 3.7-8.9z"/>
-              <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"/>
-              <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.8 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
-              <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
-            </svg>
-          </div>
-        );
-      case 'microsoft':
-        return (
-          <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: '#1A1A1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="16" height="16" viewBox="0 0 21 21">
-              <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
-              <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
-              <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
-              <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
-            </svg>
-          </div>
-        );
-      case 'amazon':
-        return (
-          <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: '#1A1A1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#F6F0E7', position: 'relative', top: '-1px' }}>
-              a<span style={{ color: '#FF9900', fontSize: '1.1rem' }}>›</span>
-            </span>
-          </div>
-        );
-      case 'tesla':
-        return (
-          <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: '#1A1A1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontWeight: 900, fontSize: '1.05rem', color: '#E82127', fontFamily: 'sans-serif' }}>
-              T
-            </span>
-          </div>
-        );
-      default:
-        return null;
+  const renderCompanyLogo = (companyName = '') => {
+    const norm = String(companyName).toLowerCase();
+    if (norm.includes('google')) {
+      return (
+        <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#1A1A1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5.1 3.7-8.9z"/>
+            <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"/>
+            <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.8 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
+            <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
+          </svg>
+        </div>
+      );
     }
+    if (norm.includes('microsoft')) {
+      return (
+        <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: '#1A1A1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="16" height="16" viewBox="0 0 21 21">
+            <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+            <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
+            <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
+            <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
+          </svg>
+        </div>
+      );
+    }
+    if (norm.includes('amazon')) {
+      return (
+        <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: '#1A1A1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#F6F0E7', position: 'relative', top: '-1px' }}>
+            a<span style={{ color: '#FF9900', fontSize: '1.1rem' }}>›</span>
+          </span>
+        </div>
+      );
+    }
+    if (norm.includes('tesla')) {
+      return (
+        <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: '#1A1A1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontWeight: 900, fontSize: '1.05rem', color: '#E82127', fontFamily: 'sans-serif' }}>
+            T
+          </span>
+        </div>
+      );
+    }
+    const initial = (companyName || 'I').trim().charAt(0).toUpperCase() || 'I';
+    return (
+      <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: 'rgba(217, 183, 122, 0.12)', border: '1px solid rgba(217, 183, 122, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.82rem', color: 'var(--accent-gold)' }}>
+        {initial}
+      </div>
+    );
   };
 
   const navItems = [
@@ -668,7 +721,7 @@ export default function Dashboard({
                       marginBottom: '1.6rem',
                     }}
                   >
-                    You have completed 1 mock interview session. Keep pushing to improve your score!
+                    You have completed {reports.length} mock interview session{reports.length === 1 ? '' : 's'}. {reports.length === 0 ? 'Start your first mock interview to get evaluated by AI!' : 'Keep pushing to improve your score!'}
                   </p>
 
                   {/* + Start New Interview Button */}
@@ -1027,36 +1080,60 @@ export default function Dashboard({
                   </h3>
                 </div>
 
-                <button
-                  onClick={() => {
-                    setActiveNav('History');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text-secondary)',
-                    fontSize: '0.82rem',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    transition: 'color 0.2s',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
-                >
-                  <span>View all</span>
-                  <span>→</span>
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <button
+                    onClick={loadReports}
+                    title="Refresh interview history"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-secondary)',
+                      fontSize: '0.82rem',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'color 0.2s',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                  >
+                    <RefreshCw size={13} className={loadingReports ? 'spin' : ''} />
+                    <span>Refresh</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveNav('History');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-secondary)',
+                      fontSize: '0.82rem',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'color 0.2s',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                  >
+                    <span>View all</span>
+                    <span>→</span>
+                  </button>
+                </div>
               </div>
 
               {/* Table Column Headers */}
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1.8fr 75px 105px 115px',
+                  gridTemplateColumns: '1.7fr 75px 105px 135px',
                   gap: '1rem',
                   padding: '0 0.5rem 0.75rem 0.5rem',
                   borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
@@ -1070,120 +1147,286 @@ export default function Dashboard({
                 <div>Company & Role</div>
                 <div style={{ textAlign: 'center' }}>Score</div>
                 <div>Date</div>
-                <div style={{ textAlign: 'right' }}>Report / Actions</div>
+                <div style={{ textAlign: 'right' }}>Actions & PDF</div>
               </div>
 
-              {/* Table Rows */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginTop: '0.85rem' }}>
-                {displayedInterviews.map((interview) => (
+              {/* Table Rows: Loading, Error, Empty, or Data */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginTop: '0.85rem', minHeight: '160px' }}>
+                {loadingReports ? (
+                  // Loading Skeleton Rows
+                  [1, 2, 3].map((n) => (
+                    <div
+                      key={n}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1.7fr 75px 105px 135px',
+                        gap: '1rem',
+                        alignItems: 'center',
+                        padding: '0.75rem 0.5rem',
+                        borderRadius: '12px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                        animation: 'pulse 1.5s infinite ease-in-out',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: '#222' }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '110px' }}>
+                          <div style={{ height: '12px', backgroundColor: '#222', borderRadius: '4px' }} />
+                          <div style={{ height: '10px', backgroundColor: '#1c1c1c', borderRadius: '4px', width: '70%' }} />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <div style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: '#222' }} />
+                      </div>
+                      <div style={{ height: '12px', width: '70px', backgroundColor: '#222', borderRadius: '4px' }} />
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                        <div style={{ height: '28px', width: '85px', backgroundColor: '#222', borderRadius: '8px' }} />
+                      </div>
+                    </div>
+                  ))
+                ) : reportsError ? (
+                  // Error State with Retry
                   <div
-                    key={interview.id}
                     style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1.8fr 75px 105px 115px',
-                      gap: '1rem',
-                      alignItems: 'center',
-                      padding: '0.65rem 0.5rem',
+                      padding: '1.5rem',
                       borderRadius: '12px',
-                      transition: 'background-color 0.2s ease',
+                      backgroundColor: 'rgba(239, 68, 68, 0.06)',
+                      border: '1px solid rgba(239, 68, 68, 0.2)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.75rem',
+                      textAlign: 'center',
                     }}
-                    className="interview-row-item"
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#161616')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
-                    {/* Company & Role */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                      {renderCompanyLogo(interview.logoType)}
-                      <div style={{ overflow: 'hidden' }}>
-                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {interview.company}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {interview.role}
-                        </div>
-                      </div>
+                    <AlertCircle size={24} color="#EF4444" />
+                    <div style={{ fontSize: '0.85rem', color: '#FCA5A5' }}>
+                      {reportsError}
                     </div>
-
-                    {/* Circular Score Gauge */}
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
-                      <div style={{ position: 'relative', width: '38px', height: '38px' }}>
-                        <svg width="38" height="38" viewBox="0 0 38 38">
-                          <circle cx="19" cy="19" r="15" fill="none" stroke="#222" strokeWidth="2.5" />
-                          <circle
-                            cx="19"
-                            cy="19"
-                            r="15"
-                            fill="none"
-                            stroke={interview.scoreColor}
-                            strokeWidth="2.5"
-                            strokeDasharray="94.2"
-                            strokeDashoffset={94.2 - (94.2 * interview.score) / 100}
-                            strokeLinecap="round"
-                            transform="rotate(-90 19 19)"
-                          />
-                        </svg>
-                        <div
-                          style={{
-                            position: 'absolute',
-                            inset: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '0.68rem',
-                            fontWeight: 700,
-                            color: 'var(--text-primary)',
-                          }}
-                        >
-                          {interview.score}%
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Date */}
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      {interview.date}
-                    </div>
-
-                    {/* View Report Button */}
-                    <div style={{ textAlign: 'right' }}>
-                      <button
-                        onClick={async () => {
-                          if (interview.isDbSession) {
-                            try {
-                              const fullReport = await apiGetReport(interview.id);
-                              if (onViewReport) return onViewReport(fullReport);
-                            } catch (err) {
-                              console.warn('Could not fetch DB report, using cached summary:', err);
-                            }
-                          }
-                          if (onViewReport) {
-                            onViewReport({
-                              role: `${interview.company} - ${interview.role}`,
-                              overallScore: interview.score,
-                              scores: interview.details?.scores,
-                              strengths: interview.details?.strengths,
-                              improvements: interview.details?.improvements,
-                              rubricScores: interview.details?.rubricScores,
-                            });
-                          }
-                        }}
-                        className="btn-secondary"
-                        style={{
-                          padding: '0.38rem 0.75rem',
-                          fontSize: '0.75rem',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          borderRadius: '8px',
-                          borderColor: 'rgba(255, 255, 255, 0.1)',
-                        }}
-                      >
-                        <FileText size={12} color="var(--accent-gold)" />
-                        <span>View Report</span>
-                      </button>
-                    </div>
+                    <button
+                      onClick={loadReports}
+                      className="btn-secondary"
+                      style={{ padding: '0.4rem 0.9rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      <RefreshCw size={12} />
+                      <span>Retry Loading</span>
+                    </button>
                   </div>
-                ))}
+                ) : reports.length === 0 ? (
+                  // Empty State
+                  <div
+                    style={{
+                      padding: '2rem 1.5rem',
+                      borderRadius: '12px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px dashed rgba(255, 255, 255, 0.1)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.75rem',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Sparkles size={24} color="var(--accent-gold)" />
+                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      No Interview Reports Yet
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', maxWidth: '320px', margin: 0 }}>
+                      Complete your first mock interview session to unlock AI scorecards, verbal delivery analysis, and customized study roadmaps.
+                    </p>
+                    <button
+                      onClick={() => setActiveNav('Mock Interview')}
+                      className="btn-primary"
+                      style={{ padding: '0.45rem 1rem', fontSize: '0.78rem', marginTop: '0.25rem' }}
+                    >
+                      + Start Mock Interview
+                    </button>
+                  </div>
+                ) : (
+                  // Real Reports Rows
+                  reports.map((interview) => {
+                    const scoreVal = interview.score ?? interview.overallScore ?? 80;
+                    const scoreColor =
+                      scoreVal >= 80 ? '#10B981' : scoreVal >= 70 ? 'var(--accent-gold)' : '#D4A373';
+                    const isDownloading = downloadingReportId === interview.id;
+
+                    return (
+                      <div
+                        key={interview.id}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1.7fr 75px 105px 135px',
+                          gap: '1rem',
+                          alignItems: 'center',
+                          padding: '0.65rem 0.5rem',
+                          borderRadius: '12px',
+                          transition: 'background-color 0.2s ease',
+                        }}
+                        className="interview-row-item"
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#161616')}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                      >
+                        {/* Company & Role */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                          {renderCompanyLogo(interview.company || interview.role)}
+                          <div style={{ overflow: 'hidden' }}>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                              {interview.company || 'Intervista AI'}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {interview.role}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Circular Score Gauge */}
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                          <div style={{ position: 'relative', width: '38px', height: '38px' }}>
+                            <svg width="38" height="38" viewBox="0 0 38 38">
+                              <circle cx="19" cy="19" r="15" fill="none" stroke="#222" strokeWidth="2.5" />
+                              <circle
+                                cx="19"
+                                cy="19"
+                                r="15"
+                                fill="none"
+                                stroke={scoreColor}
+                                strokeWidth="2.5"
+                                strokeDasharray="94.2"
+                                strokeDashoffset={94.2 - (94.2 * scoreVal) / 100}
+                                strokeLinecap="round"
+                                transform="rotate(-90 19 19)"
+                              />
+                            </svg>
+                            <div
+                              style={{
+                                position: 'absolute',
+                                inset: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.68rem',
+                                fontWeight: 700,
+                                color: 'var(--text-primary)',
+                              }}
+                            >
+                              {scoreVal}%
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Date */}
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                          {interview.date || (interview.created_at ? new Date(interview.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent')}
+                        </div>
+
+                        {/* Action Buttons: Download PDF & View Report */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                          {interview.status === 'failed' ? (
+                            <button
+                              onClick={() => loadReports()}
+                              className="btn-secondary"
+                              title="Report generation failed. Click to retry."
+                              style={{
+                                padding: '0.35rem 0.6rem',
+                                fontSize: '0.72rem',
+                                color: '#EF4444',
+                                borderColor: 'rgba(239, 68, 68, 0.3)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                borderRadius: '7px',
+                              }}
+                            >
+                              <RefreshCw size={11} />
+                              <span>Retry</span>
+                            </button>
+                          ) : (
+                            <>
+                              {/* Direct PDF Download button */}
+                              <button
+                                onClick={(e) => handleDirectPdfDownload(e, interview)}
+                                disabled={isDownloading}
+                                title="Download Official PDF Report"
+                                style={{
+                                  background: 'rgba(255, 255, 255, 0.04)',
+                                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                                  color: isDownloading ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                                  padding: '0.38rem 0.45rem',
+                                  borderRadius: '7px',
+                                  cursor: isDownloading ? 'wait' : 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  transition: 'all 0.18s ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.color = 'var(--accent-gold)';
+                                  e.currentTarget.style.borderColor = 'rgba(217, 183, 122, 0.35)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.color = 'var(--text-secondary)';
+                                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                                }}
+                              >
+                                {isDownloading ? (
+                                  <Loader2 size={13} className="spin" />
+                                ) : (
+                                  <Download size={13} />
+                                )}
+                              </button>
+
+                              {/* View Report modal button */}
+                              <button
+                                onClick={() => {
+                                  if (onViewReport) {
+                                    onViewReport({
+                                      id: interview.id,
+                                      sessionId: interview.sessionId || interview.id,
+                                      role: interview.role,
+                                      company: interview.company,
+                                      overallScore: scoreVal,
+                                      scores: interview.details?.scores || interview.criterionScores || {
+                                        communication: interview.communication || 88,
+                                        technicalDepth: interview.technical_depth || 86,
+                                        problemSolving: interview.problem_solving || 85,
+                                        confidence: interview.confidence || 82,
+                                      },
+                                      criterionScores: interview.details?.criterionScores || interview.criterionScores,
+                                      criterionWeights: interview.details?.criterionWeights || interview.criterionWeights,
+                                      strengths: interview.details?.strengths || interview.strengths || [],
+                                      improvements: interview.details?.improvements || interview.improvements || [],
+                                      questionFeedback: interview.details?.questionFeedback || interview.questionFeedback || [],
+                                      verbalDelivery: interview.details?.verbalDelivery || interview.verbalDelivery,
+                                      visualObservations: interview.details?.visualObservations || interview.visualObservations,
+                                      knowledgeGaps: interview.details?.knowledgeGaps || interview.knowledgeGaps || [],
+                                      studyRoadmap: interview.details?.studyRoadmap || interview.studyRoadmap || [],
+                                      summary: interview.details?.summary || interview.summary
+                                    });
+                                  }
+                                }}
+                                className="btn-secondary"
+                                style={{
+                                  padding: '0.38rem 0.65rem',
+                                  fontSize: '0.73rem',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  borderRadius: '7px',
+                                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                                }}
+                              >
+                                <FileText size={11} color="var(--accent-gold)" />
+                                <span>Report</span>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </section>
 

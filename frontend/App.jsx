@@ -220,18 +220,23 @@ export default function App() {
   const handleViewSampleReport = (customData = null) => {
     if (customData) {
       setReportData({
+        ...customData,
         role: customData.role || 'Software Engineer',
         level: customData.level || 'Mid Level',
-        overallScore: customData.overallScore || 86,
+        overallScore: customData.overallScore ?? customData.score ?? 86,
         scores: customData.scores || {
-          communication: 90,
-          technicalDepth: 86,
-          problemSolving: 88,
-          confidence: 82,
+          communication: customData.communication || 90,
+          technicalDepth: customData.technicalDepth || 86,
+          problemSolving: customData.problemSolving || 88,
+          confidence: customData.confidence || 82,
         },
-        strengths: customData.strengths,
-        improvements: customData.improvements,
-        questionFeedback: customData.questionFeedback,
+        strengths: customData.strengths || [],
+        improvements: customData.improvements || [],
+        questionFeedback: customData.questionFeedback || [],
+        studyRoadmap: customData.studyRoadmap || [],
+        knowledgeGaps: customData.knowledgeGaps || [],
+        verbalDelivery: customData.verbalDelivery || null,
+        visualObservations: customData.visualObservations || null,
       });
     } else {
       setReportData({
