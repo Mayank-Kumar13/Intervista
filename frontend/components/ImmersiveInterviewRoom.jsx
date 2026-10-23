@@ -30,6 +30,19 @@ import { apiStartInterview, apiSendMessage, apiEndInterview } from '../utils/api
 import { getCurrentUser } from '../utils/auth';
 import ThreeInterviewScene from './ThreeInterviewScene';
 
+const ROLE_OPTIONS = [
+  'Software Engineer',
+  'Frontend Developer',
+  'Backend Developer',
+  'Full Stack Engineer',
+  'AI / ML Engineer',
+  'System Architect',
+  'DevOps / SRE Engineer',
+  'Product Manager',
+  'Engineering Manager',
+  'Data Analyst',
+];
+
 export default function ImmersiveInterviewRoom({
   config,
   onFinishInterview,
@@ -41,7 +54,8 @@ export default function ImmersiveInterviewRoom({
   const interviewerName = config?.interviewerName || (isChen ? 'Mr. J. Chen' : 'Sophia Sterling');
   const interviewerTitle = config?.interviewerTitle || (isChen ? 'Hiring Manager' : 'VP of Engineering');
   const targetCompany = config?.company || 'Google';
-  const targetRole = config?.role || 'Software Engineer';
+  const [selectedRole, setSelectedRole] = useState(config?.role || 'Software Engineer');
+  const targetRole = selectedRole;
   const experienceLevel = config?.level || 'Mid Level';
   const interviewType = config?.interviewType || 'Technical Interview';
   const backgroundImage = isChen
@@ -97,6 +111,10 @@ export default function ImmersiveInterviewRoom({
   const textareaRef = useRef(null);
   const transcriptScrollRef = useRef(null);
   const interviewerFinishedSpeakingAtRef = useRef(Date.now());
+  const isMicMutedRef = useRef(isMicMuted);
+  useEffect(() => {
+    isMicMutedRef.current = isMicMuted;
+  }, [isMicMuted]);
 
   // Format Elapsed Time MM:SS
   const formatTimer = (totalSec) => {
@@ -162,7 +180,7 @@ export default function ImmersiveInterviewRoom({
               setMicVolume(vol);
 
               // Update candidate speaking state if sound is detected and mic isn't muted
-              if (vol > 15 && !isMicMuted) {
+              if (vol > 15 && !isMicMutedRef.current) {
                 setIsCandidateSpeaking(true);
               } else {
                 setIsCandidateSpeaking(false);
@@ -205,9 +223,84 @@ export default function ImmersiveInterviewRoom({
     stopSpeechRecognition();
   }, []);
 
-  // ─── 3. Speech Synthesis (Interviewer Voice Out Loud) ────────────────────────
+  const stopSpeechSynthesis = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsInterviewerSpeaking(false);
+  };
+
+  // ─── 3. Speech Recognition (Candidate Voice-to-Text) ─────────────────────────
+  const startSpeechRecognition = useCallback(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setIsSpeechRecognitionSupported(false);
+      return;
+    }
+
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) {}
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript + ' ';
+        }
+        setCandidateAnswer(transcript.trim());
+      };
+
+      recognition.onerror = (err) => {
+        console.warn('Speech recognition error:', err);
+      };
+
+      recognition.onend = () => {
+        // Automatically restart speech recognition while session is active and mic is not muted
+        if (sessionPhase === 'active' && !isMicMutedRef.current) {
+          try { recognition.start(); } catch (e) {}
+        }
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.warn('Could not start speech recognition:', err);
+    }
+  }, [sessionPhase]);
+
+  const stopSpeechRecognition = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {}
+      recognitionRef.current = null;
+    }
+  };
+
+  // ─── Helper: Turn Microphone ON automatically ──────────────────────────────
+  const activateMic = useCallback(() => {
+    isMicMutedRef.current = false;
+    setIsMicMuted(false);
+    if (micStreamRef.current) {
+      micStreamRef.current.getAudioTracks().forEach(t => {
+        t.enabled = true;
+      });
+    }
+    startSpeechRecognition();
+  }, [startSpeechRecognition]);
+
+  // ─── 4. Speech Synthesis (Interviewer Voice Out Loud) ────────────────────────
   const speakText = (text) => {
-    if (!('speechSynthesis' in window)) return;
+    if (!('speechSynthesis' in window)) {
+      activateMic();
+      return;
+    }
     window.speechSynthesis.cancel();
 
     // Clean text of intro metadata for speech
@@ -234,80 +327,33 @@ export default function ImmersiveInterviewRoom({
       if (femaleVoice) utterance.voice = femaleVoice;
     }
 
-    utterance.onstart = () => setIsInterviewerSpeaking(true);
-    utterance.onend = () => {
-      setIsInterviewerSpeaking(false);
-      interviewerFinishedSpeakingAtRef.current = Date.now();
+    let safetyTimer = null;
+
+    utterance.onstart = () => {
+      setIsInterviewerSpeaking(true);
+      // Fallback timer: ensure mic is activated even if browser speech ends unexpectedly
+      safetyTimer = setTimeout(() => {
+        setIsInterviewerSpeaking(false);
+        activateMic();
+      }, 10000);
     };
-    utterance.onerror = () => {
+
+    utterance.onend = () => {
+      if (safetyTimer) clearTimeout(safetyTimer);
       setIsInterviewerSpeaking(false);
       interviewerFinishedSpeakingAtRef.current = Date.now();
+      // Auto-turn mic ON when model finishes asking the question
+      activateMic();
+    };
+
+    utterance.onerror = () => {
+      if (safetyTimer) clearTimeout(safetyTimer);
+      setIsInterviewerSpeaking(false);
+      interviewerFinishedSpeakingAtRef.current = Date.now();
+      activateMic();
     };
 
     window.speechSynthesis.speak(utterance);
-  };
-
-  const stopSpeechSynthesis = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
-    setIsInterviewerSpeaking(false);
-  };
-
-  // ─── 4. Speech Recognition (Candidate Voice-to-Text) ─────────────────────────
-  const startSpeechRecognition = useCallback(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setIsSpeechRecognitionSupported(false);
-      return;
-    }
-
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch (e) {}
-    }
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-
-      recognition.onresult = (event) => {
-        let transcript = '';
-        for (let i = 0; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript + ' ';
-        }
-        setCandidateAnswer(prev => {
-          // If candidate is already typing, append or replace smoothly
-          return transcript.trim();
-        });
-      };
-
-      recognition.onerror = (err) => {
-        console.warn('Speech recognition error:', err);
-      };
-
-      recognition.onend = () => {
-        // Automatically restart speech recognition while session is active and mic is not muted
-        if (sessionPhase === 'active' && !isMicMuted) {
-          try { recognition.start(); } catch (e) {}
-        }
-      };
-
-      recognitionRef.current = recognition;
-      recognition.start();
-    } catch (err) {
-      console.warn('Could not start speech recognition:', err);
-    }
-  }, [sessionPhase, isMicMuted]);
-
-  const stopSpeechRecognition = () => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {}
-      recognitionRef.current = null;
-    }
   };
 
   // ─── 5. Start Session Lifecycle ─────────────────────────────────────────────
@@ -332,6 +378,7 @@ export default function ImmersiveInterviewRoom({
   // Handle Mute/Unmute toggle
   const toggleMicrophone = () => {
     const newMuted = !isMicMuted;
+    isMicMutedRef.current = newMuted;
     setIsMicMuted(newMuted);
 
     if (micStreamRef.current) {
@@ -438,7 +485,70 @@ export default function ImmersiveInterviewRoom({
       setCurrentQuestionText(firstQ);
       setSessionPhase('active');
       speakText(fullText);
-      if (!isMicMuted) startSpeechRecognition();
+      if (!isMicMutedRef.current) startSpeechRecognition();
+    }
+  };
+
+  // ─── 6b. Role Dropdown Change Handler ───────────────────────────────────────
+  const handleRoleChange = async (newRole) => {
+    if (newRole === selectedRole) return;
+    setSelectedRole(newRole);
+    stopSpeechSynthesis();
+    stopSpeechRecognition();
+    setSessionPhase('initializing');
+    setQuestionIndex(1);
+    setCandidateAnswer('');
+
+    try {
+      const response = await apiStartInterview({
+        role: newRole,
+        company: targetCompany,
+        interviewType,
+        experience: experienceLevel,
+        duration: config?.duration ? parseInt(config.duration) : 30,
+        focusTopic: config?.topic || config?.language || null,
+        interviewerName,
+      });
+
+      setSessionId(response.sessionId);
+      setGeminiInteractionId(response.geminiInteractionId);
+      setIsDemoMode(!!response.isDemoMode);
+
+      const openingMsg = response.message;
+      setMessages([{ role: 'interviewer', text: openingMsg, timestamp: Date.now() }]);
+
+      const questionClean = openingMsg
+        .replace(/Hello!.*?\n\n/s, '')
+        .replace(/^To begin:\s*/i, '')
+        .trim();
+      setCurrentQuestionText(questionClean || openingMsg);
+      setSessionPhase('active');
+      speakText(openingMsg);
+    } catch (err) {
+      console.warn('[interview room] Role switch API error, utilizing role fallback:', err);
+      const fallbackId = 's_' + Date.now().toString(36);
+      const roleQuestions = {
+        'Frontend Developer': 'How do you profile, diagnose, and optimize Core Web Vitals—specifically Largest Contentful Paint (LCP) and Interaction to Next Paint (INP)—in a modern Single Page Application?',
+        'Backend Developer': 'Can you describe the architecture of a high-throughput backend service you designed or maintained? How did you handle data consistency and database load during peak traffic spikes?',
+        'Full Stack Engineer': 'When designing an end-to-end fullstack system with real-time updates, how do you handle state synchronization between client cache and distributed backend databases?',
+        'AI / ML Engineer': 'When deploying a classification model in production where False Positives are 10x costlier than False Negatives, how do you tune decision thresholds and detect feature drift?',
+        'System Architect': 'When multiple microservices update shared state across independent databases, what transaction management pattern would you select (e.g. 2PC vs Saga), and how do you handle compensations?',
+        'DevOps / SRE Engineer': 'Imagine your production API p99 latency suddenly jumps from 45ms to 2.4 seconds, but CPU utilization remains low at 15%. How do you systematically diagnose the root cause?',
+        'Product Manager': 'How would you measure the product health and north-star retention of an AI-assisted developer tool? If an A/B test shows conflicting metric trade-offs, how do you decide rollout?',
+        'Engineering Manager': 'Tell me about a project where you had a strong technical disagreement with senior stakeholders. How did you resolve the conflict, and what was the outcome?',
+        'Data Analyst': 'How do you design analytical SQL queries and data models for high-frequency business event streams while ensuring query latency remains under a second?',
+        'Software Engineer': 'Can you describe the architecture of a high-throughput backend service you designed or maintained? How did you handle data consistency and database load during peak traffic spikes?',
+      };
+      const firstQ = roleQuestions[newRole] || roleQuestions['Software Engineer'];
+      const greeting = `Hello! Welcome to your ${newRole} interview at ${targetCompany}. I'm ${interviewerName}, and I'll be conducting your technical interview today.`;
+      const fullText = `${greeting}\n\nTo begin: ${firstQ}`;
+
+      setSessionId(fallbackId);
+      setIsDemoMode(true);
+      setMessages([{ role: 'interviewer', text: fullText, timestamp: Date.now() }]);
+      setCurrentQuestionText(firstQ);
+      setSessionPhase('active');
+      speakText(fullText);
     }
   };
 
@@ -833,7 +943,7 @@ export default function ImmersiveInterviewRoom({
         <div
           id="interview-question-card"
           style={{
-            maxWidth: isQuestionCollapsed ? '460px' : '560px',
+            maxWidth: isQuestionCollapsed ? '540px' : '640px',
             width: '92%',
             backgroundColor: 'rgba(16, 26, 44, 0.82)',
             border: '1.5px solid rgba(56, 189, 248, 0.55)',
@@ -875,9 +985,43 @@ export default function ImmersiveInterviewRoom({
                 Question {questionIndex} of {totalQuestions}
               </span>
               <span style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.75rem' }}>•</span>
-              <span style={{ fontSize: '0.74rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-                {interviewType}
-              </span>
+              <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                <select
+                  id="interview-role-select"
+                  value={selectedRole}
+                  onChange={(e) => handleRoleChange(e.target.value)}
+                  style={{
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    borderRadius: '8px',
+                    padding: '0.22rem 1.6rem 0.22rem 0.6rem',
+                    color: '#BAE6FD',
+                    fontSize: '0.74rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    outline: 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title="Choose job role to test"
+                >
+                  {ROLE_OPTIONS.map((r) => (
+                    <option key={r} value={r} style={{ backgroundColor: '#0B1220', color: '#FFFFFF' }}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={12}
+                  style={{
+                    position: 'absolute',
+                    right: '6px',
+                    color: '#38BDF8',
+                    pointerEvents: 'none',
+                  }}
+                />
+              </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
@@ -1189,6 +1333,7 @@ export default function ImmersiveInterviewRoom({
         >
           {/* Active Voice Input Mic indicator */}
           <div
+            onClick={toggleMicrophone}
             style={{
               width: '36px',
               height: '36px',
@@ -1200,8 +1345,9 @@ export default function ImmersiveInterviewRoom({
               justifyContent: 'center',
               color: !isMicMuted ? '#22C55E' : '#EF4444',
               flexShrink: 0,
+              cursor: 'pointer',
             }}
-            title={!isMicMuted ? 'Speech recognition active' : 'Mic muted'}
+            title={!isMicMuted ? 'Microphone is ON (Listening). Click to mute' : 'Microphone is MUTED. Click to turn ON'}
           >
             {!isMicMuted ? <Mic size={18} /> : <MicOff size={18} />}
           </div>

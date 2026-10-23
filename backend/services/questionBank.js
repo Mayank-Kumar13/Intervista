@@ -237,31 +237,39 @@ function getQuestionsForSession({ role, interviewType, experience, count = 5 }) 
   const roleNorm = (role || 'Software Engineer').toLowerCase();
   const typeNorm = (interviewType || '').toLowerCase();
 
-  let matched = QUESTION_BANK.filter(q => {
+  // First priority: direct role match
+  let exactMatches = QUESTION_BANK.filter(q => {
     const qRole = q.role.toLowerCase();
+    const qCategory = (q.category || '').toLowerCase();
     if (typeNorm.includes('behavioral')) {
       return qRole.includes('behavioral');
     }
     if (roleNorm.includes('front')) {
-      return qRole.includes('front') || qRole.includes('software');
+      return qRole.includes('front') || qCategory.includes('front') || qCategory.includes('web');
     }
     if (roleNorm.includes('data') || roleNorm.includes('machine') || roleNorm.includes('ml')) {
-      return qRole.includes('data') || qRole.includes('software');
+      return qRole.includes('data') || qCategory.includes('model') || qCategory.includes('drift');
     }
     if (roleNorm.includes('product')) {
-      return qRole.includes('product') || qRole.includes('behavioral');
+      return qRole.includes('product') || qCategory.includes('product');
     }
-    // Default software engineering
+    if (roleNorm.includes('architect')) {
+      return qCategory.includes('concurrency') || qCategory.includes('distributed');
+    }
+    if (roleNorm.includes('devops') || roleNorm.includes('sre')) {
+      return qCategory.includes('observability') || qCategory.includes('debugging');
+    }
+    if (roleNorm.includes('manager')) {
+      return qRole.includes('behavioral') || qCategory.includes('collaboration');
+    }
     return qRole.includes('software');
   });
 
-  // If not enough questions matched, include behavioral and system questions
-  if (matched.length < count) {
-    const fallbacks = QUESTION_BANK.filter(q => !matched.includes(q));
-    matched = [...matched, ...fallbacks];
-  }
+  // Second priority: related fallbacks
+  const fallbacks = QUESTION_BANK.filter(q => !exactMatches.includes(q));
+  const combined = [...exactMatches, ...fallbacks];
 
-  return matched.slice(0, count);
+  return combined.slice(0, count);
 }
 
 module.exports = {
