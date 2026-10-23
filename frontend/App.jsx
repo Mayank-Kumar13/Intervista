@@ -92,7 +92,7 @@ export default function App() {
         if (parts[1]) {
           setTargetCompany(parts[1]);
         }
-      } else if (hash === '#dashboard') {
+      } else if (hash.startsWith('#dashboard') || hash === '#history') {
         setCurrentView('dashboard');
       } else if (hash === '#plans' || hash === '#pricing') {
         setCurrentView('plans');
@@ -104,13 +104,7 @@ export default function App() {
     };
 
     // Check hash on initial mount
-    if (window.location.hash === '#login') {
-      setAuthModalMode('login');
-      setAuthModalOpen(true);
-    } else if (window.location.hash === '#signup') {
-      setAuthModalMode('signup');
-      setAuthModalOpen(true);
-    }
+    handleHashChange();
 
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);

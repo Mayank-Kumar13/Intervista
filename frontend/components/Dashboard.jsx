@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import MockInterviewSetupPage from './MockInterviewSetupPage';
 import CareerPrepDSAPage from './CareerPrepDSAPage';
+import HistoryPage from './HistoryPage';
 import {
   Home,
   Mic,
@@ -145,8 +146,33 @@ export default function Dashboard({
   const [selectedYear, setSelectedYear] = useState(2026);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeNav, setActiveNav] = useState('Overview');
+  const [activeNav, setActiveNav] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const h = window.location.hash.toLowerCase();
+      if (h.includes('history')) return 'History';
+      if (h.includes('mock')) return 'Mock Interview';
+      if (h.includes('prep') || h.includes('career')) return 'Career Prep';
+    }
+    return 'Overview';
+  });
   const [hoveredCell, setHoveredCell] = useState(null);
+
+  useEffect(() => {
+    const handleHash = () => {
+      const h = window.location.hash.toLowerCase();
+      if (h.includes('history')) {
+        setActiveNav('History');
+      } else if (h.includes('mock')) {
+        setActiveNav('Mock Interview');
+      } else if (h.includes('career') || h.includes('prep')) {
+        setActiveNav('Career Prep');
+      } else if (h === '#dashboard') {
+        setActiveNav('Overview');
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   // Generate 53 weeks x 7 days for the selected year
   const heatmapData = useMemo(() => {
@@ -270,6 +296,7 @@ export default function Dashboard({
       id: 'overview',
       action: () => {
         setActiveNav('Overview');
+        window.location.hash = '#dashboard';
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
     },
@@ -279,6 +306,7 @@ export default function Dashboard({
       id: 'mock-interview',
       action: () => {
         setActiveNav('Mock Interview');
+        window.location.hash = '#dashboard/mock-interview';
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
     },
@@ -287,13 +315,9 @@ export default function Dashboard({
       icon: History,
       id: 'history',
       action: () => {
-        setActiveNav('Overview');
-        setTimeout(() => {
-          const el = document.getElementById('recent-interviews');
-          if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 100);
+        setActiveNav('History');
+        window.location.hash = '#dashboard/history';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       },
     },
     {
@@ -302,6 +326,7 @@ export default function Dashboard({
       id: 'career-prep',
       action: () => {
         setActiveNav('Career Prep');
+        window.location.hash = '#dashboard/career-prep';
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
     },
@@ -547,6 +572,19 @@ export default function Dashboard({
                 setActiveNav('Mock Interview');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
+              onBackToOverview={() => {
+                setActiveNav('Overview');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
+          ) : activeNav === 'History' ? (
+            <HistoryPage
+              onViewReport={onViewReport}
+              onStartInterview={() => {
+                setActiveNav('Mock Interview');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onNavigateToCompanies={onNavigateToCompanies}
               onBackToOverview={() => {
                 setActiveNav('Overview');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1059,7 +1097,10 @@ export default function Dashboard({
                 </div>
 
                 <button
-                  onClick={() => onViewReport && onViewReport({ role: 'Software Engineer', overallScore: 86 })}
+                  onClick={() => {
+                    setActiveNav('History');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                   style={{
                     background: 'none',
                     border: 'none',
